@@ -1,0 +1,37 @@
+{
+    "station_settings": {
+        "name": "北京 1.2 公尺 L/S 站",
+        "remark": "测试站",
+        "location": "北京"
+    },
+    "control_settings": {
+        "device": "/dev/ttyUSB0",
+        "baudrate": 9600
+    },
+    "sensor_settings": {
+        "device": "/dev/ttyUSB1",
+        "baudrate": 9600
+    },
+    "display_settings": {
+        "device": "/dev/ttyUSB2",
+        "baudrate": 115200
+    },
+    "oribit_settings": {
+        "path": "/data/tle.txt",
+        "life": 86400
+    },
+    "database_settings": {
+        "engine": "sqlite",
+        "host": "",
+        "port": 0,
+        "username": "",
+        "password": "",
+        "database": "/home/yuki/openstation.db"
+    },
+    "server_settings": {
+        "host": "0.0.0.0",
+        "port": 8073,
+        "cors": true,
+        "debug": false
+    }
+}
