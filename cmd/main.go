@@ -10,7 +10,7 @@ import (
 	"github.com/bclswl0827/openstation/app"
 	"github.com/bclswl0827/openstation/config"
 	"github.com/bclswl0827/openstation/feature"
-	"github.com/bclswl0827/openstation/publisher"
+	"github.com/bclswl0827/openstation/feature/monitor"
 	"github.com/bclswl0827/openstation/server"
 	"github.com/common-nighthawk/go-figure"
 	"github.com/fatih/color"
@@ -52,15 +52,15 @@ func main() {
 		logrus.Info("main: configuration has been loaded")
 	}
 
-	// Initialize global status
-	var status publisher.Status
-	publisher.Initialize(&conf, &status)
+	// Initialize system status
+	var status feature.Status
+	status.Init()
 
 	// Register features
 	features := []feature.Feature{
-		//
+		&monitor.Monitor{},
 	}
-	featureOptions := &feature.FeatureOptions{
+	featureOptions := &feature.Options{
 		Config: &conf,
 		Status: &status,
 	}
@@ -85,4 +85,8 @@ func main() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	<-sigCh
+
+	// Wait for all features to stop
+	logrus.Println("main: daemon is shutting down")
+	featureWaitGroup.Wait()
 }

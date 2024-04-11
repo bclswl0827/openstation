@@ -8,17 +8,19 @@
         "device": "/dev/ttyUSB0",
         "baudrate": 9600
     },
-    "sensor_settings": {
+    "reference_settings": {
         "device": "/dev/ttyUSB1",
+        "baudrate": 57600
+    },
+    "monitor_settings": {
+        "device": "/dev/ttyUSB0",
         "baudrate": 9600
     },
-    "display_settings": {
-        "device": "/dev/ttyUSB2",
-        "baudrate": 115200
-    },
-    "oribit_settings": {
-        "path": "/data/tle.txt",
-        "life": 86400
+    "satellite_settings": {
+        "tle_settings": {
+            "path":"/data/tle.txt",
+            "life": 86400
+        }
     },
     "database_settings": {
         "engine": "sqlite",

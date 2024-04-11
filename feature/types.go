@@ -2,22 +2,25 @@ package feature
 
 import (
 	"sync"
+	"time"
 
 	"github.com/bclswl0827/openstation/config"
-	"github.com/bclswl0827/openstation/publisher"
 	"gorm.io/gorm"
 )
 
-type Feature interface {
-	Run(*FeatureOptions, *sync.WaitGroup)
-	OnStart(*FeatureOptions, ...any)
-	OnStop(*FeatureOptions, ...any)
-	OnReady(*FeatureOptions, ...any)
-	OnError(*FeatureOptions, error)
+type Status struct {
+	IsReady  bool
+	GnssTime time.Time
 }
 
-type FeatureOptions struct {
+type Options struct {
 	Database *gorm.DB
+	Status   *Status
 	Config   *config.Config
-	Status   *publisher.Status
+}
+
+type Feature interface {
+	Run(*Options, *sync.WaitGroup)
+	OnError(*Options, error, ...any)
+	OnMessage(*Options, string, ...any)
 }

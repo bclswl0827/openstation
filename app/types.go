@@ -7,5 +7,5 @@ type ServerOptions struct {
 	CORS           bool
 	WebPrefix      string
 	APIPrefix      string
-	FeatureOptions *feature.FeatureOptions
+	FeatureOptions *feature.Options
 }
