@@ -39,9 +39,6 @@ func init() {
 	fmt.Println(w(t))
 }
 
-// @BasePath /api/v1
-// @title OpenStation RESTful API documentation
-// @description This is OpenStation RESTful API documentation, please set `server_settings.debug` to `false` in `config.json` when deploying to production environment in case of any security issues.
 func main() {
 	// Read configuration
 	var conf config.Config
@@ -87,6 +84,6 @@ func main() {
 	<-sigCh
 
 	// Wait for all features to stop
-	logrus.Println("main: daemon is shutting down")
+	logrus.Info("main: daemon is shutting down")
 	featureWaitGroup.Wait()
 }
