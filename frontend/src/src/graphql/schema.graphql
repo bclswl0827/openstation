@@ -1,0 +1,10 @@
+query Goods($id: Int!) {
+    user(id: $id) {
+        id
+        name
+    }
+}
+
+query Version {
+    version
+}

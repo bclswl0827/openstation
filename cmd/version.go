@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/bclswl0827/openstation/utils/text"
 	"github.com/fatih/color"
 )
 
@@ -15,7 +14,7 @@ var (
 )
 
 func printVersion() {
-	version := text.Concat(
+	version := concat(
 		"Observer ", version, " (", description, ")\nRelease: ", version, "-", release, " ",
 		runtime.Version(), " ", runtime.GOOS, "/", runtime.GOARCH, "\n",
 	)
