@@ -16,45 +16,33 @@ uint8_t gnss_padding_sentence(uint8_t* str_buf) {
         }
     }
 
-    memccpy(str_buf, new_str, '\0', new_len);
+    strncpy((char*)str_buf, (char*)new_str, new_len);
+    str_buf[new_len] = '\0';
+
     return new_len;
 }
 
-uint8_t gnss_get_sentences(gnss_sentence_t* sentence) {
-    if (mcu_utils_uart2_hasdata()) {
-        bool has_gga = false;
-        bool has_rmc = false;
+uint8_t gnss_get_sentence(uint8_t* str_buf, const char* keyword) {
+    uint8_t line_buf[GNSS_SENTENCE_BUFER_SIZE];
+    uint8_t line_idx = 0;
 
-        while (1) {
-            uint8_t line_buf[GNSS_SENTENCE_BUFER_SIZE];
-            uint8_t line_idx = 0;
-
-            uint8_t ch = mcu_utils_uart2_readch();
-            for (; ch != '\n' && line_idx <= UINT8_MAX;
-                 ch = mcu_utils_uart2_readch()) {
-                if (ch >= 32 && ch <= 126) {
-                    line_buf[line_idx] = ch;
-                    line_idx++;
-                }
+    for (uint8_t ch = mcu_utils_uart2_readch();
+         ch != '\n' && line_idx < UINT8_MAX;) {
+        if (mcu_utils_uart2_hasdata()) {
+            if (ch >= 32 && ch <= 126) {
+                line_buf[line_idx] = ch;
+                line_idx++;
             }
-            line_buf[line_idx] = '\0';
-
-            if (gnss_check_checksum(line_buf)) {
-                if (strstr((char*)line_buf, "GGA")) {
-                    has_gga = true;
-                    memccpy(sentence->gga, line_buf, '\0', line_idx);
-                } else if (strstr((char*)line_buf, "RMC")) {
-                    has_rmc = true;
-                    memccpy(sentence->rmc, line_buf, '\0', line_idx);
-                }
-            }
-
-            if (has_gga && has_rmc) {
-                return 1;
-            }
+            ch = mcu_utils_uart2_readch();
         }
+    }
 
-        return 0;
+    if (gnss_check_checksum(line_buf)) {
+        if (strstr((char*)line_buf, keyword)) {
+            strncpy((char*)str_buf, (char*)line_buf, line_idx);
+            str_buf[line_idx] = '\0';
+            return 1;
+        }
     }
 
     return 0;
@@ -70,8 +58,25 @@ uint8_t gnss_check_checksum(uint8_t* str_buf) {
             checksum ^= *ch;
         }
 
-        uint32_t messageChecksum;
-        sscanf(end + 1, "%x", &messageChecksum);
+        uint8_t messageChecksum = 0;
+        uint8_t checksumChar_1 = *(end + 1);
+        if (checksumChar_1 >= '0' && checksumChar_1 <= '9') {
+            messageChecksum += (checksumChar_1 - '0') << 4;
+        } else if (checksumChar_1 >= 'A' && checksumChar_1 <= 'F') {
+            messageChecksum += (10 + checksumChar_1 - 'A') << 4;
+        } else if (checksumChar_1 >= 'a' && checksumChar_1 <= 'f') {
+            messageChecksum += (10 + checksumChar_1 - 'a') << 4;
+        }
+
+        uint8_t checksumChar_2 = *(end + 2);
+        if (checksumChar_2 >= '0' && checksumChar_2 <= '9') {
+            messageChecksum += (checksumChar_2 - '0');
+        } else if (checksumChar_2 >= 'A' && checksumChar_2 <= 'F') {
+            messageChecksum += (10 + checksumChar_2 - 'A');
+        } else if (checksumChar_2 >= 'a' && checksumChar_2 <= 'f') {
+            messageChecksum += (10 + checksumChar_2 - 'a');
+        }
+
         return checksum == messageChecksum;
     }
 

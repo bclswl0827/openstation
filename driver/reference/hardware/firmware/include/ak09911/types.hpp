@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define AK09911_ADDRESS 0x0D
+#define AK09911_ADDRESS 0x0C
 
 #define AK09911_REG_WIA1 0x00
 #define AK09911_REG_WIA2 0x01

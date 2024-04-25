@@ -1,22 +1,17 @@
-import {
-	mdiCalendarCheck,
-	mdiDotsVertical,
-	mdiMenu,
-	mdiServerNetwork,
-	mdiTranslate
-} from "@mdi/js";
+import { mdiDotsVertical, mdiMenu } from "@mdi/js";
 import Icon from "@mdi/react";
 import { PrimitiveAtom, useAtom } from "jotai";
 import { useState } from "react";
 
-import { Translation } from "../config/locale";
+import { HeaderItem } from "../config/header";
 
 interface Props {
-	readonly title?: Translation;
+	readonly title: string;
+	readonly items: HeaderItem[];
 	readonly asideMenu: PrimitiveAtom<boolean>;
 }
 
-export const Header = ({ asideMenu }: Props) => {
+export const Header = ({ title, items, asideMenu }: Props) => {
 	const [isAsideMenuOpen, setIsAsideMenuOpen] = useAtom(asideMenu);
 	const [isIconsMenuOpen, setIsIconsMenuOpen] = useState(false);
 
@@ -24,42 +19,50 @@ export const Header = ({ asideMenu }: Props) => {
 		<div className="flex border-b justify-between p-5 items-center shadow-lg">
 			<div className="flex items-center">
 				<button
-					className="p-2 lg:hidden text-gray-700 hover:bg-gray-200 rounded-md mr-1"
+					className="lg:hidden text-gray-700 hover:text-gray-500 rounded-md mr-4"
 					onClick={() => setIsAsideMenuOpen(!isAsideMenuOpen)}
 				>
 					<Icon path={mdiMenu} size={1} />
 				</button>
-				<h2 className="text-gray-700 font-light text-xl">Dashboard</h2>
+				<h2 className="text-gray-700 font-light text-xl lg:pl-4">{title}</h2>
 			</div>
-			<div className="hidden sm:flex flex-row space-x-5">
-				<button className="text-gray-500 hover:text-gray-400">
-					<Icon path={mdiTranslate} size={1} />
-				</button>
-				<button className="text-gray-500 hover:text-gray-400">
-					<Icon path={mdiCalendarCheck} size={1} />
-				</button>
-				<button className="text-gray-500 hover:text-gray-400">
-					<Icon path={mdiServerNetwork} size={1} />
-				</button>
+			<div className="hidden sm:flex flex-row">
+				{items.map(({ icon, onClick }, index) => (
+					<div className="flex" key={index}>
+						<button
+							className="text-gray-500 hover:text-gray-400 mx-4"
+							onClick={onClick}
+						>
+							<Icon path={icon} size={1} />
+						</button>
+						{index !== items.length - 1 && (
+							<span className="text-gray-300 select-none">|</span>
+						)}
+					</div>
+				))}
 			</div>
-			<div className="sm:hidden">
+			<div className="sm:hidden flex">
 				<button
-					className="p-2 text-gray-700 hover:bg-gray-200 rounded-md"
+					className="text-gray-700 hover:text-gray-500 rounded-md"
 					onClick={() => setIsIconsMenuOpen(!isIconsMenuOpen)}
 				>
 					<Icon path={mdiDotsVertical} size={1} />
 				</button>
 				{isIconsMenuOpen && (
-					<div className="absolute flex right-2 mt-2 p-4 space-x-4 bg-white border rounded-md shadow-xl animate-fade animate-duration-300">
-						<button className="text-gray-500 hover:text-gray-400 w-full">
-							<Icon path={mdiTranslate} size={1} />
-						</button>
-						<button className="text-gray-500 hover:text-gray-400 w-full">
-							<Icon path={mdiCalendarCheck} size={1} />
-						</button>
-						<button className="text-gray-500 hover:text-gray-400 w-full">
-							<Icon path={mdiServerNetwork} size={1} />
-						</button>
+					<div className="absolute flex right-2 mt-8 p-4 space-x-4 bg-white border rounded-md shadow-xl animate-fade animate-duration-300">
+						{items.map(({ icon, onClick }, index) => (
+							<div className="flex space-x-4" key={index}>
+								<button
+									className="text-gray-500 hover:text-gray-400"
+									onClick={onClick}
+								>
+									<Icon path={icon} size={1} />
+								</button>
+								{index !== items.length - 1 && (
+									<span className="text-gray-300 select-none">|</span>
+								)}
+							</div>
+						))}
 					</div>
 				)}
 			</div>
