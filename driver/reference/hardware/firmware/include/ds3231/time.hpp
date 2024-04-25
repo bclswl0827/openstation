@@ -9,5 +9,6 @@
 
 void ds3231_get_time(ds3231_time_t* time);
 void ds3231_set_time(ds3231_time_t* time);
+int64_t ds3231_get_timestamp(ds3231_time_t* time);
 
 #endif

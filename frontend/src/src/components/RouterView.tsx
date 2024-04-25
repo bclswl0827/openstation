@@ -10,15 +10,18 @@ interface Props {
 	readonly appName: Translation;
 	readonly suspense: ReactNode;
 	readonly locale: string;
+	readonly onTitleChange: (routeTitle: string) => void;
 }
 
-export const RouterView = ({ routes, suspense, appName, locale, routerProps }: Props) => {
+export const RouterView = ({ routes, suspense, appName, locale, routerProps, onTitleChange }: Props) => {
 	const { pathname } = useLocation();
 
 	useEffect(() => {
-		const title = Object.values(routes).find(({ uri }) => pathname === uri)?.title;
-		document.title = `${title?.[locale] ?? routes.default.title?.[locale]} - ${appName[locale]}`;
-	}, [routes, appName, pathname, locale]);
+		const routeTitle = Object.values(routes).find(({ uri }) => pathname === uri)?.title;
+		const title = routeTitle?.[locale] ?? routes.default.title?.[locale];
+		document.title = `${title} - ${appName[locale]}`;
+		onTitleChange(title);
+	}, [routes, appName, pathname, locale, onTitleChange]);
 
 	return (
 		<Suspense fallback={suspense}>

@@ -6,6 +6,7 @@ import { Header } from "./components/Header";
 import { RouterView } from "./components/RouterView";
 import { Skeleton } from "./components/Skeleton";
 import { globalConfig } from "./config/global";
+import { headerConfig } from "./config/header";
 import i18n, { localeConfig } from "./config/locale";
 import { menuConfig } from "./config/menu";
 import { routerConfig } from "./config/router";
@@ -22,6 +23,11 @@ const App = () => {
 		setCurrentLocaleToState();
 	}, []);
 
+	const [currentTitle, setCurrentTitle] = useState<string>("");
+	const handleTitleChange = (routeTitle: string) => {
+		setCurrentTitle(routeTitle);
+	};
+
 	const asideMenuState = atom(false);
 	const { routes } = routerConfig;
 	const { name, logo, release, version } = globalConfig;
@@ -37,12 +43,17 @@ const App = () => {
 				release={`${version}@${release}`}
 			/>
 			<div className="flex flex-col w-full">
-				<Header asideMenu={asideMenuState} />
+				<Header
+					title={currentTitle}
+					items={headerConfig}
+					asideMenu={asideMenuState}
+				/>
 				<RouterView
 					appName={name}
 					routes={routes}
 					locale={currentLocale}
 					suspense={<Skeleton />}
+					onTitleChange={handleTitleChange}
 				/>
 			</div>
 		</div>
