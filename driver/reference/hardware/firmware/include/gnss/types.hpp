@@ -5,6 +5,7 @@
 
 #define GNSS_SENTENCE_BUFER_SIZE 82
 #define GNSS_SENTENCE_PADDING_CHAR '_'
+#define GNSS_SENTENCE_READ_ATTEMPTS (UINT16_MAX / 2)
 
 typedef struct {
     double latitude = 0;
