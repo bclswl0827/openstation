@@ -1,9 +1,5 @@
 #include "ds3231/utils.hpp"
 
-void ds3231_init() {
-    mcu_utils_i2c_init();
-}
-
 uint8_t ds3231_bcd2dec(uint8_t bcd) {
     return (bcd / 16 * 10) + (bcd % 16);
 }

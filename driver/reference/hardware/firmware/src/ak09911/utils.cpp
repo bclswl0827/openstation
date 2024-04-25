@@ -7,7 +7,6 @@ void ak09911_reset() {
 }
 
 void ak09911_init() {
-    mcu_utils_i2c_init();
     ak09911_reset();
 }
 

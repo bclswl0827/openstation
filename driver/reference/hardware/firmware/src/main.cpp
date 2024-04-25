@@ -93,6 +93,7 @@ void read_gnss(void* pvParameters) {
 static TaskHandle_t handle_send_packet = NULL;
 void send_packet(void* pvParameters) {
     packet_t packet;
+
     while (1) {
         packet.gnss_state = gnss_location.is_valid << 1 | gnss_time.is_valid;
         packet.coordinates[0] = gnss_location.latitude;
@@ -118,8 +119,8 @@ void send_packet(void* pvParameters) {
 }
 
 void setup() {
+    mcu_utils_i2c_init();
     ak09911_init();
-    ds3231_init();
     gnss_init(GNSS_UART_BAUDRATE);
 
     mcu_utils_uart_init(MCU_UART_BAUDRATE);
