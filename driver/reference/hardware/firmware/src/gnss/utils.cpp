@@ -26,16 +26,23 @@ uint8_t gnss_get_sentence(uint8_t* str_buf, const char* keyword) {
     uint8_t line_buf[GNSS_SENTENCE_BUFER_SIZE];
     uint8_t line_idx = 0;
 
-    for (uint8_t ch = mcu_utils_uart2_readch();
-         ch != '\n' && line_idx < UINT8_MAX;) {
+    uint16_t read_attempts = GNSS_SENTENCE_READ_ATTEMPTS;
+    for (uint8_t ch = mcu_utils_uart2_readch(); ch != '\n';) {
         if (mcu_utils_uart2_hasdata()) {
             if (ch >= 32 && ch <= 126) {
+                if (ch == '$') {
+                    memset(line_buf, 0, sizeof(line_buf));
+                    line_idx = 0;
+                }
                 line_buf[line_idx] = ch;
                 line_idx++;
             }
             ch = mcu_utils_uart2_readch();
+        } else if (!--read_attempts) {
+            return 0;
         }
     }
+    line_buf[line_idx] = '\0';
 
     if (gnss_check_checksum(line_buf)) {
         if (strstr((char*)line_buf, keyword)) {
