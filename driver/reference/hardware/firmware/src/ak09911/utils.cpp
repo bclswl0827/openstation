@@ -28,6 +28,5 @@ uint8_t ak09911_is_drdy() {
     uint8_t rx_buf[1];
     mcu_utils_i2c_read(AK09911_ADDRESS, AK09911_REG_ST1, rx_buf,
                        sizeof(rx_buf));
-    mcu_utils_i2c_read(AK09911_ADDRESS, AK09911_REG_ST2, NULL, 1);
     return (rx_buf[0] & 0x01) != 0;
 }
