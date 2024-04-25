@@ -7,6 +7,5 @@
 #include "task.h"
 
 void mcu_utils_delay_ms(uint32_t ms, uint8_t rtos);
-void mcu_utils_delay_us(uint32_t us, uint8_t rtos);
 
 #endif

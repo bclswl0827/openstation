@@ -42,7 +42,9 @@ uint8_t gnss_get_sentence(uint8_t* str_buf, const char* keyword) {
             return 0;
         }
     }
+
     line_buf[line_idx] = '\0';
+    mcu_utils_uart2_flush();
 
     if (gnss_check_checksum(line_buf)) {
         if (strstr((char*)line_buf, keyword)) {

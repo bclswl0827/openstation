@@ -16,7 +16,6 @@
 
 #include "mcu_utils/delay.hpp"
 #include "mcu_utils/led.hpp"
-#include "mcu_utils/reset.hpp"
 #include "mcu_utils/uart.hpp"
 
 #include "packet.hpp"
@@ -112,6 +111,8 @@ void send_packet(void* pvParameters) {
 
         send_control_word(SYNC_WORD, sizeof(SYNC_WORD));
         send_data_packet(packet);
+
+        mcu_utils_uart_flush();
         mcu_utils_delay_ms(DATA_PACKET_SEND_INTERVAL, 1);
     }
 }
