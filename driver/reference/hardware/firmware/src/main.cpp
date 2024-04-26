@@ -7,6 +7,10 @@
 #include "ak09911/types.hpp"
 #include "ak09911/utils.hpp"
 
+#include "adxl345/acceleration.hpp"
+#include "adxl345/types.hpp"
+#include "adxl345/utils.hpp"
+
 #include "ds3231/time.hpp"
 #include "ds3231/types.hpp"
 
@@ -22,9 +26,10 @@
 #include "settings.hpp"
 
 #define DATA_PACKET_SEND_INTERVAL 100
-#define CPMPASS_READ_COUNT_FACTOR_FOR_AVERAGE 10
+#define SENSOR_READ_COUNT_FOR_AVAERAGE 10
 
 ak09911_magnetometer_t magnetometer;
+adxl345_accelerometer_t accelerometer;
 ds3231_time_t rtc_time;
 
 gnss_location_t gnss_location;
@@ -38,19 +43,35 @@ void read_peripherals(void* pvParameters) {
     ak09911_start(AK09911_MODE_CONT_100HZ);
 
     while (1) {
-        int32_t compass_read_sum_x_y[2] = {0};
+        int32_t magnetometer_read_sum_x_y_z[3] = {0};
+        int32_t accelerometer_read_sum_x_y_z[3] = {0};
 
         ak09911_magnetometer_t temp_magnetometer;
-        for (uint8_t i = 0; i < CPMPASS_READ_COUNT_FACTOR_FOR_AVERAGE; i++) {
+        adxl345_accelerometer_t temp_accelerometer;
+        for (uint8_t i = 0; i < SENSOR_READ_COUNT_FOR_AVAERAGE; i++) {
             ak09911_read_compass(&temp_magnetometer);
-            compass_read_sum_x_y[0] += temp_magnetometer.x;
-            compass_read_sum_x_y[1] += temp_magnetometer.y;
+            magnetometer_read_sum_x_y_z[0] += temp_magnetometer.x;
+            magnetometer_read_sum_x_y_z[1] += temp_magnetometer.y;
+            magnetometer_read_sum_x_y_z[2] += temp_magnetometer.z;
+            adxl345_read_acceleration(&temp_accelerometer);
+            accelerometer_read_sum_x_y_z[0] += temp_accelerometer.x;
+            accelerometer_read_sum_x_y_z[1] += temp_accelerometer.y;
+            accelerometer_read_sum_x_y_z[2] += temp_accelerometer.z;
         }
 
         magnetometer.x =
-            compass_read_sum_x_y[0] / CPMPASS_READ_COUNT_FACTOR_FOR_AVERAGE;
+            magnetometer_read_sum_x_y_z[0] / SENSOR_READ_COUNT_FOR_AVAERAGE;
         magnetometer.y =
-            compass_read_sum_x_y[1] / CPMPASS_READ_COUNT_FACTOR_FOR_AVERAGE;
+            magnetometer_read_sum_x_y_z[1] / SENSOR_READ_COUNT_FOR_AVAERAGE;
+        magnetometer.z =
+            magnetometer_read_sum_x_y_z[2] / SENSOR_READ_COUNT_FOR_AVAERAGE;
+
+        accelerometer.x =
+            accelerometer_read_sum_x_y_z[0] / SENSOR_READ_COUNT_FOR_AVAERAGE;
+        accelerometer.y =
+            accelerometer_read_sum_x_y_z[1] / SENSOR_READ_COUNT_FOR_AVAERAGE;
+        accelerometer.z =
+            accelerometer_read_sum_x_y_z[2] / SENSOR_READ_COUNT_FOR_AVAERAGE;
 
         if (xSemaphoreTake(rtc_time_mutex, portMAX_DELAY) == pdTRUE) {
             ds3231_get_time(&rtc_time);
@@ -96,19 +117,31 @@ void send_packet(void* pvParameters) {
     packet_t packet;
 
     while (1) {
-        packet.gnss_state = gnss_location.is_valid << 1 | gnss_time.is_valid;
+        // packet.gnss_state = gnss_location.is_valid << 1 | gnss_time.is_valid;
         packet.coordinates[0] = gnss_location.latitude;
         packet.coordinates[1] = gnss_location.longitude;
 
-        int16_t magnetometer_coef =
-            magnetometer.coef[1] << 8 | magnetometer.coef[0];
-        packet.magnetometer[0] = magnetometer_coef;
-        packet.magnetometer[1] = magnetometer.x;
-        packet.magnetometer[2] = magnetometer.y;
+        packet.magnetometer_asa[0] = magnetometer.asa[0];
+        packet.magnetometer_asa[1] = magnetometer.asa[1];
+        packet.magnetometer_asa[2] = magnetometer.asa[2];
 
-        packet.checksum = get_packet_checksum(packet.magnetometer,
-                                              sizeof(packet.magnetometer) / 2);
+        packet.magnetometer[0] = magnetometer.x;
+        packet.magnetometer[1] = magnetometer.y;
+        packet.magnetometer[2] = magnetometer.z;
+        uint8_t magnetometer_checksum = get_packet_checksum(
+            packet.magnetometer,
+            sizeof(packet.magnetometer) / sizeof(packet.magnetometer[0]));
 
+        packet.accelerometer[0] = accelerometer.x;
+        packet.accelerometer[1] = accelerometer.y;
+        packet.accelerometer[2] = accelerometer.z;
+        uint8_t accelerometer_checksum = get_packet_checksum(
+            packet.accelerometer,
+            sizeof(packet.accelerometer) / sizeof(packet.accelerometer[0]));
+
+        packet.states[0] =
+            (uint8_t)(gnss_location.is_valid << 1 | gnss_time.is_valid);
+        packet.states[1] = magnetometer_checksum ^ accelerometer_checksum;
         packet.timestamp = ds3231_get_timestamp(&rtc_time);
 
         send_control_word(SYNC_WORD, sizeof(SYNC_WORD));
@@ -121,6 +154,7 @@ void send_packet(void* pvParameters) {
 
 void setup() {
     mcu_utils_i2c_init();
+    adxl345_init();
     ak09911_init();
     gnss_init(GNSS_UART_BAUDRATE);
 
@@ -134,7 +168,7 @@ void setup() {
 
     xTaskCreate(read_peripherals, "read_peripherals", configMINIMAL_STACK_SIZE,
                 NULL, tskIDLE_PRIORITY, &handle_read_peripherals);
-    xTaskCreate(read_gnss, "read_gnss", configMINIMAL_STACK_SIZE, NULL,
+    xTaskCreate(read_gnss, "read_gnss", configMINIMAL_STACK_SIZE * 4, NULL,
                 tskIDLE_PRIORITY, &handle_read_gnss);
     xTaskCreate(send_packet, "send_packet", configMINIMAL_STACK_SIZE, NULL,
                 tskIDLE_PRIORITY, &handle_send_packet);

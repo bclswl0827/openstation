@@ -6,11 +6,12 @@
 #include "settings.hpp"
 
 typedef struct {
-    int64_t timestamp = 0;   // Unix format timestamp, from RTC in seconds
-    uint8_t checksum = 0;    // Packet checksum calculated from magnetometer
-    uint8_t gnss_state = 0;  // B0: GNSS time state, B1: GNSS location state)
-    int16_t magnetometer[3] = {0};  // (2 cofficients, x axis, y axis)
-    float coordinates[2] = {0};     // (GNSS latitude, GNSS longitude)
+    int64_t timestamp = 0;        // Unix format timestamp in seconds
+    double coordinates[2] = {0};  // (latitude, longitude)
+    int16_t accelerometer[3] = {0};    // (mag_x, mag_y, mag_z)
+    int16_t magnetometer[3] = {0};     // (acc_x, acc_y, acc_z)
+    int8_t magnetometer_asa[3] = {0};  // (asa_x, asa_y, asa_z)
+    uint8_t states[2] = {0};           // (gnss state, checksum)
 } packet_t;
 
 void send_data_packet(packet_t packet);
