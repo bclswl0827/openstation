@@ -68,6 +68,7 @@ void read_gnss(void* pvParameters) {
         if (gnss_get_sentence(rmc_sentence, "RMC")) {
             gnss_padding_sentence(rmc_sentence);
             gnss_parse_rmc(&gnss_location, &gnss_time, rmc_sentence);
+
             if ((!has_rtc_time_set && gnss_time.is_valid) ||
                 (gnss_time.minute % 5 == 0 && gnss_time.second == 0 &&
                  gnss_time.is_valid)) {

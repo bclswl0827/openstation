@@ -38,7 +38,10 @@ uint8_t gnss_get_sentence(uint8_t* str_buf, const char* keyword) {
                 line_idx++;
             }
             ch = mcu_utils_uart2_readch();
-        } else if (!--read_attempts) {
+        } else {
+            read_attempts--;
+        }
+        if (!read_attempts) {
             return 0;
         }
     }
