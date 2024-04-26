@@ -8,7 +8,7 @@ void ak09911_read_rom(ak09911_magnetometer_t* magnetometer) {
                        sizeof(rx_buf));
 
     for (uint8_t i = 0; i < sizeof(rx_buf); i++) {
-        magnetometer->coef[i] = rx_buf[i];
+        magnetometer->asa[i] = rx_buf[i];
     }
 
     mcu_utils_i2c_read(AK09911_ADDRESS, AK09911_REG_ST2, NULL, sizeof(rx_buf));

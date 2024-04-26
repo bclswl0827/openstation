@@ -39,7 +39,7 @@ typedef struct {
     int16_t x = 0;
     int16_t y = 0;
     int16_t z = 0;
-    int8_t coef[3] = {0};
+    int8_t asa[3] = {0};
 } ak09911_magnetometer_t;
 
 #endif
