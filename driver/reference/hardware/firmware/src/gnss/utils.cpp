@@ -6,7 +6,7 @@ void gnss_init(uint32_t baudrate) {
 
 uint8_t gnss_padding_sentence(uint8_t* str_buf) {
     uint8_t str_len = strlen((char*)str_buf);
-    uint8_t new_str[GNSS_SENTENCE_BUFER_SIZE];
+    uint8_t new_str[GNSS_SENTENCE_BUFFER_SIZE];
     uint8_t new_len = 0;
 
     for (uint8_t i = 0; i < str_len; i++) {
@@ -23,7 +23,7 @@ uint8_t gnss_padding_sentence(uint8_t* str_buf) {
 }
 
 uint8_t gnss_get_sentence(uint8_t* str_buf, const char* keyword) {
-    uint8_t line_buf[GNSS_SENTENCE_BUFER_SIZE];
+    uint8_t line_buf[GNSS_SENTENCE_BUFFER_SIZE];
     uint8_t line_idx = 0;
 
     uint16_t read_attempts = GNSS_SENTENCE_READ_ATTEMPTS;
@@ -105,5 +105,5 @@ int64_t gnss_get_timestamp(gnss_time_t* time) {
     timeinfo.tm_sec = time->second;
     timeinfo.tm_isdst = -1;
 
-    return mktime(&timeinfo);
+    return mktime(&timeinfo) * 1000 + time->milisecond;
 }

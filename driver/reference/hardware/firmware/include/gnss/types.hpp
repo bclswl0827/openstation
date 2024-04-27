@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define GNSS_SENTENCE_BUFER_SIZE 82
+#define GNSS_SENTENCE_BUFFER_SIZE 82
 #define GNSS_SENTENCE_PADDING_CHAR '_'
 #define GNSS_SENTENCE_TYPE_RMC "RMC"
 #define GNSS_SENTENCE_TYPE_GGA "GGA"
@@ -29,6 +29,7 @@ typedef struct {
     uint8_t hour = 0;
     uint8_t minute = 0;
     uint8_t second = 0;
+    uint16_t milisecond = 0;
     uint8_t is_valid = 0;
 } gnss_time_t;
 
