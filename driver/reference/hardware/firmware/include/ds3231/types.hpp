@@ -12,6 +12,7 @@ typedef struct {
     uint8_t hour = 0;
     uint8_t minute = 0;
     uint8_t second = 0;
+    uint8_t has_init = 0;
 } ds3231_time_t;
 
 #endif

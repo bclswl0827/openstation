@@ -49,8 +49,8 @@ uint8_t gnss_get_sentence(uint8_t* str_buf, const char* keyword) {
     line_buf[line_idx] = '\0';
     mcu_utils_uart2_flush();
 
-    if (gnss_check_checksum(line_buf)) {
-        if (strstr((char*)line_buf, keyword)) {
+    if (strstr((char*)line_buf, keyword)) {
+        if (gnss_check_checksum(line_buf)) {
             strncpy((char*)str_buf, (char*)line_buf, line_idx);
             str_buf[line_idx] = '\0';
             return 1;

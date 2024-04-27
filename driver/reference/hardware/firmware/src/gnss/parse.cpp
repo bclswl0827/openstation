@@ -5,7 +5,7 @@ void gnss_parse_rmc(gnss_location_t* location,
                     uint8_t* str_buf) {
     uint8_t str_len = strlen((char*)str_buf);
     char buffer[str_len];
-    memcpy(buffer, str_buf, str_len);
+    strncpy(buffer, (char*)str_buf, str_len);
 
     char* token = strtok(buffer, ",");
     for (uint8_t i = 0; token != NULL; i++) {
@@ -80,7 +80,7 @@ void gnss_parse_gga(gnss_location_t* location,
                     uint8_t* str_buf) {
     uint8_t str_len = strlen((char*)str_buf);
     char buffer[str_len];
-    memcpy(buffer, str_buf, str_len);
+    strncpy(buffer, (char*)str_buf, str_len);
 
     char* token = strtok(buffer, ",");
     for (uint8_t i = 0; token != NULL; i++) {
