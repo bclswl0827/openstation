@@ -67,9 +67,11 @@ void read_peripherals(void* pvParameters) {
 
         if (xSemaphoreTake(params->gnss_time_mutex, portMAX_DELAY) == pdTRUE) {
             uint8_t is_gnss_time_valid = params->gnss_time.is_valid;
+            uint8_t is_gnss_location_valid = params->gnss_location.is_valid;
+
             if (xSemaphoreTake(params->rtc_time_mutex, portMAX_DELAY) ==
                 pdTRUE) {
-                if (!is_gnss_time_valid) {
+                if (!is_gnss_time_valid || !is_gnss_location_valid) {
                     if (xSemaphoreTake(params->i2c_bus_mutex, portMAX_DELAY) ==
                         pdTRUE) {
                         ds3231_get_time(&(params->rtc_time));
@@ -101,7 +103,7 @@ void read_gnss(void* pvParameters) {
 
             if (xSemaphoreTake(params->rtc_time_mutex, portMAX_DELAY) ==
                 pdTRUE) {
-                if (temp_gnss_time.is_valid) {
+                if (temp_gnss_time.is_valid && temp_gnss_location.is_valid) {
                     ds3231_time_t temp_rtc_time;
                     temp_rtc_time.year = temp_gnss_time.year;
                     temp_rtc_time.month = temp_gnss_time.month;
@@ -138,12 +140,13 @@ void read_gnss(void* pvParameters) {
 void send_packet(void* pvParameters) {
     global_task_parameters_t* params = (global_task_parameters_t*)pvParameters;
 
-    packet_t packet;
-    uint8_t packet_checksum = 0;
-    uint8_t gnss_state = 0;
-    uint8_t has_init = 0;
+    uint8_t rtc_has_init = 0;
 
     while (1) {
+        packet_t packet;
+        uint8_t gnss_state = 0;
+        uint8_t packet_checksum = 0;
+
         if (xSemaphoreTake(params->magnetometer_mutex, portMAX_DELAY) ==
             pdTRUE) {
             packet.magnetometer_asa[0] = params->magnetometer.asa[0];
@@ -160,7 +163,7 @@ void send_packet(void* pvParameters) {
 
         if (xSemaphoreTake(params->gnss_location_mutex, portMAX_DELAY) ==
             pdTRUE) {
-            if (params->gnss_time.is_valid) {
+            if (params->gnss_time.is_valid && params->gnss_location.is_valid) {
                 packet.timestamp = gnss_get_timestamp(&(params->gnss_time));
             }
             packet.coordinates[0] = params->gnss_location.latitude;
@@ -172,17 +175,21 @@ void send_packet(void* pvParameters) {
 
         if (xSemaphoreTake(params->rtc_time_mutex, portMAX_DELAY) == pdTRUE) {
             uint8_t is_gnss_time_valid = gnss_state & 0x01;
-            has_init = params->rtc_time.has_init;
-            if (!is_gnss_time_valid && has_init) {
+            uint8_t is_gnss_location_valid = gnss_state >> 1;
+            rtc_has_init = params->rtc_time.has_init;
+
+            if (rtc_has_init &&
+                (!is_gnss_time_valid || !is_gnss_location_valid)) {
                 packet.timestamp = ds3231_get_timestamp(&(params->rtc_time));
             }
+
             xSemaphoreGive(params->rtc_time_mutex);
         }
 
         packet.states[0] = gnss_state;
         packet.states[1] = packet_checksum;
 
-        if (has_init) {
+        if (rtc_has_init) {
             send_control_word(SYNC_WORD, sizeof(SYNC_WORD));
             send_data_packet(packet);
             mcu_utils_uart_flush();
