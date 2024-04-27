@@ -4,6 +4,7 @@ void ds3231_get_time(ds3231_time_t* time) {
     uint8_t data[7];
     mcu_utils_i2c_read(DS3231_ADDRESS, 0x00, data, 7);
 
+    time->has_init = 1;
     time->second = ds3231_bcd2dec(data[0]);
     time->minute = ds3231_bcd2dec(data[1]);
     time->hour = ds3231_bcd2dec(data[2]);
@@ -50,5 +51,5 @@ int64_t ds3231_get_timestamp(ds3231_time_t* time) {
     timeinfo.tm_sec = time->second;
     timeinfo.tm_isdst = -1;
 
-    return mktime(&timeinfo);
+    return mktime(&timeinfo) * 1000;
 }

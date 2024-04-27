@@ -13,7 +13,6 @@ void mcu_utils_i2c_read(uint8_t address,
     }
     Wire.beginTransmission(address);
     Wire.write(reg);
-    Wire.endTransmission();
     Wire.requestFrom(address, len);
     for (uint8_t i = 0; i < len; i++) {
         if (data != NULL) {
@@ -22,6 +21,8 @@ void mcu_utils_i2c_read(uint8_t address,
             Wire.read();
         }
     }
+
+    Wire.endTransmission();
 }
 
 void mcu_utils_i2c_write(uint8_t address,
@@ -36,5 +37,6 @@ void mcu_utils_i2c_write(uint8_t address,
     for (uint8_t i = 0; i < len; i++) {
         Wire.write(data[i]);
     }
+
     Wire.endTransmission();
 }

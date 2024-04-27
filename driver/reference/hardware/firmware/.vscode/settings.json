@@ -17,6 +17,7 @@
         "ranges": "cpp",
         "valarray": "cpp",
         "limits": "cpp",
-        "uart.hpp": "c"
+        "uart.hpp": "c",
+        "newlib.h": "c"
     }
 }
