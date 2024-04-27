@@ -8,7 +8,6 @@
 typedef struct {
     int64_t timestamp = 0;        // Unix format timestamp in seconds
     double coordinates[2] = {0};  // (latitude, longitude)
-    int16_t accelerometer[3] = {0};    // (mag_x, mag_y, mag_z)
     int16_t magnetometer[3] = {0};     // (acc_x, acc_y, acc_z)
     int8_t magnetometer_asa[3] = {0};  // (asa_x, asa_y, asa_z)
     uint8_t states[2] = {0};           // (gnss state, checksum)
