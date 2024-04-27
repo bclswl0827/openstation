@@ -12,10 +12,15 @@ void gnss_parse_rmc(gnss_location_t* location,
         switch (i) {
             case 1:
                 if (*token != GNSS_SENTENCE_PADDING_CHAR) {
-                    int32_t result = atoi(token);
-                    time->hour = result / 10000;
-                    time->minute = (result / 100) % 100;
-                    time->second = result % 100;
+                    double result = atof(token);
+                    int32_t result_int = (int32_t)result;
+                    time->hour = result_int / 10000;
+                    time->minute = (result_int / 100) % 100;
+                    time->second = result_int % 100;
+                    time->milisecond = (result - result_int) * 1000;
+                    time->is_valid = 1;
+                } else {
+                    time->is_valid = 0;
                 }
                 break;
             case 2:
@@ -59,15 +64,11 @@ void gnss_parse_rmc(gnss_location_t* location,
                     time->mday = result / 10000;
                     time->month = (result / 100) % 100;
                     time->year = result % 100;
+                    time->is_valid = time->year >= 0 && time->year <= 99;
+                } else {
+                    time->is_valid = 0;
                 }
                 break;
-            case 12:
-                if (*token == 'N') {
-                    time->is_valid = 0;
-                    location->is_valid = 0;
-                } else {
-                    time->is_valid = 1;
-                }
         }
 
         token = strtok(NULL, ",");
@@ -84,17 +85,6 @@ void gnss_parse_gga(gnss_location_t* location,
     char* token = strtok(buffer, ",");
     for (uint8_t i = 0; token != NULL; i++) {
         switch (i) {
-            case 1:
-                if (*token != GNSS_SENTENCE_PADDING_CHAR) {
-                    int32_t result = atoi(token);
-                    time->hour = result / 10000;
-                    time->minute = (result / 100) % 100;
-                    time->second = result % 100;
-                    time->is_valid = 1;
-                } else {
-                    time->is_valid = 0;
-                }
-                break;
             case 2:
                 if (*token != GNSS_SENTENCE_PADDING_CHAR) {
                     double result = atof(token);
