@@ -3,10 +3,11 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
-	"github.com/bclswl0827/openstation/app"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/bclswl0827/openstation/frontend"
+	"github.com/bclswl0827/openstation/graph"
 	"github.com/bclswl0827/openstation/server/middleware/cors"
 	"github.com/bclswl0827/openstation/server/middleware/static"
 	"github.com/bclswl0827/openstation/server/response"
@@ -19,53 +20,53 @@ func init() {
 	gin.SetMode(gin.ReleaseMode)
 }
 
-func StartDaemon(host string, port int, options *app.ServerOptions) error {
+func StartDaemon(host string, port int, options *Options) error {
 	r := gin.New()
-	r.Use(
-		gzip.Gzip(options.Gzip, gzip.WithExcludedPaths([]string{options.APIPrefix})),
-		gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
-			trimmedErr := strings.TrimRight(param.ErrorMessage, "\n")
-			loggerText := fmt.Sprintf("%s [server] %s %d %s %s %s\n",
-				param.TimeStamp.Format("2006/01/02 15:04:05"),
-				param.Method, param.StatusCode,
-				param.ClientIP, param.Path, trimmedErr,
-			)
 
-			return loggerText
-		}),
+	// Setup logger
+	r.Use(
+		gzip.Gzip(options.Gzip, gzip.WithExcludedPaths([]string{options.ApiEndpoint})),
+		gin.LoggerWithWriter(logrus.StandardLogger().Writer()),
 	)
+
+	// Setup Cross-Origin Resource Sharing (CORS)
 	if options.CORS {
 		r.Use(cors.AllowCORS([]cors.HttpHeader{
-			{
-				Header: "Access-Control-Allow-Origin",
-				Value:  "*",
-			}, {
-				Header: "Access-Control-Allow-Methods",
-				Value:  "POST, OPTIONS, GET",
-			}, {
-				Header: "Access-Control-Allow-Headers",
-				Value:  "Content-Type",
-			}, {
-				Header: "Access-Control-Expose-Headers",
-				Value:  "Content-Length",
-			},
+			{Header: "Access-Control-Allow-Origin", Value: "*"},
+			{Header: "Access-Control-Allow-Headers", Value: "Content-Type"},
+			{Header: "Access-Control-Expose-Headers", Value: "Content-Length"},
+			{Header: "Access-Control-Allow-Methods", Value: "POST, OPTIONS, GET"},
 		}))
 	}
 
+	// Setup 404 error handler
 	r.NoRoute(func(c *gin.Context) {
 		response.Error(c, http.StatusNotFound)
 	})
 
-	// Register API v1 routers
-	registerRouterV1(r.Group(
-		fmt.Sprintf("/%s/v1", options.APIPrefix),
-	), options)
+	// Setup GraphQL API endpoint
+	apiEndpoint := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{
+		Resolvers: options.GraphResolver,
+	}))
+	r.POST(options.ApiEndpoint, func(ctx *gin.Context) {
+		apiEndpoint.ServeHTTP(ctx.Writer, ctx.Request)
+	})
 
+	// Setup GraphQL Playground
+	if options.Debug {
+		r.GET(options.ApiEndpoint, func(ctx *gin.Context) {
+			playground.Handler("GraphQL", options.ApiEndpoint).
+				ServeHTTP(ctx.Writer, ctx.Request)
+		})
+	}
+
+	// Setup static file serve
 	r.Use(static.ServeEmbed(&static.LocalFileSystem{
 		Root: options.WebPrefix, Prefix: options.WebPrefix,
 		FileSystem: static.CreateFilesystem(frontend.Dist, "dist"),
 	}))
 
+	// Start server
 	err := r.Run(fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		logrus.Fatalf("server: %v\n", err)

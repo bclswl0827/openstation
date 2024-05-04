@@ -6,15 +6,18 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
-	"github.com/bclswl0827/openstation/app"
 	"github.com/bclswl0827/openstation/config"
+	"github.com/bclswl0827/openstation/driver/dao"
 	"github.com/bclswl0827/openstation/feature"
 	"github.com/bclswl0827/openstation/feature/monitor"
+	"github.com/bclswl0827/openstation/graph"
 	"github.com/bclswl0827/openstation/server"
 	"github.com/common-nighthawk/go-figure"
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
+	messagebus "github.com/vardius/message-bus"
 )
 
 func parseCommandLine(conf *config.Config) error {
@@ -46,37 +49,72 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("main: %v\n", err)
 	} else {
-		logrus.Info("main: configuration has been loaded")
+		logrus.Info("main: global configuration has been loaded")
+	}
+
+	// Connect to database
+	databaseConn, err := dao.Open(
+		conf.Database.Host,
+		conf.Database.Port,
+		conf.Database.Engine,
+		conf.Database.Username,
+		conf.Database.Password,
+		conf.Database.Database,
+		30*time.Second,
+	)
+	if err != nil {
+		logrus.Fatalf("main: %v\n", err)
+	} else {
+		logrus.Info("main: database connection has been established")
+	}
+
+	// Migrate database schema
+	err = Migrate(databaseConn)
+	if err != nil {
+		logrus.Fatalf("main: %v\n", err)
+	} else {
+		logrus.Info("main: database schema has been migrated")
 	}
 
 	// Initialize system status
-	var status feature.Status
-	status.Init()
+	var states feature.States
+	states.Initialize()
+
+	// Initialize message bus
+	messageBus := messagebus.New(32)
+	logrus.Info("main: message bus has been initialized")
 
 	// Register features
 	features := []feature.Feature{
 		&monitor.Monitor{},
 	}
-	featureOptions := &feature.Options{
-		Config: &conf,
-		Status: &status,
+	featureOptions := feature.Options{
+		Config:     &conf,
+		States:     &states,
+		Database:   databaseConn,
+		MessageBus: messageBus,
 	}
 	featureWaitGroup := new(sync.WaitGroup)
 	for _, s := range features {
-		go s.Run(featureOptions, featureWaitGroup)
+		go s.Run(&featureOptions, featureWaitGroup)
 	}
 
 	// Start HTTP server
 	go server.StartDaemon(
 		conf.Server.Host,
 		conf.Server.Port,
-		&app.ServerOptions{
-			Gzip:           9,
-			WebPrefix:      WEB_PREFIX,
-			APIPrefix:      API_PREFIX,
-			FeatureOptions: featureOptions,
-			CORS:           conf.Server.CORS,
-		})
+		&server.Options{
+			Gzip:        GZIP_LEVEL,
+			WebPrefix:   WEB_PREFIX,
+			ApiEndpoint: API_ENDPOINT,
+			CORS:        conf.Server.CORS,
+			Debug:       conf.Server.Debug,
+			GraphResolver: &graph.Resolver{
+				Options: featureOptions,
+			},
+		},
+	)
+	logrus.Info("main: http server is listening on ", conf.Server.Host, ":", conf.Server.Port)
 
 	// Receive interrupt signals
 	sigCh := make(chan os.Signal, 1)

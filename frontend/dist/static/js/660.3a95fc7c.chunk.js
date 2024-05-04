@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksrc=self.webpackChunksrc||[]).push([[660],{660:(s,e,c)=>{c.r(e),c.d(e,{default:()=>u});var r=c(414);const u=()=>(0,r.jsx)("div",{children:"Home"})}}]);

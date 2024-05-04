@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksrc=self.webpackChunksrc||[]).push([[836],{836:(s,c,e)=>{e.r(c),e.d(c,{default:()=>l});var r=e(414);const l=()=>(0,r.jsx)("div",{children:"Control"})}}]);

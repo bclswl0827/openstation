@@ -1,10 +1,12 @@
 package server
 
-import (
-	"github.com/bclswl0827/openstation/app"
-	"github.com/gin-gonic/gin"
-)
+import "github.com/bclswl0827/openstation/graph"
 
-type ApiServices interface {
-	RegisterModule(rg *gin.RouterGroup, options *app.ServerOptions)
+type Options struct {
+	Gzip          int
+	CORS          bool
+	Debug         bool
+	WebPrefix     string
+	ApiEndpoint   string
+	GraphResolver *graph.Resolver
 }

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksrc=self.webpackChunksrc||[]).push([[464],{464:(e,s,c)=>{c.r(s),c.d(s,{default:()=>r});var l=c(414);const r=()=>(0,l.jsx)("div",{children:"Satellite"})}}]);
