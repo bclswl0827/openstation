@@ -2,25 +2,35 @@ package feature
 
 import (
 	"sync"
-	"time"
 
 	"github.com/bclswl0827/openstation/config"
+	messagebus "github.com/vardius/message-bus"
 	"gorm.io/gorm"
 )
 
-type Status struct {
-	IsReady  bool
-	GnssTime time.Time
+type States struct {
+	IsPanTiltReady bool
+	IsMonitorReady bool
+	IsGNSSReady    bool
+	IsIMUReady     bool
+	IsRTCReady     bool
+	HasFindNorth   bool
+	PendingTasks   int
+	Satellites     int
+	TimeOffset     float64
 }
 
 type Options struct {
-	Database *gorm.DB
-	Status   *Status
-	Config   *config.Config
+	Database   *gorm.DB
+	States     *States
+	Config     *config.Config
+	MessageBus messagebus.MessageBus
 }
 
 type Feature interface {
 	Run(*Options, *sync.WaitGroup)
-	OnError(*Options, error, ...any)
-	OnMessage(*Options, string, ...any)
+	OnEvent(*Options, string, ...any)
+	OnError(*Options, error, bool)
+	OnStart(*Options)
+	OnStop(*Options)
 }

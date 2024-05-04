@@ -9,18 +9,12 @@
         "baudrate": 9600
     },
     "reference_settings": {
-        "device": "/dev/ttyUSB1",
-        "baudrate": 57600
+        "device": "/dev/ttyUSB0",
+        "baudrate": 115200
     },
     "monitor_settings": {
         "device": "/dev/ttyUSB0",
         "baudrate": 9600
-    },
-    "satellite_settings": {
-        "tle_settings": {
-            "path":"/data/tle.txt",
-            "life": 86400
-        }
     },
     "database_settings": {
         "engine": "sqlite",
@@ -34,6 +28,6 @@
         "host": "0.0.0.0",
         "port": 8073,
         "cors": true,
-        "debug": false
+        "debug": true
     }
 }

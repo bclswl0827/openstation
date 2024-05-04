@@ -24,8 +24,7 @@ func (p *PostgreSQL) open(host string, port int, username, password, database st
 		host, port, username, password, database, int(timeout.Seconds()),
 	)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger:                 logger.Default.LogMode(logger.Silent),
-		SkipDefaultTransaction: true, // Disable transaction to improve performance
+		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
 		return nil, err
@@ -50,8 +49,7 @@ func (m *MariaDB) open(host string, port int, username, password, database strin
 		username, password, host, port, database, int(timeout.Seconds()),
 	)
 	return gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger:                 logger.Default.LogMode(logger.Silent),
-		SkipDefaultTransaction: true, // Disable transaction to improve performance
+		Logger: logger.Default.LogMode(logger.Silent),
 	})
 }
 
@@ -67,8 +65,7 @@ func (s *SQLServer) open(host string, port int, username, password, database str
 		username, password, host, port, database,
 	)
 	return gorm.Open(sqlserver.Open(dsn), &gorm.Config{
-		Logger:                 logger.Default.LogMode(logger.Silent),
-		SkipDefaultTransaction: true, // Disable transaction to improve performance
+		Logger: logger.Default.LogMode(logger.Silent),
 	})
 }
 

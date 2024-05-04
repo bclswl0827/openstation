@@ -12,7 +12,7 @@ func Message(c *gin.Context, message string, data any) error {
 	currentTime := time.Now().UTC().Format(time.RFC3339)
 	currentPath := c.Request.URL.Path
 
-	response := HttpResponse{
+	response := BaseResponse{
 		Error:   false,
 		Path:    currentPath,
 		Time:    currentTime,

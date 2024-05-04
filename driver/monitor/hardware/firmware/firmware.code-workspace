@@ -29,7 +29,8 @@
             "editor.insertSpaces": true,
             "editor.tabSize": 4,
             "editor.autoIndent": "advanced"
-        }
+        },
+        "EIDE.SDCC.InstallDirectory": ""
     },
     "extensions": {
         "recommendations": [

@@ -1,6 +1,6 @@
 package response
 
-type HttpResponse struct {
+type BaseResponse struct {
 	Time    string `json:"time"`
 	Status  int    `json:"status"`
 	Error   bool   `json:"error"`

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunksrc=self.webpackChunksrc||[]).push([[943],{943:(s,e,c)=>{c.r(e),c.d(e,{default:()=>a});var r=c(414);const a=()=>(0,r.jsx)("div",{children:"Tasker"})}}]);

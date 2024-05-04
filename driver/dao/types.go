@@ -18,6 +18,5 @@ type BaseModel struct {
 
 type ITable[T any] interface {
 	GetModel() T
-	GetData() T
 	GetName() string
 }

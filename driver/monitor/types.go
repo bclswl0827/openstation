@@ -2,14 +2,14 @@ package monitor
 
 import "io"
 
-type Status struct {
+type MonitorStatus struct {
 	Busy  bool
 	Error bool
 }
 
 type MonitorDriver interface {
 	// Prints the given string at the given position
-	Display(io.ReadWriteCloser, Status, string, int, int) error
+	Display(io.ReadWriteCloser, MonitorStatus, string, int, int) error
 	// Clears the monitor display
 	Clear(io.ReadWriteCloser) error
 	// Resets the monitor display

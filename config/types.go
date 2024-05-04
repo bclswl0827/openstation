@@ -37,21 +37,11 @@ type server struct {
 	Debug bool   `json:"debug"`
 }
 
-type tle_settings struct {
-	Path string `json:"path"`
-	Life int    `json:"life"`
-}
-
-type satellite struct {
-	TLE tle_settings `json:"tle_settings"`
-}
-
 type Config struct {
 	Station   station   `json:"station_settings"`
 	Control   control   `json:"control_settings"`
 	Reference reference `json:"reference_settings"`
 	Monitor   monitor   `json:"monitor_settings"`
-	Satellite satellite `json:"satellite_settings"`
 	Database  database  `json:"database_settings"`
 	Server    server    `json:"server_settings"`
 }

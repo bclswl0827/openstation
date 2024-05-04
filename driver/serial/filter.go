@@ -4,18 +4,24 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"time"
 )
 
-func Filter(port io.ReadWriteCloser, signature []byte, retry int) ([]byte, error) {
+func Filter(port io.ReadWriteCloser, signature []byte, filter_attempts int) error {
 	header := make([]byte, len(signature))
 
-	for i := 0; i < retry; i++ {
-		port.Read(header)
+	for i := 0; i < filter_attempts; i++ {
+		_, err := port.Read(header)
+		if err != nil {
+			return err
+		}
 
 		if bytes.Equal(header, signature) {
-			return nil, nil
+			return nil
+		} else {
+			time.Sleep(time.Millisecond)
 		}
 	}
 
-	return header, fmt.Errorf("failed to filter header")
+	return fmt.Errorf("failed to filter header")
 }

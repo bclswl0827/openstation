@@ -1,0 +1,15 @@
+type TLEData {
+    satelliteName: String!
+    tleLine1: String!
+    tleLine2: String!
+    updatedAt: Int!
+    hasExpired: Boolean!
+}
+
+type Query {
+    QueryTLE(id: Int!): TLEData
+}
+
+type Mutation {
+    UpdateTLE(satelliteName: String!, tleLine1: String!, tleLine2: String!): Boolean
+}

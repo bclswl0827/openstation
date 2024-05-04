@@ -15,30 +15,51 @@ func (d *Monitor) Run(options *feature.Options, waitGroup *sync.WaitGroup) {
 	var (
 		deviceName = options.Config.Monitor.Device
 		baudRate   = options.Config.Monitor.Baud
-		driver     = &monitor.LCD1602DriverImpl{}
+		driver     = &monitor.MonitorDriverImpl{}
 	)
 
 	port, err := serial.Open(deviceName, baudRate)
 	if err != nil {
-		d.OnError(options, err)
+		d.OnError(options, err, true)
 		return
 	}
-
-	d.OnMessage(options, "display service has been started")
+	d.OnStart(options)
 	defer serial.Close(port)
 
 	waitGroup.Add(1)
 	defer waitGroup.Done()
 
-	d.OnMessage(options, "initializing display")
+	// Initialize display screen
 	err = driver.Init(port)
 	if err != nil {
-		d.OnError(options, err)
+		d.OnError(options, err, false)
 		return
 	}
+	d.OnEvent(options, "display has been initialized")
 
-	d.OnMessage(options, "display initialized")
-	go d.displayStatus(driver, port)
+	// Clear display screen
+	err = driver.Clear(port)
+	if err != nil {
+		d.OnError(options, err, false)
+		return
+	}
+	d.OnEvent(options, "display screen has been cleared")
+	options.States.IsMonitorReady = true
+
+	// Subscribe to monitor topic
+	options.MessageBus.Subscribe(TOPIC_NAME, func(displayText string, status monitor.MonitorStatus, clear bool) {
+		if clear {
+			err := driver.Clear(port)
+			if err != nil {
+				d.OnError(options, err, false)
+			}
+			return
+		}
+		err := driver.Display(port, status, displayText, 0, 0)
+		if err != nil {
+			d.OnError(options, err, false)
+		}
+	})
 
 	// Receive interrupt signals
 	sigCh := make(chan os.Signal, 1)
@@ -46,6 +67,5 @@ func (d *Monitor) Run(options *feature.Options, waitGroup *sync.WaitGroup) {
 
 	// Wait for interrupt signals
 	<-sigCh
-	d.OnMessage(options, "closing display service")
-	serial.Close(port)
+	d.OnStop(options)
 }
