@@ -30,12 +30,18 @@ func (d *Reference) Run(options *feature.Options, waitGroup *sync.WaitGroup) {
 	waitGroup.Add(1)
 	defer waitGroup.Done()
 
-	var status reference.ReferenceStatus
-	err = driver.GetReferenceStatus(port, &status)
-	if err != nil {
-		d.OnError(options, err)
-		return
-	}
+	// var state reference.ReferenceState
+	go func() {
+		for {
+			var state reference.ReferenceState
+			err := driver.GetState(port, &state)
+			if err != nil {
+				d.OnError(options, err)
+				return
+			}
+
+		}
+	}()
 
 	// Receive interrupt signals
 	sigCh := make(chan os.Signal, 1)
@@ -44,5 +50,4 @@ func (d *Reference) Run(options *feature.Options, waitGroup *sync.WaitGroup) {
 	// Wait for interrupt signals
 	<-sigCh
 	d.OnMessage(options, "closing reference service")
-	serial.Close(port)
 }

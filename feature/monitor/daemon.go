@@ -47,7 +47,7 @@ func (d *Monitor) Run(options *feature.Options, waitGroup *sync.WaitGroup) {
 	options.States.IsMonitorReady = true
 
 	// Subscribe to monitor topic
-	options.MessageBus.Subscribe(TOPIC_NAME, func(displayText string, status monitor.MonitorStatus, clear bool) {
+	options.MessageBus.Subscribe(TOPIC_NAME, func(displayText string, state monitor.MonitorState, clear bool) {
 		if clear {
 			err := driver.Clear(port)
 			if err != nil {
@@ -55,7 +55,7 @@ func (d *Monitor) Run(options *feature.Options, waitGroup *sync.WaitGroup) {
 			}
 			return
 		}
-		err := driver.Display(port, status, displayText, 0, 0)
+		err := driver.Display(port, state, displayText, 0, 0)
 		if err != nil {
 			d.OnError(options, err, false)
 		}
