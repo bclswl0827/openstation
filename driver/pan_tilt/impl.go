@@ -143,6 +143,11 @@ func (d *PanTiltImpl) SetTilt(port io.ReadWriteCloser, tilt, offset float64) err
 		return fmt.Errorf("tilt angle must be positive")
 	}
 
+	tilt += offset
+	if tilt >= 360 {
+		tilt -= 360
+	}
+
 	tmsb, tlsb := byte(0), byte(0)
 	encodedTilt := int(tilt * 100)
 	tmsb, tlsb = byte(encodedTilt>>8), byte(encodedTilt&0xFF)

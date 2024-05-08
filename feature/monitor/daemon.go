@@ -44,7 +44,7 @@ func (d *Monitor) Run(options *feature.Options, waitGroup *sync.WaitGroup) {
 		return
 	}
 	d.OnEvent(options, "display screen has been cleared")
-	options.States.IsMonitorReady = true
+	options.State.IsMonitorReady = true
 
 	// Subscribe to monitor topic
 	options.MessageBus.Subscribe(TOPIC_NAME, func(displayText string, state monitor.MonitorState, clear bool) {

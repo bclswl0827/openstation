@@ -5,39 +5,50 @@ package model
 type Mutation struct {
 }
 
+type PanTilt struct {
+	TrueAzimuth  float64 `json:"trueAzimuth"`
+	PanAngle     float64 `json:"panAngle"`
+	TiltAngle    float64 `json:"tiltAngle"`
+	IsReady      bool    `json:"isReady"`
+	IsMoving     bool    `json:"isMoving"`
+	HasFindNorth bool    `json:"hasFindNorth"`
+}
+
+type Peripherals struct {
+	IsRTCValid     bool `json:"IsRTCValid"`
+	IsGNSSValid    bool `json:"IsGNSSValid"`
+	IsMonitorReady bool `json:"isMonitorReady"`
+	IsCompassReady bool `json:"IsCompassReady"`
+}
+
 type Query struct {
 }
 
-type StationInfo struct {
-	Name     string `json:"name"`
-	Remark   string `json:"remark"`
-	Location string `json:"location"`
+type Station struct {
+	Name          string `json:"name"`
+	Remark        string `json:"remark"`
+	Location      string `json:"location"`
+	Satellites    int    `json:"satellites"`
+	PendingTasks  int    `json:"pendingTasks"`
+	TaskCountdown int    `json:"taskCountdown"`
 }
 
-type StationState struct {
-	IsPanTiltMoving bool    `json:"isPanTiltMoving"`
-	IsPanTiltReady  bool    `json:"isPanTiltReady"`
-	IsMonitorReady  bool    `json:"isMonitorReady"`
-	IsGNSSReady     bool    `json:"isGNSSReady"`
-	IsCompassReady  bool    `json:"isCompassReady"`
-	IsRTCReady      bool    `json:"isRTCReady"`
-	HasFindNorth    bool    `json:"hasFindNorth"`
-	PendingTasks    int     `json:"pendingTasks"`
-	Satellites      int     `json:"satellites"`
-	TimeOffset      float64 `json:"timeOffset"`
+type System struct {
+	Uptime    int      `json:"uptime"`
+	CPUUsage  float64  `json:"cpuUsage"`
+	MemUsage  float64  `json:"memUsage"`
+	DiskUsage float64  `json:"diskUsage"`
+	Release   string   `json:"release"`
+	Arch      string   `json:"arch"`
+	Hostname  string   `json:"hostname"`
+	IP        []string `json:"ip"`
 }
 
 type TLEData struct {
 	ID         int    `json:"id"`
 	Name       string `json:"name"`
-	Line1      string `json:"line1"`
-	Line2      string `json:"line2"`
-	UpdatedAt  int    `json:"updatedAt"`
-	HasExpired bool   `json:"hasExpired"`
-}
-
-type TLEDataInput struct {
-	Name  string `json:"name"`
-	Line1 string `json:"line1"`
-	Line2 string `json:"line2"`
+	Line1      string `json:"line_1"`
+	Line2      string `json:"line_2"`
+	Expired    bool   `json:"expired"`
+	LastUpdate int    `json:"lastUpdate"`
 }

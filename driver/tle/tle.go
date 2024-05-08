@@ -7,10 +7,13 @@ import (
 )
 
 func (t *TLE) isValid() bool {
-	var (
-		checksum_1 = 0
-		expected_1 = int(t.Line_1[len(t.Line_1)-1] - '0')
-	)
+	line_1, line_2 := t.Line_1, t.Line_2
+	if len(line_1) == 0 || len(line_2) == 0 {
+		return false
+	}
+
+	checksum_1 := 0
+	expected_1 := int(line_1[len(line_1)-1] - '0')
 	for _, char := range t.Line_1[:len(t.Line_1)-1] {
 		if char >= '0' && char <= '9' {
 			checksum_1 += int(char - '0')
@@ -20,10 +23,8 @@ func (t *TLE) isValid() bool {
 	}
 	checksum_1 %= 10
 
-	var (
-		checksum_2 = 0
-		expected_2 = int(t.Line_2[len(t.Line_2)-1] - '0')
-	)
+	checksum_2 := 0
+	expected_2 := int(line_2[len(line_2)-1] - '0')
 	for _, char := range t.Line_2[:len(t.Line_2)-1] {
 		if char >= '0' && char <= '9' {
 			checksum_2 += int(char - '0')
@@ -38,6 +39,7 @@ func (t *TLE) isValid() bool {
 
 func (t *TLE) Load(tleData string) error {
 	lines := strings.Split(tleData, "\n")
+
 	for i := range lines {
 		lines[i] = strings.TrimSpace(lines[i])
 	}
@@ -46,19 +48,19 @@ func (t *TLE) Load(tleData string) error {
 		return errors.New("TLE data must have 3 lines, including satellite name, line 1, and line 2")
 	}
 
+	t.Name = lines[0]
+	t.Line_1 = lines[1]
+	t.Line_2 = lines[2]
+
 	if !t.isValid() {
 		return errors.New("invalid TLE data, checksums do not match")
 	}
 
-	satelliteID, err := strconv.ParseInt(lines[0][2:7], 10, 64)
+	satelliteID, err := strconv.ParseInt(lines[1][2:7], 10, 64)
 	if err != nil {
 		return err
 	}
-
 	t.ID = satelliteID
-	t.Name = lines[0]
-	t.Line_1 = lines[1]
-	t.Line_2 = lines[2]
 
 	return nil
 }

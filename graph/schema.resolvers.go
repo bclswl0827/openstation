@@ -7,26 +7,312 @@ package graph
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/bclswl0827/openstation/driver/dao/table"
 	"github.com/bclswl0827/openstation/driver/tle"
 	"github.com/bclswl0827/openstation/graph/model"
 	"github.com/bclswl0827/openstation/utils/duration"
+	"github.com/bclswl0827/openstation/utils/system"
+	"gorm.io/gorm"
 )
 
-// AddTLEs is the resolver for the AddTLEs field.
-func (r *mutationResolver) AddTLEs(ctx context.Context, tleData []*model.TLEDataInput) ([]*model.TLEData, error) {
-	panic(fmt.Errorf("not implemented: AddTLEs - AddTLEs"))
+// SetPanTiltToAngle is the resolver for the SetPanTiltToAngle field.
+func (r *mutationResolver) SetPanTiltToAngle(ctx context.Context, pan float64, tilt float64) (bool, error) {
+	panic(fmt.Errorf("not implemented: SetPanTiltToAngle - SetPanTiltToAngle"))
+}
+
+// SetPanTiltToAzimuth is the resolver for the SetPanTiltToAzimuth field.
+func (r *mutationResolver) SetPanTiltToAzimuth(ctx context.Context, azimuth float64) (bool, error) {
+	panic(fmt.Errorf("not implemented: SetPanTiltToAzimuth - SetPanTiltToAzimuth"))
+}
+
+// SetPanTiltToNorth is the resolver for the SetPanTiltToNorth field.
+func (r *mutationResolver) SetPanTiltToNorth(ctx context.Context) (bool, error) {
+	panic(fmt.Errorf("not implemented: SetPanTiltToNorth - SetPanTiltToNorth"))
+}
+
+// SetAllTLEs is the resolver for the SetAllTLEs field.
+func (r *mutationResolver) SetAllTLEs(ctx context.Context, tleData []string) (bool, error) {
+	currentTime, _ := duration.GetOffsetTime(r.State.RTCTime.TimeOffset)
+	var (
+		tleModel   table.SatelliteTLE
+		tleRecords []table.SatelliteTLE
+	)
+
+	for _, tleInput := range tleData {
+		var (
+			inputTLE       tle.TLE
+			mockObserver   tle.Observer
+			inputSatellite tle.Satellite
+		)
+		err := inputTLE.Load(tleInput)
+		if err != nil {
+			return false, err
+		}
+
+		mockObserver.Latitude = -1
+		mockObserver.Longitude = -1
+		mockObserver.Time = currentTime
+		err = inputSatellite.Parse(&inputTLE, &mockObserver)
+		if err != nil {
+			return false, err
+		}
+
+		tleRecords = append(tleRecords, table.SatelliteTLE{
+			ID:         inputTLE.ID,
+			Name:       inputTLE.Name,
+			Line_1:     inputTLE.Line_1,
+			Line_2:     inputTLE.Line_2,
+			EpochTime:  inputSatellite.Epoch.UnixMilli(),
+			LastUpdate: currentTime.UnixMilli(),
+		})
+	}
+
+	err := r.Database.Transaction(func(tx *gorm.DB) error {
+		// Clear all TLE records before adding new ones
+		err := tx.
+			Table(tleModel.GetName()).
+			Select("*").
+			Where("id = id").
+			Delete(tleModel).
+			Error
+		if err != nil {
+			return err
+		}
+		// Insert new TLE records
+		err = tx.
+			Table(tleModel.GetName()).
+			Create(&tleRecords).
+			Error
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // DeleteTLEByID is the resolver for the DeleteTLEById field.
-func (r *mutationResolver) DeleteTLEByID(ctx context.Context, id *int) (*bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteTLEByID - DeleteTLEById"))
+func (r *mutationResolver) DeleteTLEByID(ctx context.Context, id int) (bool, error) {
+	var tleModel table.SatelliteTLE
+	err := r.Database.
+		Table(tleModel.GetName()).
+		Where("id = ?", id).
+		Delete(tleModel).
+		Error
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // UpdateTLEByID is the resolver for the UpdateTLEById field.
-func (r *mutationResolver) UpdateTLEByID(ctx context.Context, id int, tleData model.TLEDataInput) (*bool, error) {
-	panic(fmt.Errorf("not implemented: UpdateTLEByID - UpdateTLEById"))
+func (r *mutationResolver) UpdateTLEByID(ctx context.Context, id int, tleData string) (bool, error) {
+	var (
+		tleModel  table.SatelliteTLE
+		tleRecord table.SatelliteTLE
+	)
+
+	// Check TLE record existence
+	err := r.Database.
+		Table(tleModel.GetName()).
+		Where("id = ?", id).
+		First(&tleRecord).
+		Error
+	if err != nil {
+		return false, err
+	}
+
+	if len(tleRecord.Line_1) == 0 || len(tleRecord.Line_2) == 0 {
+		return false, fmt.Errorf("no matching TLE record found")
+	}
+
+	var (
+		inputTLE       tle.TLE
+		mockObserver   tle.Observer
+		inputSatellite tle.Satellite
+	)
+
+	err = inputTLE.Load(tleData)
+	if err != nil {
+		return false, err
+	} else if inputTLE.ID != int64(id) {
+		return false, fmt.Errorf("input TLE ID mismatch the record ID")
+	}
+
+	currentTime, _ := duration.GetOffsetTime(r.State.RTCTime.TimeOffset)
+	mockObserver.Latitude = -1
+	mockObserver.Longitude = -1
+	mockObserver.Time = currentTime
+	err = inputSatellite.Parse(&inputTLE, &mockObserver)
+	if err != nil {
+		return false, err
+	}
+
+	tleRecord.Name = inputTLE.Name
+	tleRecord.Line_1 = inputTLE.Line_1
+	tleRecord.Line_2 = inputTLE.Line_2
+	tleRecord.EpochTime = inputSatellite.Epoch.UnixMilli()
+	tleRecord.LastUpdate = currentTime.UnixMilli()
+
+	// Update TLE record
+	err = r.Database.
+		Table(tleModel.GetName()).
+		Where("id = ?", id).
+		Updates(tleRecord).
+		Error
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+// RebootSystem is the resolver for the RebootSystem field.
+func (r *mutationResolver) RebootSystem(ctx context.Context) (bool, error) {
+	// Reboot system after 3 seconds
+	go func() {
+		time.Sleep(3 * time.Second)
+		system.Reboot()
+	}()
+
+	return true, nil
+}
+
+// PurgeTaskQueue is the resolver for the PurgeTaskQueue field.
+func (r *mutationResolver) PurgeTaskQueue(ctx context.Context) (bool, error) {
+	panic(fmt.Errorf("not implemented: PurgeTaskQueue - PurgeTaskQueue"))
+}
+
+// PurgeTLERecords is the resolver for the PurgeTLERecords field.
+func (r *mutationResolver) PurgeTLERecords(ctx context.Context) (bool, error) {
+	var tleModel table.SatelliteTLE
+	err := r.Database.Table(tleModel.GetName()).
+		Select("*").
+		Where("id = id").
+		Delete(&tleModel).
+		Error
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+// PurgeForecastRecords is the resolver for the PurgeForecastRecords field.
+func (r *mutationResolver) PurgeForecastRecords(ctx context.Context) (bool, error) {
+	panic(fmt.Errorf("not implemented: PurgeForecastRecords - PurgeForecastRecords"))
+}
+
+// GetStation is the resolver for the GetStation field.
+func (r *queryResolver) GetStation(ctx context.Context) (*model.Station, error) {
+	// Get satellite count from database
+	var (
+		tleModel       table.SatelliteTLE
+		satelliteCount int64
+	)
+
+	err := r.Database.
+		Table(tleModel.GetName()).
+		Count(&satelliteCount).
+		Error
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Add more fields to the Station model
+	// 	  PendingTasks  int    `json:"pendingTasks"`
+	// 	  TaskCountdown int    `json:"taskCountdown"`
+
+	return &model.Station{
+		Satellites: int(satelliteCount),
+		Name:       r.Config.Station.Name,
+		Remark:     r.Config.Station.Remark,
+		Location:   r.Config.Station.Location,
+	}, nil
+}
+
+// GetPanTilt is the resolver for the GetPanTilt field.
+func (r *queryResolver) GetPanTilt(ctx context.Context) (*model.PanTilt, error) {
+	return &model.PanTilt{
+		TrueAzimuth:  r.State.PanTilt.Azimuth,
+		PanAngle:     r.State.PanTilt.PanAngle,
+		TiltAngle:    r.State.PanTilt.TiltAngle,
+		IsReady:      r.State.PanTilt.IsPanTiltReady,
+		IsMoving:     r.State.PanTilt.IsPanTiltMoving,
+		HasFindNorth: r.State.PanTilt.HasFindNorth,
+	}, nil
+}
+
+// GetPeripherals is the resolver for the GetPeripherals field.
+func (r *queryResolver) GetPeripherals(ctx context.Context) (*model.Peripherals, error) {
+	return &model.Peripherals{
+		IsRTCValid:     r.State.RTCTime.IsRTCValid,
+		IsGNSSValid:    r.State.GNSS.IsGNSSValid,
+		IsMonitorReady: r.State.IsMonitorReady,
+		IsCompassReady: r.State.PanTilt.IsCompassReady,
+	}, nil
+}
+
+// GetSystem is the resolver for the GetSystem field.
+func (r *queryResolver) GetSystem(ctx context.Context) (*model.System, error) {
+	uptime, err := system.GetUptime()
+	if err != nil {
+		return nil, err
+	}
+
+	cpuUsage, err := system.GetCPUUsage()
+	if err != nil {
+		return nil, err
+	}
+
+	memUsage, err := system.GetMemUsage()
+	if err != nil {
+		return nil, err
+	}
+
+	diskUsage, err := system.GetDiskUsage()
+	if err != nil {
+		return nil, err
+	}
+
+	release, err := system.GetRelease()
+	if err != nil {
+		return nil, err
+	}
+
+	arch, err := system.GetArch()
+	if err != nil {
+		return nil, err
+	}
+
+	hostname, err := system.GetHostname()
+	if err != nil {
+		return nil, err
+	}
+
+	ipAddrs, err := system.GetIPv4Addrs()
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.System{
+		Uptime:    int(uptime),
+		CPUUsage:  cpuUsage,
+		MemUsage:  memUsage,
+		DiskUsage: diskUsage,
+		Release:   release,
+		Arch:      arch,
+		Hostname:  hostname,
+		IP:        ipAddrs,
+	}, nil
 }
 
 // GetAllTLEs is the resolver for the GetAllTLEs field.
@@ -45,20 +331,20 @@ func (r *queryResolver) GetAllTLEs(ctx context.Context) ([]*model.TLEData, error
 		return nil, err
 	}
 
-	if tleRecords == nil {
+	if len(tleRecords) == 0 {
 		return nil, fmt.Errorf("no TLE records found")
 	}
 
-	currentTime, _ := duration.GetOffsetTime(r.RTCTime.TimeOffset)
+	currentTime, _ := duration.GetOffsetTime(r.State.RTCTime.TimeOffset)
 	for _, tleRecord := range tleRecords {
-		HasExpired := currentTime.Add(tle.EXPIRATION_DAYS).UnixMilli() > int64(tleRecord.LastUpdate)
 		tleData = append(tleData, &model.TLEData{
 			ID:         int(tleRecord.ID),
 			Name:       tleRecord.Name,
 			Line1:      tleRecord.Line_1,
 			Line2:      tleRecord.Line_2,
-			HasExpired: HasExpired,
-			UpdatedAt:  int(tleRecord.LastUpdate),
+			LastUpdate: int(tleRecord.LastUpdate),
+			Expired: time.UnixMilli(tleRecord.EpochTime).UTC().
+				Sub(currentTime).Hours() > tle.EXPIRATION_DAYS.Hours(),
 		})
 	}
 
@@ -66,40 +352,35 @@ func (r *queryResolver) GetAllTLEs(ctx context.Context) ([]*model.TLEData, error
 }
 
 // GetTLEByID is the resolver for the GetTLEById field.
-func (r *queryResolver) GetTLEByID(ctx context.Context, id *int) ([]*model.TLEData, error) {
+func (r *queryResolver) GetTLEByID(ctx context.Context, id int) (*model.TLEData, error) {
 	var (
-		tleModel   table.SatelliteTLE
-		tleRecords []table.SatelliteTLE
-		tleData    []*model.TLEData
+		tleModel  table.SatelliteTLE
+		tleRecord table.SatelliteTLE
 	)
 
 	err := r.Database.
 		Table(tleModel.GetName()).
-		Where("id = ?", *id).
-		Find(&tleRecords).
+		Where("id = ?", id).
+		First(&tleRecord).
 		Error
 	if err != nil {
 		return nil, err
 	}
 
-	if tleRecords == nil {
-		return nil, fmt.Errorf("no TLE records found")
+	if len(tleRecord.Line_1) == 0 || len(tleRecord.Line_2) == 0 {
+		return nil, fmt.Errorf("no  matching TLE record found")
 	}
 
-	currentTime, _ := duration.GetOffsetTime(r.RTCTime.TimeOffset)
-	for _, tleRecord := range tleRecords {
-		HasExpired := currentTime.Add(tle.EXPIRATION_DAYS).UnixMilli() > int64(tleRecord.LastUpdate)
-		tleData = append(tleData, &model.TLEData{
-			ID:         int(tleRecord.ID),
-			Name:       tleRecord.Name,
-			Line1:      tleRecord.Line_1,
-			Line2:      tleRecord.Line_2,
-			HasExpired: HasExpired,
-			UpdatedAt:  int(tleRecord.LastUpdate),
-		})
-	}
-
-	return tleData, nil
+	currentTime, _ := duration.GetOffsetTime(r.State.RTCTime.TimeOffset)
+	return &model.TLEData{
+		ID:         int(tleRecord.ID),
+		Name:       tleRecord.Name,
+		Line1:      tleRecord.Line_1,
+		Line2:      tleRecord.Line_2,
+		LastUpdate: int(tleRecord.LastUpdate),
+		Expired: time.UnixMilli(tleRecord.EpochTime).UTC().
+			Sub(currentTime).Hours() > tle.EXPIRATION_DAYS.Hours(),
+	}, nil
 }
 
 // Mutation returns MutationResolver implementation.
