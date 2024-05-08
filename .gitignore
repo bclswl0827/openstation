@@ -22,3 +22,4 @@ go.work
 
 # OpenStation build files
 /build/dist
+/frontend/dist

@@ -2,6 +2,8 @@ package tle
 
 import "time"
 
+const EXPIRATION_DAYS = time.Duration(24 * 3 * time.Hour)
+
 type TLE struct {
 	ID     int64
 	Name   string

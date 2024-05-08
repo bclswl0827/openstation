@@ -9,22 +9,41 @@ import (
 )
 
 type States struct {
-	IsPanTiltReady bool
 	IsMonitorReady bool
-	IsGNSSReady    bool
-	IsIMUReady     bool
-	IsRTCReady     bool
-	HasFindNorth   bool
 	PendingTasks   int
 	Satellites     int
-	TimeOffset     float64
+}
+
+type RTCTime struct {
+	IsRTCValid bool
+	TimeOffset float64
+}
+
+type Coordinates struct {
+	IsPanTiltMoving bool
+	IsPanTiltReady  bool
+	IsGNSSValid     bool
+	Latitude        float64
+	Longitude       float64
+	Altitude        float64
+}
+
+type PanTilt struct {
+	IsCompassReady bool
+	HasFindNorth   bool
+	Azimuth        float64
+	PanAngle       float64
+	TiltAngle      float64
 }
 
 type Options struct {
-	Database   *gorm.DB
-	States     *States
-	Config     *config.Config
-	MessageBus messagebus.MessageBus
+	States      *States
+	PanTilt     *PanTilt
+	RTCTime     *RTCTime
+	Coordinates *Coordinates
+	Database    *gorm.DB
+	Config      *config.Config
+	MessageBus  messagebus.MessageBus
 }
 
 type Feature interface {

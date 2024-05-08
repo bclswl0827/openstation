@@ -8,10 +8,36 @@ type Mutation struct {
 type Query struct {
 }
 
+type StationInfo struct {
+	Name     string `json:"name"`
+	Remark   string `json:"remark"`
+	Location string `json:"location"`
+}
+
+type StationState struct {
+	IsPanTiltMoving bool    `json:"isPanTiltMoving"`
+	IsPanTiltReady  bool    `json:"isPanTiltReady"`
+	IsMonitorReady  bool    `json:"isMonitorReady"`
+	IsGNSSReady     bool    `json:"isGNSSReady"`
+	IsCompassReady  bool    `json:"isCompassReady"`
+	IsRTCReady      bool    `json:"isRTCReady"`
+	HasFindNorth    bool    `json:"hasFindNorth"`
+	PendingTasks    int     `json:"pendingTasks"`
+	Satellites      int     `json:"satellites"`
+	TimeOffset      float64 `json:"timeOffset"`
+}
+
 type TLEData struct {
-	SatelliteName string `json:"satelliteName"`
-	TleLine1      string `json:"tleLine1"`
-	TleLine2      string `json:"tleLine2"`
-	UpdatedAt     int    `json:"updatedAt"`
-	HasExpired    bool   `json:"hasExpired"`
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	Line1      string `json:"line1"`
+	Line2      string `json:"line2"`
+	UpdatedAt  int    `json:"updatedAt"`
+	HasExpired bool   `json:"hasExpired"`
+}
+
+type TLEDataInput struct {
+	Name  string `json:"name"`
+	Line1 string `json:"line1"`
+	Line2 string `json:"line2"`
 }
