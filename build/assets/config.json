@@ -9,7 +9,7 @@
         "baudrate": 9600
     },
     "reference_settings": {
-        "device": "/dev/ttyUSB0",
+        "device": "/dev/ttyUSB1",
         "baudrate": 115200
     },
     "monitor_settings": {

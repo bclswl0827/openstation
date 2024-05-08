@@ -76,9 +76,9 @@ func main() {
 		logrus.Info("main: database schema has been migrated")
 	}
 
-	// Initialize system status
-	var states feature.States
-	states.Initialize()
+	// Initialize system state
+	var State feature.State
+	State.Initialize()
 
 	// Initialize message bus
 	messageBus := messagebus.New(32)
@@ -90,7 +90,7 @@ func main() {
 	}
 	featureOptions := feature.Options{
 		Config:     &conf,
-		States:     &states,
+		State:      &State,
 		Database:   databaseConn,
 		MessageBus: messageBus,
 	}

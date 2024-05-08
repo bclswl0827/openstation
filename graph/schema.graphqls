@@ -1,46 +1,74 @@
-type TLEData {
-    id: Int!
-    name: String!
-    line1: String!
-    line2: String!
-    updatedAt: Int!
-    hasExpired: Boolean!
-}
-
-input TLEDataInput {
-    name: String!
-    line1: String!
-    line2: String!
-}
-
-type StationInfo {
+type Station {
     name: String!
     remark: String!
     location: String!
+    satellites: Int!
+    pendingTasks: Int!
+    taskCountdown: Int!
 }
 
-type StationState {
-    isPanTiltMoving: Boolean!
-    isPanTiltReady: Boolean!
-    isMonitorReady: Boolean!
-    isGNSSReady: Boolean!
-    isCompassReady: Boolean!
-    isRTCReady: Boolean!
+type PanTilt {
+    trueAzimuth: Float!
+    panAngle: Float!
+    tiltAngle: Float!
+    isReady: Boolean!
+    isMoving: Boolean!
     hasFindNorth: Boolean!
-    pendingTasks: Int!
-    satellites: Int!
-    timeOffset: Float!
+}
+
+type Peripherals {
+    IsRTCValid: Boolean!
+    IsGNSSValid: Boolean!
+    isMonitorReady: Boolean!
+    IsCompassReady: Boolean!
+}
+
+type System {
+    uptime: Int!
+    cpuUsage: Float!
+    memUsage: Float!
+    diskUsage: Float!
+    release: String!
+    arch: String!
+    hostname: String!
+    ip: [String!]!
+}
+
+type TLEData {
+    id: Int!
+    name: String!
+    line_1: String!
+    line_2: String!
+    expired: Boolean!
+    lastUpdate: Int!
 }
 
 type Query {
+    # Station information
+    GetStation: Station!
+    # Pan-Tilt information
+    GetPanTilt: PanTilt!
+    # Peripherals information
+    GetPeripherals: Peripherals!
+    # Current OS information
+    GetSystem: System!
     # Satellite TLEs
-    GetAllTLEs: [TLEData!]!
-    GetTLEById(id: Int): [TLEData!]!
+    GetAllTLEs: [TLEData]!
+    GetTLEById(id: Int!): TLEData
 }
 
 type Mutation {
+    # Pan-Tilt control
+    SetPanTiltToAngle(pan: Float!, tilt: Float!): Boolean!
+    SetPanTiltToAzimuth(azimuth: Float!): Boolean!
+    SetPanTiltToNorth: Boolean!
     # Satellite TLEs
-    AddTLEs(tleData: [TLEDataInput!]!): [TLEData!]!
-    DeleteTLEById(id: Int): Boolean
-    UpdateTLEById(id: Int!, tleData: TLEDataInput!): Boolean
+    SetAllTLEs(tleData: [String!]!): Boolean!
+    DeleteTLEById(id: Int!): Boolean!
+    UpdateTLEById(id: Int!, tleData: String!): Boolean!
+    # Dangerous operations
+    RebootSystem: Boolean!
+    PurgeTaskQueue: Boolean!
+    PurgeTLERecords: Boolean!
+    PurgeForecastRecords: Boolean!
 }

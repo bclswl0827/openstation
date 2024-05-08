@@ -88,7 +88,8 @@ func (r *ReferenceBoardDriverImpl) GetState(port io.ReadWriteCloser, state *Refe
 	}
 	yawAngle += declination
 
-	state.YawAngle = yawAngle
+	state.Declination = declination
+	state.Azimuth = yawAngle
 
 	return nil
 }

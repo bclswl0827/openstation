@@ -9,7 +9,8 @@ type ReferenceState struct {
 	Latitude    float64
 	Longitude   float64
 	Altitude    float64
-	YawAngle    float64
+	Declination float64
+	Azimuth     float64
 }
 
 type ReferenceDriver interface {
