@@ -21,7 +21,7 @@
 #include "packet.hpp"
 #include "settings.hpp"
 
-#define READ_COUNT_FOR_AVERAGE 1
+#define READ_COUNT_FOR_AVERAGE 30
 #define DATA_PACKET_INTERVAL 100
 
 typedef struct {
@@ -216,7 +216,7 @@ void setup() {
     mcu_utils_i2c_init();
     ak09911_init();
     ak09911_read_rom(&(params.magnetometer));
-    ak09911_start(AK09911_MODE_CONT_10HZ);
+    ak09911_start(AK09911_MODE_CONT_100HZ);
 
     gnss_init(GNSS_UART_BAUDRATE);
     mcu_utils_uart_init(MCU_UART_BAUDRATE);

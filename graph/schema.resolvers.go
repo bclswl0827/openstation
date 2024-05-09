@@ -236,28 +236,28 @@ func (r *queryResolver) GetStation(ctx context.Context) (*model.Station, error) 
 		Name:       r.Config.Station.Name,
 		Remark:     r.Config.Station.Remark,
 		Location:   r.Config.Station.Location,
+		Latitude:   r.State.GNSS.Latitude,
+		Longitude:  r.State.GNSS.Longitude,
+		Altitude:   r.State.GNSS.Altitude,
 	}, nil
 }
 
 // GetPanTilt is the resolver for the GetPanTilt field.
 func (r *queryResolver) GetPanTilt(ctx context.Context) (*model.PanTilt, error) {
 	return &model.PanTilt{
-		TrueAzimuth:  r.State.PanTilt.Azimuth,
+		IsBusy:       r.State.PanTilt.IsBusy,
 		PanAngle:     r.State.PanTilt.PanAngle,
 		TiltAngle:    r.State.PanTilt.TiltAngle,
-		IsReady:      r.State.PanTilt.IsPanTiltReady,
-		IsMoving:     r.State.PanTilt.IsPanTiltMoving,
 		HasFindNorth: r.State.PanTilt.HasFindNorth,
 	}, nil
 }
 
-// GetPeripherals is the resolver for the GetPeripherals field.
-func (r *queryResolver) GetPeripherals(ctx context.Context) (*model.Peripherals, error) {
-	return &model.Peripherals{
-		IsRTCValid:     r.State.RTCTime.IsRTCValid,
-		IsGNSSValid:    r.State.GNSS.IsGNSSValid,
-		IsMonitorReady: r.State.IsMonitorReady,
-		IsCompassReady: r.State.PanTilt.IsCompassReady,
+// GetCompass is the resolver for the GetCompass field.
+func (r *queryResolver) GetCompass(ctx context.Context) (*model.Compass, error) {
+	return &model.Compass{
+		HasCalibrated: r.State.Compass.HasCalibrated,
+		Declination:   r.State.Compass.Declination,
+		Azimuth:       r.State.Compass.Azimuth,
 	}, nil
 }
 

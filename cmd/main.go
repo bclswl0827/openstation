@@ -12,6 +12,7 @@ import (
 	"github.com/bclswl0827/openstation/driver/dao"
 	"github.com/bclswl0827/openstation/feature"
 	"github.com/bclswl0827/openstation/feature/monitor"
+	"github.com/bclswl0827/openstation/feature/pan_tilt"
 	"github.com/bclswl0827/openstation/graph"
 	"github.com/bclswl0827/openstation/server"
 	"github.com/common-nighthawk/go-figure"
@@ -87,6 +88,8 @@ func main() {
 	// Register features
 	features := []feature.Feature{
 		&monitor.Monitor{},
+		&pan_tilt.PanTilt{},
+		// &reference.Reference{},
 	}
 	featureOptions := feature.Options{
 		Config:     &conf,
@@ -96,7 +99,7 @@ func main() {
 	}
 	featureWaitGroup := new(sync.WaitGroup)
 	for _, s := range features {
-		go s.Run(&featureOptions, featureWaitGroup)
+		go s.Start(&featureOptions, featureWaitGroup)
 	}
 
 	// Start HTTP server
@@ -123,5 +126,8 @@ func main() {
 
 	// Wait for all features to stop
 	logrus.Info("main: daemon is shutting down")
+	for _, s := range features {
+		s.Terminate(&featureOptions, featureWaitGroup)
+	}
 	featureWaitGroup.Wait()
 }

@@ -2,35 +2,35 @@
 
 package model
 
+type Compass struct {
+	HasCalibrated bool    `json:"hasCalibrated"`
+	Azimuth       float64 `json:"azimuth"`
+	Declination   float64 `json:"declination"`
+}
+
 type Mutation struct {
 }
 
 type PanTilt struct {
-	TrueAzimuth  float64 `json:"trueAzimuth"`
+	IsBusy       bool    `json:"isBusy"`
+	HasFindNorth bool    `json:"hasFindNorth"`
 	PanAngle     float64 `json:"panAngle"`
 	TiltAngle    float64 `json:"tiltAngle"`
-	IsReady      bool    `json:"isReady"`
-	IsMoving     bool    `json:"isMoving"`
-	HasFindNorth bool    `json:"hasFindNorth"`
-}
-
-type Peripherals struct {
-	IsRTCValid     bool `json:"IsRTCValid"`
-	IsGNSSValid    bool `json:"IsGNSSValid"`
-	IsMonitorReady bool `json:"isMonitorReady"`
-	IsCompassReady bool `json:"IsCompassReady"`
 }
 
 type Query struct {
 }
 
 type Station struct {
-	Name          string `json:"name"`
-	Remark        string `json:"remark"`
-	Location      string `json:"location"`
-	Satellites    int    `json:"satellites"`
-	PendingTasks  int    `json:"pendingTasks"`
-	TaskCountdown int    `json:"taskCountdown"`
+	Name          string  `json:"name"`
+	Remark        string  `json:"remark"`
+	Location      string  `json:"location"`
+	Latitude      float64 `json:"latitude"`
+	Longitude     float64 `json:"longitude"`
+	Altitude      float64 `json:"altitude"`
+	Satellites    int     `json:"satellites"`
+	PendingTasks  int     `json:"pendingTasks"`
+	TaskCountdown int     `json:"taskCountdown"`
 }
 
 type System struct {

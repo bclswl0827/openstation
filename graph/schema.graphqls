@@ -2,25 +2,25 @@ type Station {
     name: String!
     remark: String!
     location: String!
+    latitude: Float!
+    longitude: Float!
+    altitude: Float!
     satellites: Int!
     pendingTasks: Int!
     taskCountdown: Int!
 }
 
-type PanTilt {
-    trueAzimuth: Float!
-    panAngle: Float!
-    tiltAngle: Float!
-    isReady: Boolean!
-    isMoving: Boolean!
-    hasFindNorth: Boolean!
+type Compass {
+    hasCalibrated: Boolean!
+    azimuth: Float!
+    declination: Float!
 }
 
-type Peripherals {
-    IsRTCValid: Boolean!
-    IsGNSSValid: Boolean!
-    isMonitorReady: Boolean!
-    IsCompassReady: Boolean!
+type PanTilt {
+    isBusy: Boolean!
+    hasFindNorth: Boolean!
+    panAngle: Float!
+    tiltAngle: Float!
 }
 
 type System {
@@ -48,8 +48,8 @@ type Query {
     GetStation: Station!
     # Pan-Tilt information
     GetPanTilt: PanTilt!
-    # Peripherals information
-    GetPeripherals: Peripherals!
+    # Compass information
+    GetCompass: Compass!
     # Current OS information
     GetSystem: System!
     # Satellite TLEs

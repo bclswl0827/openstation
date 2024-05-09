@@ -39,24 +39,27 @@ func (d *MonitorDriverImpl) Display(port io.ReadWriteCloser, state MonitorState,
 		led |= 0x02
 	}
 
-	for columnIndex, column := range strArr {
-		if len(column) > DISPLAY_WIDTH {
-			return errors.New("string length exceeds display size")
-		}
-		for charIndex, char := range column {
-			_, err := port.Write([]byte{
-				SYNC_WORD,
-				PRINT_CMD,
-				byte(x + charIndex),
-				byte(y + columnIndex),
-				byte(char),
-				byte(led),
-			})
-			if err != nil {
-				return err
+	// To ensure that the text is displayed correctly
+	for i := 0; i < 2; i++ {
+		for columnIndex, column := range strArr {
+			if len(column) > DISPLAY_WIDTH {
+				return errors.New("string length exceeds display size")
 			}
+			for charIndex, char := range column {
+				_, err := port.Write([]byte{
+					SYNC_WORD,
+					PRINT_CMD,
+					byte(x + charIndex),
+					byte(y + columnIndex),
+					byte(char),
+					byte(led),
+				})
+				if err != nil {
+					return err
+				}
 
-			serial.Filter(port, []byte{ACK_WORD}, math.MaxUint8)
+				serial.Filter(port, []byte{ACK_WORD}, math.MaxUint8)
+			}
 		}
 	}
 
@@ -84,15 +87,5 @@ func (d *MonitorDriverImpl) Reset(port io.ReadWriteCloser) error {
 }
 
 func (d *MonitorDriverImpl) Init(port io.ReadWriteCloser) error {
-	err := d.Reset(port)
-	if err != nil {
-		return err
-	}
-
-	err = d.Clear(port)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return d.Clear(port)
 }

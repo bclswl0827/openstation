@@ -4,16 +4,16 @@
         "remark": "测试站",
         "location": "北京"
     },
-    "control_settings": {
+    "pantilt_settings": {
         "device": "/dev/ttyUSB0",
         "baudrate": 9600
     },
     "reference_settings": {
-        "device": "/dev/ttyUSB1",
-        "baudrate": 115200
+        "device": "/dev/rfcomm0",
+        "baudrate": 9600
     },
     "monitor_settings": {
-        "device": "/dev/ttyUSB0",
+        "device": "/dev/ttyUSB1",
         "baudrate": 9600
     },
     "database_settings": {
