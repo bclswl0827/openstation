@@ -47,6 +47,12 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Compass struct {
+		Azimuth       func(childComplexity int) int
+		Declination   func(childComplexity int) int
+		HasCalibrated func(childComplexity int) int
+	}
+
 	Mutation struct {
 		DeleteTLEByID        func(childComplexity int, id int) int
 		PurgeForecastRecords func(childComplexity int) int
@@ -62,31 +68,25 @@ type ComplexityRoot struct {
 
 	PanTilt struct {
 		HasFindNorth func(childComplexity int) int
-		IsMoving     func(childComplexity int) int
-		IsReady      func(childComplexity int) int
+		IsBusy       func(childComplexity int) int
 		PanAngle     func(childComplexity int) int
 		TiltAngle    func(childComplexity int) int
-		TrueAzimuth  func(childComplexity int) int
-	}
-
-	Peripherals struct {
-		IsCompassReady func(childComplexity int) int
-		IsGNSSValid    func(childComplexity int) int
-		IsMonitorReady func(childComplexity int) int
-		IsRTCValid     func(childComplexity int) int
 	}
 
 	Query struct {
-		GetAllTLEs     func(childComplexity int) int
-		GetPanTilt     func(childComplexity int) int
-		GetPeripherals func(childComplexity int) int
-		GetStation     func(childComplexity int) int
-		GetSystem      func(childComplexity int) int
-		GetTLEByID     func(childComplexity int, id int) int
+		GetAllTLEs func(childComplexity int) int
+		GetCompass func(childComplexity int) int
+		GetPanTilt func(childComplexity int) int
+		GetStation func(childComplexity int) int
+		GetSystem  func(childComplexity int) int
+		GetTLEByID func(childComplexity int, id int) int
 	}
 
 	Station struct {
+		Altitude      func(childComplexity int) int
+		Latitude      func(childComplexity int) int
 		Location      func(childComplexity int) int
+		Longitude     func(childComplexity int) int
 		Name          func(childComplexity int) int
 		PendingTasks  func(childComplexity int) int
 		Remark        func(childComplexity int) int
@@ -130,7 +130,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	GetStation(ctx context.Context) (*model.Station, error)
 	GetPanTilt(ctx context.Context) (*model.PanTilt, error)
-	GetPeripherals(ctx context.Context) (*model.Peripherals, error)
+	GetCompass(ctx context.Context) (*model.Compass, error)
 	GetSystem(ctx context.Context) (*model.System, error)
 	GetAllTLEs(ctx context.Context) ([]*model.TLEData, error)
 	GetTLEByID(ctx context.Context, id int) (*model.TLEData, error)
@@ -154,6 +154,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Compass.azimuth":
+		if e.complexity.Compass.Azimuth == nil {
+			break
+		}
+
+		return e.complexity.Compass.Azimuth(childComplexity), true
+
+	case "Compass.declination":
+		if e.complexity.Compass.Declination == nil {
+			break
+		}
+
+		return e.complexity.Compass.Declination(childComplexity), true
+
+	case "Compass.hasCalibrated":
+		if e.complexity.Compass.HasCalibrated == nil {
+			break
+		}
+
+		return e.complexity.Compass.HasCalibrated(childComplexity), true
 
 	case "Mutation.DeleteTLEById":
 		if e.complexity.Mutation.DeleteTLEByID == nil {
@@ -257,19 +278,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PanTilt.HasFindNorth(childComplexity), true
 
-	case "PanTilt.isMoving":
-		if e.complexity.PanTilt.IsMoving == nil {
+	case "PanTilt.isBusy":
+		if e.complexity.PanTilt.IsBusy == nil {
 			break
 		}
 
-		return e.complexity.PanTilt.IsMoving(childComplexity), true
-
-	case "PanTilt.isReady":
-		if e.complexity.PanTilt.IsReady == nil {
-			break
-		}
-
-		return e.complexity.PanTilt.IsReady(childComplexity), true
+		return e.complexity.PanTilt.IsBusy(childComplexity), true
 
 	case "PanTilt.panAngle":
 		if e.complexity.PanTilt.PanAngle == nil {
@@ -285,41 +299,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PanTilt.TiltAngle(childComplexity), true
 
-	case "PanTilt.trueAzimuth":
-		if e.complexity.PanTilt.TrueAzimuth == nil {
-			break
-		}
-
-		return e.complexity.PanTilt.TrueAzimuth(childComplexity), true
-
-	case "Peripherals.IsCompassReady":
-		if e.complexity.Peripherals.IsCompassReady == nil {
-			break
-		}
-
-		return e.complexity.Peripherals.IsCompassReady(childComplexity), true
-
-	case "Peripherals.IsGNSSValid":
-		if e.complexity.Peripherals.IsGNSSValid == nil {
-			break
-		}
-
-		return e.complexity.Peripherals.IsGNSSValid(childComplexity), true
-
-	case "Peripherals.isMonitorReady":
-		if e.complexity.Peripherals.IsMonitorReady == nil {
-			break
-		}
-
-		return e.complexity.Peripherals.IsMonitorReady(childComplexity), true
-
-	case "Peripherals.IsRTCValid":
-		if e.complexity.Peripherals.IsRTCValid == nil {
-			break
-		}
-
-		return e.complexity.Peripherals.IsRTCValid(childComplexity), true
-
 	case "Query.GetAllTLEs":
 		if e.complexity.Query.GetAllTLEs == nil {
 			break
@@ -327,19 +306,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetAllTLEs(childComplexity), true
 
+	case "Query.GetCompass":
+		if e.complexity.Query.GetCompass == nil {
+			break
+		}
+
+		return e.complexity.Query.GetCompass(childComplexity), true
+
 	case "Query.GetPanTilt":
 		if e.complexity.Query.GetPanTilt == nil {
 			break
 		}
 
 		return e.complexity.Query.GetPanTilt(childComplexity), true
-
-	case "Query.GetPeripherals":
-		if e.complexity.Query.GetPeripherals == nil {
-			break
-		}
-
-		return e.complexity.Query.GetPeripherals(childComplexity), true
 
 	case "Query.GetStation":
 		if e.complexity.Query.GetStation == nil {
@@ -367,12 +346,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetTLEByID(childComplexity, args["id"].(int)), true
 
+	case "Station.altitude":
+		if e.complexity.Station.Altitude == nil {
+			break
+		}
+
+		return e.complexity.Station.Altitude(childComplexity), true
+
+	case "Station.latitude":
+		if e.complexity.Station.Latitude == nil {
+			break
+		}
+
+		return e.complexity.Station.Latitude(childComplexity), true
+
 	case "Station.location":
 		if e.complexity.Station.Location == nil {
 			break
 		}
 
 		return e.complexity.Station.Location(childComplexity), true
+
+	case "Station.longitude":
+		if e.complexity.Station.Longitude == nil {
+			break
+		}
+
+		return e.complexity.Station.Longitude(childComplexity), true
 
 	case "Station.name":
 		if e.complexity.Station.Name == nil {
@@ -790,6 +790,138 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _Compass_hasCalibrated(ctx context.Context, field graphql.CollectedField, obj *model.Compass) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Compass_hasCalibrated(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasCalibrated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Compass_hasCalibrated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Compass",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Compass_azimuth(ctx context.Context, field graphql.CollectedField, obj *model.Compass) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Compass_azimuth(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Azimuth, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Compass_azimuth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Compass",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Compass_declination(ctx context.Context, field graphql.CollectedField, obj *model.Compass) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Compass_declination(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Declination, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Compass_declination(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Compass",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Mutation_SetPanTiltToAngle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_SetPanTiltToAngle(ctx, field)
@@ -1286,8 +1418,8 @@ func (ec *executionContext) fieldContext_Mutation_PurgeForecastRecords(_ context
 	return fc, nil
 }
 
-func (ec *executionContext) _PanTilt_trueAzimuth(ctx context.Context, field graphql.CollectedField, obj *model.PanTilt) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PanTilt_trueAzimuth(ctx, field)
+func (ec *executionContext) _PanTilt_isBusy(ctx context.Context, field graphql.CollectedField, obj *model.PanTilt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PanTilt_isBusy(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1300,7 +1432,7 @@ func (ec *executionContext) _PanTilt_trueAzimuth(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TrueAzimuth, nil
+		return obj.IsBusy, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1312,19 +1444,63 @@ func (ec *executionContext) _PanTilt_trueAzimuth(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(float64)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PanTilt_trueAzimuth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PanTilt_isBusy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PanTilt",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Float does not have child fields")
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PanTilt_hasFindNorth(ctx context.Context, field graphql.CollectedField, obj *model.PanTilt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PanTilt_hasFindNorth(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HasFindNorth, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PanTilt_hasFindNorth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PanTilt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1418,314 +1594,6 @@ func (ec *executionContext) fieldContext_PanTilt_tiltAngle(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _PanTilt_isReady(ctx context.Context, field graphql.CollectedField, obj *model.PanTilt) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PanTilt_isReady(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsReady, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_PanTilt_isReady(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "PanTilt",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _PanTilt_isMoving(ctx context.Context, field graphql.CollectedField, obj *model.PanTilt) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PanTilt_isMoving(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsMoving, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_PanTilt_isMoving(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "PanTilt",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _PanTilt_hasFindNorth(ctx context.Context, field graphql.CollectedField, obj *model.PanTilt) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PanTilt_hasFindNorth(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.HasFindNorth, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_PanTilt_hasFindNorth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "PanTilt",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Peripherals_IsRTCValid(ctx context.Context, field graphql.CollectedField, obj *model.Peripherals) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Peripherals_IsRTCValid(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsRTCValid, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Peripherals_IsRTCValid(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Peripherals",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Peripherals_IsGNSSValid(ctx context.Context, field graphql.CollectedField, obj *model.Peripherals) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Peripherals_IsGNSSValid(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsGNSSValid, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Peripherals_IsGNSSValid(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Peripherals",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Peripherals_isMonitorReady(ctx context.Context, field graphql.CollectedField, obj *model.Peripherals) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Peripherals_isMonitorReady(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsMonitorReady, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Peripherals_isMonitorReady(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Peripherals",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Peripherals_IsCompassReady(ctx context.Context, field graphql.CollectedField, obj *model.Peripherals) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Peripherals_IsCompassReady(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsCompassReady, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Peripherals_IsCompassReady(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Peripherals",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_GetStation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_GetStation(ctx, field)
 	if err != nil {
@@ -1771,6 +1639,12 @@ func (ec *executionContext) fieldContext_Query_GetStation(_ context.Context, fie
 				return ec.fieldContext_Station_remark(ctx, field)
 			case "location":
 				return ec.fieldContext_Station_location(ctx, field)
+			case "latitude":
+				return ec.fieldContext_Station_latitude(ctx, field)
+			case "longitude":
+				return ec.fieldContext_Station_longitude(ctx, field)
+			case "altitude":
+				return ec.fieldContext_Station_altitude(ctx, field)
 			case "satellites":
 				return ec.fieldContext_Station_satellites(ctx, field)
 			case "pendingTasks":
@@ -1823,18 +1697,14 @@ func (ec *executionContext) fieldContext_Query_GetPanTilt(_ context.Context, fie
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "trueAzimuth":
-				return ec.fieldContext_PanTilt_trueAzimuth(ctx, field)
+			case "isBusy":
+				return ec.fieldContext_PanTilt_isBusy(ctx, field)
+			case "hasFindNorth":
+				return ec.fieldContext_PanTilt_hasFindNorth(ctx, field)
 			case "panAngle":
 				return ec.fieldContext_PanTilt_panAngle(ctx, field)
 			case "tiltAngle":
 				return ec.fieldContext_PanTilt_tiltAngle(ctx, field)
-			case "isReady":
-				return ec.fieldContext_PanTilt_isReady(ctx, field)
-			case "isMoving":
-				return ec.fieldContext_PanTilt_isMoving(ctx, field)
-			case "hasFindNorth":
-				return ec.fieldContext_PanTilt_hasFindNorth(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PanTilt", field.Name)
 		},
@@ -1842,8 +1712,8 @@ func (ec *executionContext) fieldContext_Query_GetPanTilt(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_GetPeripherals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_GetPeripherals(ctx, field)
+func (ec *executionContext) _Query_GetCompass(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_GetCompass(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1856,7 +1726,7 @@ func (ec *executionContext) _Query_GetPeripherals(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetPeripherals(rctx)
+		return ec.resolvers.Query().GetCompass(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1868,12 +1738,12 @@ func (ec *executionContext) _Query_GetPeripherals(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Peripherals)
+	res := resTmp.(*model.Compass)
 	fc.Result = res
-	return ec.marshalNPeripherals2ᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐPeripherals(ctx, field.Selections, res)
+	return ec.marshalNCompass2ᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐCompass(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_GetPeripherals(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_GetCompass(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1881,16 +1751,14 @@ func (ec *executionContext) fieldContext_Query_GetPeripherals(_ context.Context,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "IsRTCValid":
-				return ec.fieldContext_Peripherals_IsRTCValid(ctx, field)
-			case "IsGNSSValid":
-				return ec.fieldContext_Peripherals_IsGNSSValid(ctx, field)
-			case "isMonitorReady":
-				return ec.fieldContext_Peripherals_isMonitorReady(ctx, field)
-			case "IsCompassReady":
-				return ec.fieldContext_Peripherals_IsCompassReady(ctx, field)
+			case "hasCalibrated":
+				return ec.fieldContext_Compass_hasCalibrated(ctx, field)
+			case "azimuth":
+				return ec.fieldContext_Compass_azimuth(ctx, field)
+			case "declination":
+				return ec.fieldContext_Compass_declination(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Peripherals", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Compass", field.Name)
 		},
 	}
 	return fc, nil
@@ -2338,6 +2206,138 @@ func (ec *executionContext) fieldContext_Station_location(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Station_latitude(ctx context.Context, field graphql.CollectedField, obj *model.Station) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Station_latitude(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Latitude, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Station_latitude(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Station",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Station_longitude(ctx context.Context, field graphql.CollectedField, obj *model.Station) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Station_longitude(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Longitude, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Station_longitude(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Station",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Station_altitude(ctx context.Context, field graphql.CollectedField, obj *model.Station) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Station_altitude(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Altitude, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Station_altitude(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Station",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4872,6 +4872,55 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(_ context.Context
 
 // region    **************************** object.gotpl ****************************
 
+var compassImplementors = []string{"Compass"}
+
+func (ec *executionContext) _Compass(ctx context.Context, sel ast.SelectionSet, obj *model.Compass) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, compassImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Compass")
+		case "hasCalibrated":
+			out.Values[i] = ec._Compass_hasCalibrated(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "azimuth":
+			out.Values[i] = ec._Compass_azimuth(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "declination":
+			out.Values[i] = ec._Compass_declination(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -4995,8 +5044,13 @@ func (ec *executionContext) _PanTilt(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("PanTilt")
-		case "trueAzimuth":
-			out.Values[i] = ec._PanTilt_trueAzimuth(ctx, field, obj)
+		case "isBusy":
+			out.Values[i] = ec._PanTilt_isBusy(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hasFindNorth":
+			out.Values[i] = ec._PanTilt_hasFindNorth(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -5007,75 +5061,6 @@ func (ec *executionContext) _PanTilt(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "tiltAngle":
 			out.Values[i] = ec._PanTilt_tiltAngle(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "isReady":
-			out.Values[i] = ec._PanTilt_isReady(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "isMoving":
-			out.Values[i] = ec._PanTilt_isMoving(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "hasFindNorth":
-			out.Values[i] = ec._PanTilt_hasFindNorth(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var peripheralsImplementors = []string{"Peripherals"}
-
-func (ec *executionContext) _Peripherals(ctx context.Context, sel ast.SelectionSet, obj *model.Peripherals) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, peripheralsImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Peripherals")
-		case "IsRTCValid":
-			out.Values[i] = ec._Peripherals_IsRTCValid(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "IsGNSSValid":
-			out.Values[i] = ec._Peripherals_IsGNSSValid(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "isMonitorReady":
-			out.Values[i] = ec._Peripherals_isMonitorReady(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "IsCompassReady":
-			out.Values[i] = ec._Peripherals_IsCompassReady(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -5165,7 +5150,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "GetPeripherals":
+		case "GetCompass":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -5174,7 +5159,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_GetPeripherals(ctx, field)
+				res = ec._Query_GetCompass(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -5304,6 +5289,21 @@ func (ec *executionContext) _Station(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "location":
 			out.Values[i] = ec._Station_location(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "latitude":
+			out.Values[i] = ec._Station_latitude(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "longitude":
+			out.Values[i] = ec._Station_longitude(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "altitude":
+			out.Values[i] = ec._Station_altitude(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -5824,6 +5824,20 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNCompass2githubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐCompass(ctx context.Context, sel ast.SelectionSet, v model.Compass) graphql.Marshaler {
+	return ec._Compass(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCompass2ᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐCompass(ctx context.Context, sel ast.SelectionSet, v *model.Compass) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Compass(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
 	res, err := graphql.UnmarshalFloatContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -5866,20 +5880,6 @@ func (ec *executionContext) marshalNPanTilt2ᚖgithubᚗcomᚋbclswl0827ᚋopens
 		return graphql.Null
 	}
 	return ec._PanTilt(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNPeripherals2githubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐPeripherals(ctx context.Context, sel ast.SelectionSet, v model.Peripherals) graphql.Marshaler {
-	return ec._Peripherals(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNPeripherals2ᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐPeripherals(ctx context.Context, sel ast.SelectionSet, v *model.Peripherals) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Peripherals(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNStation2githubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐStation(ctx context.Context, sel ast.SelectionSet, v model.Station) graphql.Marshaler {

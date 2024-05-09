@@ -26,22 +26,60 @@ func (*PanTiltImpl) getChecksum(data []byte) byte {
 	return byte(checksum % 256)
 }
 
-func (d *PanTiltImpl) Reset(port io.ReadWriteCloser) error {
-	resetCmd := []byte{SLAVE_ADDR, 0x00, 0x0F, 0x00, 0x00}
-	checksum := d.getChecksum(resetCmd)
-	resetCmd = append(resetCmd, checksum)
+func (d *PanTiltImpl) IsAvailable(port io.ReadWriteCloser) bool {
+	_, err := d.GetPan(port)
+	return err == nil
+}
 
-	// Send reset command
-	_, err := port.Write(append([]byte{SYNC_WORD}, resetCmd...))
+func (d *PanTiltImpl) Init(port io.ReadWriteCloser) error {
+	err := d.SetPan(port, 0, 0)
 	if err != nil {
 		return err
+	}
+
+	err = d.SetTilt(port, 0, 0)
+	if err != nil {
+		return err
+	}
+
+	for i := 0; ; i++ {
+		pan, err := d.GetPan(port)
+		if err != nil {
+			continue
+		}
+
+		tilt, err := d.GetTilt(port)
+		if err != nil {
+			continue
+		}
+
+		if pan == 0 && tilt == 0 {
+			break
+		}
+
+		if i == math.MaxInt8 {
+			return fmt.Errorf("failed to set both pan and tilt to 0 degrees")
+		}
 	}
 
 	return nil
 }
 
-func (d *PanTiltImpl) IsAvailable(port io.ReadWriteCloser) (bool, error) {
-	return true, nil
+func (d *PanTiltImpl) Reset(port io.ReadWriteCloser) error {
+	resetCmd := []byte{SLAVE_ADDR, 0x00, 0x0F, 0x00, 0x00}
+	checksum := d.getChecksum(resetCmd)
+	resetCmd = append(resetCmd, checksum)
+
+	// Send command 3 times to ensure device reset
+	for i := 0; i < 3; i++ {
+		port.Write(append([]byte{SYNC_WORD}, resetCmd...))
+		time.Sleep(300 * time.Millisecond)
+	}
+
+	// Reset takes approximately 130 seconds
+	time.Sleep(130 * time.Second)
+
+	return nil
 }
 
 func (d *PanTiltImpl) GetPan(port io.ReadWriteCloser) (float64, error) {
@@ -56,7 +94,7 @@ func (d *PanTiltImpl) GetPan(port io.ReadWriteCloser) (float64, error) {
 	}
 
 	// Filter response's SYNC_WORD
-	err = serial.Filter(port, []byte{SYNC_WORD}, math.MaxInt8)
+	err = serial.Filter(port, []byte{SYNC_WORD}, math.MaxUint8)
 	if err != nil {
 		return 0, err
 	}
@@ -108,7 +146,7 @@ func (d *PanTiltImpl) GetTilt(port io.ReadWriteCloser) (float64, error) {
 	}
 
 	// Filter response's SYNC_WORD
-	err = serial.Filter(port, []byte{SYNC_WORD}, math.MaxInt8)
+	err = serial.Filter(port, []byte{SYNC_WORD}, math.MaxUint8)
 	if err != nil {
 		return 0, err
 	}

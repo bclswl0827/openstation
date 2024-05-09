@@ -6,7 +6,7 @@ type station struct {
 	Location string `json:"location"`
 }
 
-type control struct {
+type pan_tilt struct {
 	Device string `json:"device"`
 	Baud   int    `json:"baud"`
 }
@@ -39,7 +39,7 @@ type server struct {
 
 type Config struct {
 	Station   station   `json:"station_settings"`
-	Control   control   `json:"control_settings"`
+	PanTilt   pan_tilt  `json:"pantilt_settings"`
 	Reference reference `json:"reference_settings"`
 	Monitor   monitor   `json:"monitor_settings"`
 	Database  database  `json:"database_settings"`

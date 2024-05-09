@@ -76,7 +76,6 @@ void loop() {
                 uint8_t led = Serial_read();
                 LCD1602Draw(x, y, ch);
                 setup_led(led);
-                delay(5);
                 Serial_write(ACK_WORD);
             }
         }
