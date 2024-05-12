@@ -1,6 +1,7 @@
 package system
 
 import (
+	"fmt"
 	"net"
 )
 
@@ -19,6 +20,10 @@ func GetIPv4Addrs() ([]string, error) {
 		if ipNet.IP.To4() != nil && ipNet.IP.IsGlobalUnicast() {
 			ipv4Addresses = append(ipv4Addresses, ipNet.IP.String())
 		}
+	}
+
+	if len(ipv4Addresses) == 0 {
+		return nil, fmt.Errorf("no available IPv4 addresses found")
 	}
 
 	return ipv4Addresses, nil

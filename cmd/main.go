@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/bclswl0827/openstation/feature"
 	"github.com/bclswl0827/openstation/feature/monitor"
 	"github.com/bclswl0827/openstation/feature/pan_tilt"
+	"github.com/bclswl0827/openstation/feature/reference"
 	"github.com/bclswl0827/openstation/graph"
 	"github.com/bclswl0827/openstation/server"
 	"github.com/common-nighthawk/go-figure"
@@ -34,7 +34,7 @@ func parseCommandLine(conf *config.Config) error {
 		return err
 	}
 
-	return nil
+	return conf.Validate()
 }
 
 func init() {
@@ -89,7 +89,7 @@ func main() {
 	features := []feature.Feature{
 		&monitor.Monitor{},
 		&pan_tilt.PanTilt{},
-		// &reference.Reference{},
+		&reference.Reference{},
 	}
 	featureOptions := feature.Options{
 		Config:     &conf,
@@ -97,9 +97,8 @@ func main() {
 		Database:   databaseConn,
 		MessageBus: messageBus,
 	}
-	featureWaitGroup := new(sync.WaitGroup)
 	for _, s := range features {
-		go s.Start(&featureOptions, featureWaitGroup)
+		go s.Start(&featureOptions)
 	}
 
 	// Start HTTP server
@@ -120,14 +119,13 @@ func main() {
 	logrus.Info("main: http server is listening on ", conf.Server.Host, ":", conf.Server.Port)
 
 	// Receive interrupt signals
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-	<-sigCh
+	signal.Notify(State.SigCh, os.Interrupt, syscall.SIGTERM)
+	<-State.SigCh
 
 	// Wait for all features to stop
 	logrus.Info("main: daemon is shutting down")
 	for _, s := range features {
-		s.Terminate(&featureOptions, featureWaitGroup)
+		s.Terminate(&featureOptions)
 	}
-	featureWaitGroup.Wait()
+	// featureWaitGroup.Wait()
 }

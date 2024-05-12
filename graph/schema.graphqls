@@ -19,8 +19,6 @@ type Compass {
 type PanTilt {
     isBusy: Boolean!
     hasFindNorth: Boolean!
-    panAngle: Float!
-    tiltAngle: Float!
 }
 
 type System {

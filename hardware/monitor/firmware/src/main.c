@@ -2,11 +2,12 @@
 #include "modules/lcd1602.h"
 
 #define FIEMWARE_NAME "OpenStation....."
-#define FIEMWARE_VERSION "FWVER: v0.0.2"
+#define FIEMWARE_VERSION "FWVER: v0.0.3"
 
 #define SYNC_WORD 0xFF
 #define ACK_WORD 0xEE
 #define NACK_WORD 0xDD
+#define DUMMY_WORD 0xCC
 
 #define CLEAR_CMD 0x00
 #define PRINT_CMD 0x01
@@ -22,6 +23,9 @@ void set_ping(uint8_t val) {
 }
 
 void setup_led(uint8_t val) {
+    if (val == DUMMY_WORD) {
+        return;
+    }
     digitalWrite(LED_POWER, HIGH);
     digitalWrite(LED_BUSY, val & 0x01);
     digitalWrite(LED_ERROR, val & 0x02);

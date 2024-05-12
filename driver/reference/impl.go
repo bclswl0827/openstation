@@ -75,21 +75,19 @@ func (r *ReferenceBoardDriverImpl) GetState(port io.ReadWriteCloser, state *Refe
 	}
 	mag_density_factor := 4912.0 / 8190.0
 	mag_x, mag_y := mag_raw_x*mag_density_factor, mag_raw_y*mag_density_factor
-	yawAngle := math.Atan2(mag_y, mag_x) * 180 / math.Pi
 
-	declination := float64(0)
+	magAzimuth := math.Atan2(mag_y, mag_x)*180/math.Pi + 360
+	magAzimuth = math.Mod(magAzimuth, 360)
+
 	if state.IsGNSSValid {
 		timeObj := time.UnixMilli(state.Timestamp)
 		location := egm96.NewLocationGeodetic(state.Latitude, state.Longitude, state.Altitude)
 		decimalYear := float64(timeObj.Year()) + float64(timeObj.Month())/10
 		epochYear := wmm.DecimalYear(decimalYear).ToTime()
 		mag, _ := wmm.CalculateWMMMagneticField(location, epochYear)
-		declination = mag.D()
+		state.Declination = mag.D()
 	}
-	yawAngle += declination
 
-	state.Declination = declination
-	state.Azimuth = yawAngle
-
+	state.Azimuth = magAzimuth
 	return nil
 }

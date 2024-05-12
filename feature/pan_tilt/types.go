@@ -1,6 +1,8 @@
 package pan_tilt
 
-import "io"
+import (
+	"io"
+)
 
 const TOPIC_NAME = "pan_tilt"
 

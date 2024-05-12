@@ -1,7 +1,7 @@
 package monitor
 
 import (
-	"os"
+	"syscall"
 
 	"github.com/bclswl0827/openstation/feature"
 	"github.com/sirupsen/logrus"
@@ -11,10 +11,10 @@ func (*Monitor) OnEvent(_ *feature.Options, eventMessage string, args ...any) {
 	logrus.Info("monitor: ", eventMessage)
 }
 
-func (*Monitor) OnError(_ *feature.Options, err error, exit bool) {
+func (*Monitor) OnError(options *feature.Options, err error, exit bool) {
 	logrus.Error("monitor: ", err)
 	if exit {
-		os.Exit(1)
+		options.State.SigCh <- syscall.SIGINT
 	}
 }
 

@@ -27,20 +27,40 @@ func (*PanTiltImpl) getChecksum(data []byte) byte {
 }
 
 func (d *PanTiltImpl) IsAvailable(port io.ReadWriteCloser) bool {
-	_, err := d.GetPan(port)
+	_, err := d.GetTilt(port)
 	return err == nil
 }
 
 func (d *PanTiltImpl) Init(port io.ReadWriteCloser) error {
-	err := d.SetPan(port, 0, 0)
+	err := d.SetTilt(port, 0, 0, nil)
 	if err != nil {
 		return err
+	}
+	time.Sleep(100 * time.Millisecond)
+
+	for i := 0; ; i++ {
+		tilt, err := d.GetTilt(port)
+		if err != nil {
+			continue
+		}
+
+		// Check if tilt is within ERROR_THRESHOLD
+		if math.Abs(tilt) <= ERROR_THRESHOLD {
+			break
+		}
+
+		if i == math.MaxInt8 {
+			return fmt.Errorf("failed to set tilt to 0 degree, expected 0, got tilt: %f", tilt)
+		}
+
+		time.Sleep(10 * time.Millisecond)
 	}
 
-	err = d.SetTilt(port, 0, 0)
+	err = d.SetPan(port, 0, 0, nil)
 	if err != nil {
 		return err
 	}
+	time.Sleep(100 * time.Millisecond)
 
 	for i := 0; ; i++ {
 		pan, err := d.GetPan(port)
@@ -48,36 +68,39 @@ func (d *PanTiltImpl) Init(port io.ReadWriteCloser) error {
 			continue
 		}
 
-		tilt, err := d.GetTilt(port)
-		if err != nil {
-			continue
-		}
-
-		if pan == 0 && tilt == 0 {
+		// Check if pan is within ERROR_THRESHOLD
+		if math.Abs(pan) <= ERROR_THRESHOLD || math.Abs(pan-360) <= ERROR_THRESHOLD {
 			break
 		}
 
-		if i == math.MaxInt8 {
-			return fmt.Errorf("failed to set both pan and tilt to 0 degrees")
+		if i == math.MaxUint8 {
+			return fmt.Errorf("failed to set pan to 0 degree, expected 0, got pan: %f", pan)
 		}
+
+		time.Sleep(10 * time.Millisecond)
 	}
 
 	return nil
 }
 
-func (d *PanTiltImpl) Reset(port io.ReadWriteCloser) error {
+func (d *PanTiltImpl) Reset(port io.ReadWriteCloser, sig chan bool) error {
 	resetCmd := []byte{SLAVE_ADDR, 0x00, 0x0F, 0x00, 0x00}
 	checksum := d.getChecksum(resetCmd)
 	resetCmd = append(resetCmd, checksum)
 
 	// Send command 3 times to ensure device reset
 	for i := 0; i < 3; i++ {
-		port.Write(append([]byte{SYNC_WORD}, resetCmd...))
+		serial.Write(port, append([]byte{SYNC_WORD}, resetCmd...))
 		time.Sleep(300 * time.Millisecond)
 	}
 
 	// Reset takes approximately 130 seconds
-	time.Sleep(130 * time.Second)
+	if sig != nil {
+		go func() {
+			time.Sleep(130 * time.Second)
+			sig <- true
+		}()
+	}
 
 	return nil
 }
@@ -88,7 +111,7 @@ func (d *PanTiltImpl) GetPan(port io.ReadWriteCloser) (float64, error) {
 	queryCmd = append(queryCmd, checksum)
 
 	// Send query command
-	_, err := port.Write(append([]byte{SYNC_WORD}, queryCmd...))
+	_, err := serial.Write(port, append([]byte{SYNC_WORD}, queryCmd...))
 	if err != nil {
 		return 0, err
 	}
@@ -117,7 +140,7 @@ func (d *PanTiltImpl) GetPan(port io.ReadWriteCloser) (float64, error) {
 	return panAngle, nil
 }
 
-func (d *PanTiltImpl) SetPan(port io.ReadWriteCloser, pan, offset float64) error {
+func (d *PanTiltImpl) SetPan(port io.ReadWriteCloser, pan, offset float64, sig chan bool) error {
 	encodedPan := int(pan * 100)
 	pmsb, plsb := byte(encodedPan>>8), byte(encodedPan&0xFF)
 
@@ -126,9 +149,34 @@ func (d *PanTiltImpl) SetPan(port io.ReadWriteCloser, pan, offset float64) error
 	setCmd = append(setCmd, checksum)
 
 	// Send set command
-	_, err := port.Write(append([]byte{SYNC_WORD}, setCmd...))
+	_, err := serial.Write(port, append([]byte{SYNC_WORD}, setCmd...))
 	if err != nil {
 		return err
+	}
+	time.Sleep(100 * time.Millisecond)
+
+	if sig != nil {
+		go func() {
+			for i := 0; ; i++ {
+				currentPan, err := d.GetPan(port)
+				if err != nil {
+					continue
+				}
+
+				// Check if currentPan is within ERROR_THRESHOLD
+				if math.Abs(currentPan-pan) <= ERROR_THRESHOLD || math.Abs(currentPan-360-pan) <= ERROR_THRESHOLD {
+					sig <- true
+					return
+				}
+
+				if i == math.MaxUint8 {
+					sig <- false
+					return
+				}
+
+				time.Sleep(10 * time.Millisecond)
+			}
+		}()
 	}
 
 	return nil
@@ -140,7 +188,7 @@ func (d *PanTiltImpl) GetTilt(port io.ReadWriteCloser) (float64, error) {
 	queryCmd = append(queryCmd, checksum)
 
 	// Send query command
-	_, err := port.Write(append([]byte{SYNC_WORD}, queryCmd...))
+	_, err := serial.Write(port, append([]byte{SYNC_WORD}, queryCmd...))
 	if err != nil {
 		return 0, err
 	}
@@ -176,14 +224,9 @@ func (d *PanTiltImpl) GetTilt(port io.ReadWriteCloser) (float64, error) {
 	return tiltAngle, nil
 }
 
-func (d *PanTiltImpl) SetTilt(port io.ReadWriteCloser, tilt, offset float64) error {
+func (d *PanTiltImpl) SetTilt(port io.ReadWriteCloser, tilt, offset float64, sig chan bool) error {
 	if tilt < 0 {
 		return fmt.Errorf("tilt angle must be positive")
-	}
-
-	tilt += offset
-	if tilt >= 360 {
-		tilt -= 360
 	}
 
 	tmsb, tlsb := byte(0), byte(0)
@@ -195,9 +238,34 @@ func (d *PanTiltImpl) SetTilt(port io.ReadWriteCloser, tilt, offset float64) err
 	setCmd = append(setCmd, checksum)
 
 	// Send set command
-	_, err := port.Write(append([]byte{SYNC_WORD}, setCmd...))
+	_, err := serial.Write(port, append([]byte{SYNC_WORD}, setCmd...))
 	if err != nil {
 		return err
+	}
+	time.Sleep(100 * time.Millisecond)
+
+	if sig != nil {
+		go func() {
+			for i := 0; ; i++ {
+				currentTilt, err := d.GetTilt(port)
+				if err != nil {
+					continue
+				}
+
+				// Check if currentTilt is within ERROR_THRESHOLD
+				if math.Abs(currentTilt-tilt) <= ERROR_THRESHOLD {
+					sig <- true
+					return
+				}
+
+				if i == math.MaxUint8 {
+					sig <- false
+					return
+				}
+
+				time.Sleep(10 * time.Millisecond)
+			}
+		}()
 	}
 
 	return nil

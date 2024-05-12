@@ -1,5 +1,7 @@
 package feature
 
+import "os"
+
 func (s *State) Initialize() {
 	s.RTCTime = &rtcTime{
 		IsReady:    false,
@@ -23,12 +25,13 @@ func (s *State) Initialize() {
 		IsReady:      false,
 		IsBusy:       false,
 		HasFindNorth: false,
-		PanAngle:     0,
-		TiltAngle:    0,
+		PanOffset:    0,
 	}
 	s.Monitor = &monitor{
 		IsReady: false,
+		IsBusy:  false,
 	}
+	s.SigCh = make(chan os.Signal, 1)
 	s.PendingTasks = 0
 	s.Satellites = 0
 }

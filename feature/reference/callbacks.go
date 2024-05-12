@@ -1,7 +1,7 @@
 package reference
 
 import (
-	"os"
+	"syscall"
 
 	"github.com/bclswl0827/openstation/feature"
 	"github.com/sirupsen/logrus"
@@ -11,10 +11,10 @@ func (*Reference) OnEvent(_ *feature.Options, eventMessage string, args ...any) 
 	logrus.Info("reference: ", eventMessage)
 }
 
-func (*Reference) OnError(_ *feature.Options, err error, exit bool) {
+func (*Reference) OnError(options *feature.Options, err error, exit bool) {
 	logrus.Error("reference: ", err)
 	if exit {
-		os.Exit(1)
+		options.State.SigCh <- syscall.SIGINT
 	}
 }
 

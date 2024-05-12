@@ -1,8 +1,6 @@
 package reference
 
 import (
-	"fmt"
-	"sync"
 	"time"
 
 	"github.com/bclswl0827/openstation/driver/reference"
@@ -11,20 +9,20 @@ import (
 	"github.com/bclswl0827/openstation/utils/duration"
 )
 
-func (d *Reference) Start(options *feature.Options, waitGroup *sync.WaitGroup) {
+func (d *Reference) Start(options *feature.Options) {
 	var (
-		deviceName = options.Config.Monitor.Device
-		baudRate   = options.Config.Monitor.Baud
+		deviceName = options.Config.Reference.Device
+		baudRate   = options.Config.Reference.Baud
 		driver     = &reference.ReferenceBoardDriverImpl{}
 	)
 
 	port, err := serial.Open(deviceName, baudRate)
 	if err != nil {
 		d.OnError(options, err, true)
+		return
 	}
 	d.serialPort = port
 	d.OnStart(options)
-	waitGroup.Add(1)
 
 	for {
 		var state reference.ReferenceState
@@ -51,7 +49,5 @@ func (d *Reference) Start(options *feature.Options, waitGroup *sync.WaitGroup) {
 		options.State.Compass.IsReady = true
 		options.State.Compass.Azimuth = state.Azimuth
 		options.State.Compass.Declination = state.Declination
-
-		fmt.Println("Azimuth:", options.State.Compass.Azimuth)
 	}
 }
