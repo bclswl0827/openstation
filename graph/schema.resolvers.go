@@ -246,8 +246,6 @@ func (r *queryResolver) GetStation(ctx context.Context) (*model.Station, error) 
 func (r *queryResolver) GetPanTilt(ctx context.Context) (*model.PanTilt, error) {
 	return &model.PanTilt{
 		IsBusy:       r.State.PanTilt.IsBusy,
-		PanAngle:     r.State.PanTilt.PanAngle,
-		TiltAngle:    r.State.PanTilt.TiltAngle,
 		HasFindNorth: r.State.PanTilt.HasFindNorth,
 	}, nil
 }

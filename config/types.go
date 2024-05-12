@@ -11,9 +11,22 @@ type pan_tilt struct {
 	Baud   int    `json:"baud"`
 }
 
+type reference_calibration struct {
+	B0       float64 `json:"b_0" validate:"ne=0"`
+	B1       float64 `json:"b_1" validate:"ne=0"`
+	B2       float64 `json:"b_2" validate:"ne=0"`
+	B3       float64 `json:"b_3" validate:"ne=0"`
+	B4       float64 `json:"b_4" validate:"ne=0"`
+	B5       float64 `json:"b_5" validate:"ne=0"`
+	Offset_X float64 `json:"offset_x"`
+	Offset_Y float64 `json:"offset_y"`
+	Offset_Z float64 `json:"offset_z"`
+}
+
 type reference struct {
-	Device string `json:"device"`
-	Baud   int    `json:"baud"`
+	Device      string                `json:"device"`
+	Baud        int                   `json:"baud"`
+	Calibration reference_calibration `json:"calibration"`
 }
 
 type monitor struct {

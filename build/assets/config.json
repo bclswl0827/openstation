@@ -10,7 +10,18 @@
     },
     "reference_settings": {
         "device": "/dev/rfcomm0",
-        "baudrate": 9600
+        "baudrate": 9600,
+        "calibration": {
+            "b_0": 1,
+            "b_1": 1,
+            "b_2": 1,
+            "b_3": 1,
+            "b_4": 1,
+            "b_5": 1,
+            "offset_x": 0,
+            "offset_y": 0,
+            "offset_z": 0
+        }
     },
     "monitor_settings": {
         "device": "/dev/ttyUSB1",

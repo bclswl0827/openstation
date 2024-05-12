@@ -1,7 +1,7 @@
 package feature
 
 import (
-	"sync"
+	"os"
 	"time"
 
 	"github.com/bclswl0827/openstation/config"
@@ -34,12 +34,12 @@ type panTilt struct {
 	IsReady      bool
 	IsBusy       bool
 	HasFindNorth bool
-	PanAngle     float64
-	TiltAngle    float64
+	PanOffset    float64
 }
 
 type monitor struct {
 	IsReady bool
+	IsBusy  bool
 }
 
 type State struct {
@@ -50,6 +50,7 @@ type State struct {
 	PanTilt      *panTilt
 	RTCTime      *rtcTime
 	GNSS         *gnss
+	SigCh        chan os.Signal
 }
 
 type Options struct {
@@ -60,8 +61,8 @@ type Options struct {
 }
 
 type Feature interface {
-	Terminate(*Options, *sync.WaitGroup)
-	Start(*Options, *sync.WaitGroup)
+	Start(*Options)
+	Terminate(*Options)
 	OnEvent(*Options, string, ...any)
 	OnError(*Options, error, bool)
 	OnStart(*Options)

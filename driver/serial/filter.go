@@ -8,8 +8,11 @@ import (
 )
 
 func Filter(port io.ReadWriteCloser, signature []byte, filter_attempts int) error {
-	header := make([]byte, len(signature))
+	if port == nil {
+		return fmt.Errorf("port is nil")
+	}
 
+	header := make([]byte, len(signature))
 	for i := 0; i < filter_attempts; i++ {
 		_, err := port.Read(header)
 		if err != nil {
