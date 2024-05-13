@@ -1,18 +1,20 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"math"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/bclswl0827/openstation/config"
-	"github.com/bclswl0827/openstation/driver/dao"
-	"github.com/bclswl0827/openstation/feature"
-	"github.com/bclswl0827/openstation/feature/monitor"
-	"github.com/bclswl0827/openstation/feature/pan_tilt"
-	"github.com/bclswl0827/openstation/feature/reference"
+	"github.com/bclswl0827/openstation/drivers/dao"
+	"github.com/bclswl0827/openstation/features"
+	"github.com/bclswl0827/openstation/features/monitor"
+	"github.com/bclswl0827/openstation/features/pan_tilt"
+	"github.com/bclswl0827/openstation/features/reference"
 	"github.com/bclswl0827/openstation/graph"
 	"github.com/bclswl0827/openstation/server"
 	"github.com/common-nighthawk/go-figure"
@@ -22,8 +24,11 @@ import (
 )
 
 func parseCommandLine(conf *config.Config) error {
-	var args config.Args
-	args.Read()
+	var args arguments
+	flag.StringVar(&args.Path, "config", "./config.json", "Path to config file")
+	flag.BoolVar(&args.Version, "version", false, "Print version information")
+	flag.Parse()
+
 	if args.Version {
 		printVersion()
 		os.Exit(0)
@@ -70,7 +75,7 @@ func main() {
 	}
 
 	// Migrate database schema
-	err = Migrate(databaseConn)
+	err = migrate(databaseConn)
 	if err != nil {
 		logrus.Fatalf("main: %v\n", err)
 	} else {
@@ -78,26 +83,26 @@ func main() {
 	}
 
 	// Initialize system state
-	var State feature.State
+	var State features.State
 	State.Initialize()
 
 	// Initialize message bus
-	messageBus := messagebus.New(32)
+	messageBus := messagebus.New(math.MaxUint8)
 	logrus.Info("main: message bus has been initialized")
 
 	// Register features
-	features := []feature.Feature{
+	regFeatures := []features.Feature{
 		&monitor.Monitor{},
 		&pan_tilt.PanTilt{},
 		&reference.Reference{},
 	}
-	featureOptions := feature.Options{
+	featureOptions := features.Options{
 		Config:     &conf,
 		State:      &State,
 		Database:   databaseConn,
 		MessageBus: messageBus,
 	}
-	for _, s := range features {
+	for _, s := range regFeatures {
 		go s.Start(&featureOptions)
 	}
 
@@ -124,8 +129,7 @@ func main() {
 
 	// Wait for all features to stop
 	logrus.Info("main: daemon is shutting down")
-	for _, s := range features {
+	for _, s := range regFeatures {
 		s.Terminate(&featureOptions)
 	}
-	// featureWaitGroup.Wait()
 }

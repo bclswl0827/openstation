@@ -12,7 +12,7 @@ type Station {
 
 type Compass {
     hasCalibrated: Boolean!
-    azimuth: Float!
+    magAzimuth: Float!
     declination: Float!
 }
 
@@ -58,7 +58,7 @@ type Query {
 type Mutation {
     # Pan-Tilt control
     SetPanTiltToAngle(pan: Float!, tilt: Float!): Boolean!
-    SetPanTiltToAzimuth(azimuth: Float!): Boolean!
+    SetPanTiltToMagAzimuth(magAzimuth: Float!): Boolean!
     SetPanTiltToNorth: Boolean!
     # Satellite TLEs
     SetAllTLEs(tleData: [String!]!): Boolean!

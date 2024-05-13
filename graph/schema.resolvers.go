@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bclswl0827/openstation/driver/dao/table"
-	"github.com/bclswl0827/openstation/driver/tle"
+	"github.com/bclswl0827/openstation/drivers/dao/table"
+	"github.com/bclswl0827/openstation/drivers/tle"
 	"github.com/bclswl0827/openstation/graph/model"
 	"github.com/bclswl0827/openstation/utils/duration"
 	"github.com/bclswl0827/openstation/utils/system"
@@ -22,9 +22,9 @@ func (r *mutationResolver) SetPanTiltToAngle(ctx context.Context, pan float64, t
 	panic(fmt.Errorf("not implemented: SetPanTiltToAngle - SetPanTiltToAngle"))
 }
 
-// SetPanTiltToAzimuth is the resolver for the SetPanTiltToAzimuth field.
-func (r *mutationResolver) SetPanTiltToAzimuth(ctx context.Context, azimuth float64) (bool, error) {
-	panic(fmt.Errorf("not implemented: SetPanTiltToAzimuth - SetPanTiltToAzimuth"))
+// SetPanTiltToMagAzimuth is the resolver for the SetPanTiltToMagAzimuth field.
+func (r *mutationResolver) SetPanTiltToMagAzimuth(ctx context.Context, magAzimuth float64) (bool, error) {
+	panic(fmt.Errorf("not implemented: SetPanTiltToMagAzimuth - SetPanTiltToMagAzimuth"))
 }
 
 // SetPanTiltToNorth is the resolver for the SetPanTiltToNorth field.
@@ -238,7 +238,6 @@ func (r *queryResolver) GetStation(ctx context.Context) (*model.Station, error) 
 		Location:   r.Config.Station.Location,
 		Latitude:   r.State.GNSS.Latitude,
 		Longitude:  r.State.GNSS.Longitude,
-		Altitude:   r.State.GNSS.Altitude,
 	}, nil
 }
 
@@ -255,7 +254,7 @@ func (r *queryResolver) GetCompass(ctx context.Context) (*model.Compass, error) 
 	return &model.Compass{
 		HasCalibrated: r.State.Compass.HasCalibrated,
 		Declination:   r.State.Compass.Declination,
-		Azimuth:       r.State.Compass.Azimuth,
+		MagAzimuth:    r.State.Compass.MagAzimuth,
 	}, nil
 }
 
