@@ -48,29 +48,27 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Compass struct {
-		Azimuth       func(childComplexity int) int
 		Declination   func(childComplexity int) int
 		HasCalibrated func(childComplexity int) int
+		MagAzimuth    func(childComplexity int) int
 	}
 
 	Mutation struct {
-		DeleteTLEByID        func(childComplexity int, id int) int
-		PurgeForecastRecords func(childComplexity int) int
-		PurgeTLERecords      func(childComplexity int) int
-		PurgeTaskQueue       func(childComplexity int) int
-		RebootSystem         func(childComplexity int) int
-		SetAllTLEs           func(childComplexity int, tleData []string) int
-		SetPanTiltToAngle    func(childComplexity int, pan float64, tilt float64) int
-		SetPanTiltToAzimuth  func(childComplexity int, azimuth float64) int
-		SetPanTiltToNorth    func(childComplexity int) int
-		UpdateTLEByID        func(childComplexity int, id int, tleData string) int
+		DeleteTLEByID          func(childComplexity int, id int) int
+		PurgeForecastRecords   func(childComplexity int) int
+		PurgeTLERecords        func(childComplexity int) int
+		PurgeTaskQueue         func(childComplexity int) int
+		RebootSystem           func(childComplexity int) int
+		SetAllTLEs             func(childComplexity int, tleData []string) int
+		SetPanTiltToAngle      func(childComplexity int, pan float64, tilt float64) int
+		SetPanTiltToMagAzimuth func(childComplexity int, magAzimuth float64) int
+		SetPanTiltToNorth      func(childComplexity int) int
+		UpdateTLEByID          func(childComplexity int, id int, tleData string) int
 	}
 
 	PanTilt struct {
 		HasFindNorth func(childComplexity int) int
 		IsBusy       func(childComplexity int) int
-		PanAngle     func(childComplexity int) int
-		TiltAngle    func(childComplexity int) int
 	}
 
 	Query struct {
@@ -117,7 +115,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	SetPanTiltToAngle(ctx context.Context, pan float64, tilt float64) (bool, error)
-	SetPanTiltToAzimuth(ctx context.Context, azimuth float64) (bool, error)
+	SetPanTiltToMagAzimuth(ctx context.Context, magAzimuth float64) (bool, error)
 	SetPanTiltToNorth(ctx context.Context) (bool, error)
 	SetAllTLEs(ctx context.Context, tleData []string) (bool, error)
 	DeleteTLEByID(ctx context.Context, id int) (bool, error)
@@ -155,13 +153,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Compass.azimuth":
-		if e.complexity.Compass.Azimuth == nil {
-			break
-		}
-
-		return e.complexity.Compass.Azimuth(childComplexity), true
-
 	case "Compass.declination":
 		if e.complexity.Compass.Declination == nil {
 			break
@@ -175,6 +166,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Compass.HasCalibrated(childComplexity), true
+
+	case "Compass.magAzimuth":
+		if e.complexity.Compass.MagAzimuth == nil {
+			break
+		}
+
+		return e.complexity.Compass.MagAzimuth(childComplexity), true
 
 	case "Mutation.DeleteTLEById":
 		if e.complexity.Mutation.DeleteTLEByID == nil {
@@ -240,17 +238,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SetPanTiltToAngle(childComplexity, args["pan"].(float64), args["tilt"].(float64)), true
 
-	case "Mutation.SetPanTiltToAzimuth":
-		if e.complexity.Mutation.SetPanTiltToAzimuth == nil {
+	case "Mutation.SetPanTiltToMagAzimuth":
+		if e.complexity.Mutation.SetPanTiltToMagAzimuth == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_SetPanTiltToAzimuth_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_SetPanTiltToMagAzimuth_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SetPanTiltToAzimuth(childComplexity, args["azimuth"].(float64)), true
+		return e.complexity.Mutation.SetPanTiltToMagAzimuth(childComplexity, args["magAzimuth"].(float64)), true
 
 	case "Mutation.SetPanTiltToNorth":
 		if e.complexity.Mutation.SetPanTiltToNorth == nil {
@@ -284,20 +282,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PanTilt.IsBusy(childComplexity), true
-
-	case "PanTilt.panAngle":
-		if e.complexity.PanTilt.PanAngle == nil {
-			break
-		}
-
-		return e.complexity.PanTilt.PanAngle(childComplexity), true
-
-	case "PanTilt.tiltAngle":
-		if e.complexity.PanTilt.TiltAngle == nil {
-			break
-		}
-
-		return e.complexity.PanTilt.TiltAngle(childComplexity), true
 
 	case "Query.GetAllTLEs":
 		if e.complexity.Query.GetAllTLEs == nil {
@@ -684,18 +668,18 @@ func (ec *executionContext) field_Mutation_SetPanTiltToAngle_args(ctx context.Co
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_SetPanTiltToAzimuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_SetPanTiltToMagAzimuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 float64
-	if tmp, ok := rawArgs["azimuth"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("azimuth"))
+	if tmp, ok := rawArgs["magAzimuth"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("magAzimuth"))
 		arg0, err = ec.unmarshalNFloat2float64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["azimuth"] = arg0
+	args["magAzimuth"] = arg0
 	return args, nil
 }
 
@@ -835,8 +819,8 @@ func (ec *executionContext) fieldContext_Compass_hasCalibrated(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Compass_azimuth(ctx context.Context, field graphql.CollectedField, obj *model.Compass) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Compass_azimuth(ctx, field)
+func (ec *executionContext) _Compass_magAzimuth(ctx context.Context, field graphql.CollectedField, obj *model.Compass) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Compass_magAzimuth(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -849,7 +833,7 @@ func (ec *executionContext) _Compass_azimuth(ctx context.Context, field graphql.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Azimuth, nil
+		return obj.MagAzimuth, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -866,7 +850,7 @@ func (ec *executionContext) _Compass_azimuth(ctx context.Context, field graphql.
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Compass_azimuth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Compass_magAzimuth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Compass",
 		Field:      field,
@@ -978,8 +962,8 @@ func (ec *executionContext) fieldContext_Mutation_SetPanTiltToAngle(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_SetPanTiltToAzimuth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_SetPanTiltToAzimuth(ctx, field)
+func (ec *executionContext) _Mutation_SetPanTiltToMagAzimuth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_SetPanTiltToMagAzimuth(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -992,7 +976,7 @@ func (ec *executionContext) _Mutation_SetPanTiltToAzimuth(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SetPanTiltToAzimuth(rctx, fc.Args["azimuth"].(float64))
+		return ec.resolvers.Mutation().SetPanTiltToMagAzimuth(rctx, fc.Args["magAzimuth"].(float64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1009,7 +993,7 @@ func (ec *executionContext) _Mutation_SetPanTiltToAzimuth(ctx context.Context, f
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_SetPanTiltToAzimuth(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_SetPanTiltToMagAzimuth(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -1026,7 +1010,7 @@ func (ec *executionContext) fieldContext_Mutation_SetPanTiltToAzimuth(ctx contex
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_SetPanTiltToAzimuth_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_SetPanTiltToMagAzimuth_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -1506,94 +1490,6 @@ func (ec *executionContext) fieldContext_PanTilt_hasFindNorth(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _PanTilt_panAngle(ctx context.Context, field graphql.CollectedField, obj *model.PanTilt) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PanTilt_panAngle(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PanAngle, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_PanTilt_panAngle(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "PanTilt",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Float does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _PanTilt_tiltAngle(ctx context.Context, field graphql.CollectedField, obj *model.PanTilt) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PanTilt_tiltAngle(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TiltAngle, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_PanTilt_tiltAngle(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "PanTilt",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Float does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_GetStation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_GetStation(ctx, field)
 	if err != nil {
@@ -1701,10 +1597,6 @@ func (ec *executionContext) fieldContext_Query_GetPanTilt(_ context.Context, fie
 				return ec.fieldContext_PanTilt_isBusy(ctx, field)
 			case "hasFindNorth":
 				return ec.fieldContext_PanTilt_hasFindNorth(ctx, field)
-			case "panAngle":
-				return ec.fieldContext_PanTilt_panAngle(ctx, field)
-			case "tiltAngle":
-				return ec.fieldContext_PanTilt_tiltAngle(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PanTilt", field.Name)
 		},
@@ -1753,8 +1645,8 @@ func (ec *executionContext) fieldContext_Query_GetCompass(_ context.Context, fie
 			switch field.Name {
 			case "hasCalibrated":
 				return ec.fieldContext_Compass_hasCalibrated(ctx, field)
-			case "azimuth":
-				return ec.fieldContext_Compass_azimuth(ctx, field)
+			case "magAzimuth":
+				return ec.fieldContext_Compass_magAzimuth(ctx, field)
 			case "declination":
 				return ec.fieldContext_Compass_declination(ctx, field)
 			}
@@ -4888,8 +4780,8 @@ func (ec *executionContext) _Compass(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "azimuth":
-			out.Values[i] = ec._Compass_azimuth(ctx, field, obj)
+		case "magAzimuth":
+			out.Values[i] = ec._Compass_magAzimuth(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -4947,9 +4839,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "SetPanTiltToAzimuth":
+		case "SetPanTiltToMagAzimuth":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_SetPanTiltToAzimuth(ctx, field)
+				return ec._Mutation_SetPanTiltToMagAzimuth(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -5051,16 +4943,6 @@ func (ec *executionContext) _PanTilt(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "hasFindNorth":
 			out.Values[i] = ec._PanTilt_hasFindNorth(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "panAngle":
-			out.Values[i] = ec._PanTilt_panAngle(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "tiltAngle":
-			out.Values[i] = ec._PanTilt_tiltAngle(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

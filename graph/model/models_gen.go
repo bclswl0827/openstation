@@ -4,7 +4,7 @@ package model
 
 type Compass struct {
 	HasCalibrated bool    `json:"hasCalibrated"`
-	Azimuth       float64 `json:"azimuth"`
+	MagAzimuth    float64 `json:"magAzimuth"`
 	Declination   float64 `json:"declination"`
 }
 
@@ -12,10 +12,8 @@ type Mutation struct {
 }
 
 type PanTilt struct {
-	IsBusy       bool    `json:"isBusy"`
-	HasFindNorth bool    `json:"hasFindNorth"`
-	PanAngle     float64 `json:"panAngle"`
-	TiltAngle    float64 `json:"tiltAngle"`
+	IsBusy       bool `json:"isBusy"`
+	HasFindNorth bool `json:"hasFindNorth"`
 }
 
 type Query struct {
