@@ -2,6 +2,8 @@ package server
 
 import "github.com/bclswl0827/openstation/graph"
 
+const MODULE = "server"
+
 type Options struct {
 	Gzip          int
 	CORS          bool

@@ -24,8 +24,8 @@ export const globalConfig: GlobalConfig = {
 		"zh-TW": "OpenStation Project"
 	},
 	footer: {
-		"en-US": "",
-		"zh-CN": "",
-		"zh-TW": ""
+		"en-US": "123",
+		"zh-CN": "123",
+		"zh-TW": "123"
 	}
 };

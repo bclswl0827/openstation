@@ -2,6 +2,7 @@ import { atom } from "jotai";
 import { useEffect, useState } from "react";
 
 import { AsideMenu } from "./components/AsideMenu";
+import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import { RouterView } from "./components/RouterView";
 import { Skeleton } from "./components/Skeleton";
@@ -30,7 +31,7 @@ const App = () => {
 
 	const asideMenuState = atom(false);
 	const { routes } = routerConfig;
-	const { name, logo, release, version } = globalConfig;
+	const { name, logo, release, version, footer } = globalConfig;
 
 	return (
 		<div className="flex animate-fade animate-duration-500 animate-delay-500">
@@ -42,19 +43,18 @@ const App = () => {
 				locale={currentLocale}
 				release={`${version}@${release}`}
 			/>
-			<div className="flex flex-col w-full">
-				<Header
-					title={currentTitle}
-					items={headerConfig}
-					asideMenu={asideMenuState}
-				/>
-				<RouterView
-					appName={name}
-					routes={routes}
-					locale={currentLocale}
-					suspense={<Skeleton />}
-					onTitleChange={handleTitleChange}
-				/>
+			<div className="flex flex-col w-full h-screen justify-between">
+				<Header title={currentTitle} items={headerConfig} asideMenu={asideMenuState} />
+				<div className="mb-auto">
+					<RouterView
+						appName={name}
+						routes={routes}
+						locale={currentLocale}
+						suspense={<Skeleton />}
+						onTitleChange={handleTitleChange}
+					/>
+				</div>
+				<Footer text={footer} locale={currentLocale} />
 			</div>
 		</div>
 	);

@@ -7,9 +7,14 @@ type MonitorState struct {
 	Error bool
 }
 
+type MonitorDependency struct {
+	Port  io.ReadWriteCloser
+	State *MonitorState
+}
+
 type MonitorDriver interface {
-	Display(port io.ReadWriteCloser, state *MonitorState, text string, x int, y int) error
-	Clear(port io.ReadWriteCloser) error
-	Reset(port io.ReadWriteCloser) error
-	Init(port io.ReadWriteCloser) error
+	Display(deps *MonitorDependency, text string, x int, y int) error
+	Clear(deps *MonitorDependency) error
+	Reset(deps *MonitorDependency) error
+	Init(deps *MonitorDependency) error
 }

@@ -4,20 +4,21 @@ go 1.22.1
 
 require (
 	github.com/99designs/gqlgen v0.17.46
+	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/bclswl0827/go-serial v0.0.1
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
-	github.com/davecgh/go-spew v1.1.1
 	github.com/fatih/color v1.16.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/joshuaferrara/go-satellite v0.0.0-20220611180459-512638c64e5b
 	github.com/json-iterator/go v1.1.12
+	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/sirupsen/logrus v1.9.3
-	github.com/vardius/message-bus v1.1.5
 	github.com/vektah/gqlparser/v2 v2.5.11
 	github.com/westphae/geomag v1.0.2
+	go.uber.org/dig v1.17.1
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	gorm.io/driver/mysql v1.5.6
 	gorm.io/driver/postgres v1.5.7

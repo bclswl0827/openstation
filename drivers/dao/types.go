@@ -6,6 +6,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const CONNECT_TIMEOUT = 5 * time.Second
+
 type engine interface {
 	compatible(engine string) bool
 	open(host string, port int, username, password, database string, timeout time.Duration) (*gorm.DB, error)
