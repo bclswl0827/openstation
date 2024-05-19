@@ -1,6 +1,7 @@
 package serial
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/bclswl0827/go-serial"
@@ -17,11 +18,8 @@ func Open(device string, baud int) (io.ReadWriteCloser, error) {
 		serial.WithStopBits(serial.OneStopBit),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open %s: %w", device, err)
 	}
-
-	port.SetDTR(true)
-	port.SetRTS(true)
 
 	return port, nil
 }

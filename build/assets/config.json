@@ -5,16 +5,15 @@
         "location": "北京"
     },
     "pantilt_settings": {
-        "device": "/dev/ttyUSB0",
+        "device": "/dev/ttyS4",
         "baudrate": 9600
     },
-    "reference_settings": {
-        "device": "/dev/rfcomm0",
-        "baudrate": 9600,
-        "calibration": []
+    "gnss_settings": {
+        "device": "/dev/ttyS5",
+        "baudrate": 9600
     },
     "monitor_settings": {
-        "device": "/dev/ttyUSB1",
+        "device": "/dev/ttyS6",
         "baudrate": 9600
     },
     "database_settings": {
@@ -30,5 +29,9 @@
         "port": 8073,
         "cors": true,
         "debug": true
+    },
+    "logger_settings":{
+        "level": "info",
+        "path": "/home/yuki/openstation.log"
     }
 }

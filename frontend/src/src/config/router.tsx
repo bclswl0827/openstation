@@ -24,7 +24,7 @@ type RouterConfig = {
 };
 
 const Home = lazy(() => import("../views/Home"));
-const Tasker = lazy(() => import("../views/Tasker"));
+const Tasks = lazy(() => import("../views/Tasks"));
 const Satellite = lazy(() => import("../views/Satellite"));
 const Control = lazy(() => import("../views/Control"));
 const Diagnose = lazy(() => import("../views/Diagnose"));
@@ -44,12 +44,12 @@ export const routerConfig: RouterConfig = {
 				"zh-CN": "测站状态"
 			}
 		},
-		tasker: {
-			uri: "/tasker",
+		tasks: {
+			uri: "/tasks",
 			pattern: "",
-			element: Tasker,
+			element: Tasks,
 			title: {
-				"en-US": "Tasker",
+				"en-US": "Tasks",
 				"zh-TW": "任務管理",
 				"zh-CN": "任务管理"
 			}

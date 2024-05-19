@@ -27,9 +27,9 @@ export const menuConfig: MenuItem[] = [
 		icon: mdiHomeAccount
 	},
 	{
-		url: "/tasker",
+		url: "/tasks",
 		label: {
-			"en-US": "Tasker",
+			"en-US": "Tasks",
 			"zh-TW": "任務管理",
 			"zh-CN": "任务管理"
 		},

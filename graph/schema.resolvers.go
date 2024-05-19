@@ -10,11 +10,8 @@ import (
 	"time"
 
 	"github.com/bclswl0827/openstation/drivers/dao/table"
-	"github.com/bclswl0827/openstation/drivers/tle"
 	"github.com/bclswl0827/openstation/graph/model"
-	"github.com/bclswl0827/openstation/utils/duration"
 	"github.com/bclswl0827/openstation/utils/system"
-	"gorm.io/gorm"
 )
 
 // SetPanTiltToAngle is the resolver for the SetPanTiltToAngle field.
@@ -34,66 +31,66 @@ func (r *mutationResolver) SetPanTiltToNorth(ctx context.Context) (bool, error) 
 
 // SetAllTLEs is the resolver for the SetAllTLEs field.
 func (r *mutationResolver) SetAllTLEs(ctx context.Context, tleData []string) (bool, error) {
-	currentTime, _ := duration.GetOffsetTime(r.State.RTCTime.TimeOffset)
-	var (
-		tleModel   table.SatelliteTLE
-		tleRecords []table.SatelliteTLE
-	)
+	// currentTime, _ := duration.GetOffsetTime(r.State.RTCTime.TimeOffset)
+	// var (
+	// 	tleModel   table.SatelliteTLE
+	// 	tleRecords []table.SatelliteTLE
+	// )
 
-	for _, tleInput := range tleData {
-		var (
-			inputTLE       tle.TLE
-			mockObserver   tle.Observer
-			inputSatellite tle.Satellite
-		)
-		err := inputTLE.Load(tleInput)
-		if err != nil {
-			return false, err
-		}
+	// for _, tleInput := range tleData {
+	// 	var (
+	// 		inputTLE       tle.TLE
+	// 		mockObserver   tle.Observer
+	// 		inputSatellite tle.Satellite
+	// 	)
+	// 	err := inputTLE.Load(tleInput)
+	// 	if err != nil {
+	// 		return false, err
+	// 	}
 
-		mockObserver.Latitude = -1
-		mockObserver.Longitude = -1
-		mockObserver.Time = currentTime
-		err = inputSatellite.Parse(&inputTLE, &mockObserver)
-		if err != nil {
-			return false, err
-		}
+	// 	mockObserver.Latitude = -1
+	// 	mockObserver.Longitude = -1
+	// 	mockObserver.Time = currentTime
+	// 	err = inputSatellite.Parse(&inputTLE, &mockObserver)
+	// 	if err != nil {
+	// 		return false, err
+	// 	}
 
-		tleRecords = append(tleRecords, table.SatelliteTLE{
-			ID:         inputTLE.ID,
-			Name:       inputTLE.Name,
-			Line_1:     inputTLE.Line_1,
-			Line_2:     inputTLE.Line_2,
-			EpochTime:  inputSatellite.Epoch.UnixMilli(),
-			LastUpdate: currentTime.UnixMilli(),
-		})
-	}
+	// 	tleRecords = append(tleRecords, table.SatelliteTLE{
+	// 		ID:         inputTLE.ID,
+	// 		Name:       inputTLE.Name,
+	// 		Line_1:     inputTLE.Line_1,
+	// 		Line_2:     inputTLE.Line_2,
+	// 		EpochTime:  inputSatellite.Epoch.UnixMilli(),
+	// 		LastUpdate: currentTime.UnixMilli(),
+	// 	})
+	// }
 
-	err := r.Database.Transaction(func(tx *gorm.DB) error {
-		// Clear all TLE records before adding new ones
-		err := tx.
-			Table(tleModel.GetName()).
-			Select("*").
-			Where("id = id").
-			Delete(tleModel).
-			Error
-		if err != nil {
-			return err
-		}
-		// Insert new TLE records
-		err = tx.
-			Table(tleModel.GetName()).
-			Create(&tleRecords).
-			Error
-		if err != nil {
-			return err
-		}
+	// err := r.Database.Transaction(func(tx *gorm.DB) error {
+	// 	// Clear all TLE records before adding new ones
+	// 	err := tx.
+	// 		Table(tleModel.GetName()).
+	// 		Select("*").
+	// 		Where("id = id").
+	// 		Delete(tleModel).
+	// 		Error
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	// Insert new TLE records
+	// 	err = tx.
+	// 		Table(tleModel.GetName()).
+	// 		Create(&tleRecords).
+	// 		Error
+	// 	if err != nil {
+	// 		return err
+	// 	}
 
-		return nil
-	})
-	if err != nil {
-		return false, err
-	}
+	// 	return nil
+	// })
+	// if err != nil {
+	// 	return false, err
+	// }
 
 	return true, nil
 }
@@ -115,62 +112,62 @@ func (r *mutationResolver) DeleteTLEByID(ctx context.Context, id int) (bool, err
 
 // UpdateTLEByID is the resolver for the UpdateTLEById field.
 func (r *mutationResolver) UpdateTLEByID(ctx context.Context, id int, tleData string) (bool, error) {
-	var (
-		tleModel  table.SatelliteTLE
-		tleRecord table.SatelliteTLE
-	)
+	// var (
+	// 	tleModel  table.SatelliteTLE
+	// 	tleRecord table.SatelliteTLE
+	// )
 
-	// Check TLE record existence
-	err := r.Database.
-		Table(tleModel.GetName()).
-		Where("id = ?", id).
-		First(&tleRecord).
-		Error
-	if err != nil {
-		return false, err
-	}
+	// // Check TLE record existence
+	// err := r.Database.
+	// 	Table(tleModel.GetName()).
+	// 	Where("id = ?", id).
+	// 	First(&tleRecord).
+	// 	Error
+	// if err != nil {
+	// 	return false, err
+	// }
 
-	if len(tleRecord.Line_1) == 0 || len(tleRecord.Line_2) == 0 {
-		return false, fmt.Errorf("no matching TLE record found")
-	}
+	// if len(tleRecord.Line_1) == 0 || len(tleRecord.Line_2) == 0 {
+	// 	return false, fmt.Errorf("no matching TLE record found")
+	// }
 
-	var (
-		inputTLE       tle.TLE
-		mockObserver   tle.Observer
-		inputSatellite tle.Satellite
-	)
+	// var (
+	// 	inputTLE       tle.TLE
+	// 	mockObserver   tle.Observer
+	// 	inputSatellite tle.Satellite
+	// )
 
-	err = inputTLE.Load(tleData)
-	if err != nil {
-		return false, err
-	} else if inputTLE.ID != int64(id) {
-		return false, fmt.Errorf("input TLE ID mismatch the record ID")
-	}
+	// err = inputTLE.Load(tleData)
+	// if err != nil {
+	// 	return false, err
+	// } else if inputTLE.ID != int64(id) {
+	// 	return false, fmt.Errorf("input TLE ID mismatch the record ID")
+	// }
 
-	currentTime, _ := duration.GetOffsetTime(r.State.RTCTime.TimeOffset)
-	mockObserver.Latitude = -1
-	mockObserver.Longitude = -1
-	mockObserver.Time = currentTime
-	err = inputSatellite.Parse(&inputTLE, &mockObserver)
-	if err != nil {
-		return false, err
-	}
+	// currentTime, _ := duration.GetOffsetTime(r.State.RTCTime.TimeOffset)
+	// mockObserver.Latitude = -1
+	// mockObserver.Longitude = -1
+	// mockObserver.Time = currentTime
+	// err = inputSatellite.Parse(&inputTLE, &mockObserver)
+	// if err != nil {
+	// 	return false, err
+	// }
 
-	tleRecord.Name = inputTLE.Name
-	tleRecord.Line_1 = inputTLE.Line_1
-	tleRecord.Line_2 = inputTLE.Line_2
-	tleRecord.EpochTime = inputSatellite.Epoch.UnixMilli()
-	tleRecord.LastUpdate = currentTime.UnixMilli()
+	// tleRecord.Name = inputTLE.Name
+	// tleRecord.Line_1 = inputTLE.Line_1
+	// tleRecord.Line_2 = inputTLE.Line_2
+	// tleRecord.EpochTime = inputSatellite.Epoch.UnixMilli()
+	// tleRecord.LastUpdate = currentTime.UnixMilli()
 
-	// Update TLE record
-	err = r.Database.
-		Table(tleModel.GetName()).
-		Where("id = ?", id).
-		Updates(tleRecord).
-		Error
-	if err != nil {
-		return false, err
-	}
+	// // Update TLE record
+	// err = r.Database.
+	// 	Table(tleModel.GetName()).
+	// 	Where("id = ?", id).
+	// 	Updates(tleRecord).
+	// 	Error
+	// if err != nil {
+	// 	return false, err
+	// }
 
 	return true, nil
 }
@@ -236,25 +233,25 @@ func (r *queryResolver) GetStation(ctx context.Context) (*model.Station, error) 
 		Name:       r.Config.Station.Name,
 		Remark:     r.Config.Station.Remark,
 		Location:   r.Config.Station.Location,
-		Latitude:   r.State.GNSS.Latitude,
-		Longitude:  r.State.GNSS.Longitude,
+		// Latitude:   r.State.GNSS.Latitude,
+		// Longitude:  r.State.GNSS.Longitude,
 	}, nil
 }
 
 // GetPanTilt is the resolver for the GetPanTilt field.
 func (r *queryResolver) GetPanTilt(ctx context.Context) (*model.PanTilt, error) {
 	return &model.PanTilt{
-		IsBusy:       r.State.PanTilt.IsBusy,
-		HasFindNorth: r.State.PanTilt.HasFindNorth,
+		// IsBusy:       r.State.PanTilt.IsBusy,
+		// HasFindNorth: r.State.PanTilt.HasFindNorth,
 	}, nil
 }
 
 // GetCompass is the resolver for the GetCompass field.
 func (r *queryResolver) GetCompass(ctx context.Context) (*model.Compass, error) {
 	return &model.Compass{
-		HasCalibrated: r.State.Compass.HasCalibrated,
-		Declination:   r.State.Compass.Declination,
-		MagAzimuth:    r.State.Compass.MagAzimuth,
+		// HasCalibrated: r.State.Compass.HasCalibrated,
+		// Declination:   r.State.Compass.Declination,
+		// MagAzimuth:    r.State.Compass.MagAzimuth,
 	}, nil
 }
 
@@ -332,18 +329,18 @@ func (r *queryResolver) GetAllTLEs(ctx context.Context) ([]*model.TLEData, error
 		return nil, fmt.Errorf("no TLE records found")
 	}
 
-	currentTime, _ := duration.GetOffsetTime(r.State.RTCTime.TimeOffset)
-	for _, tleRecord := range tleRecords {
-		tleData = append(tleData, &model.TLEData{
-			ID:         int(tleRecord.ID),
-			Name:       tleRecord.Name,
-			Line1:      tleRecord.Line_1,
-			Line2:      tleRecord.Line_2,
-			LastUpdate: int(tleRecord.LastUpdate),
-			Expired: time.UnixMilli(tleRecord.EpochTime).UTC().
-				Sub(currentTime).Hours() > tle.EXPIRATION_DAYS.Hours(),
-		})
-	}
+	// currentTime, _ := duration.GetOffsetTime(r.State.RTCTime.TimeOffset)
+	// for _, tleRecord := range tleRecords {
+	// 	tleData = append(tleData, &model.TLEData{
+	// 		ID:         int(tleRecord.ID),
+	// 		Name:       tleRecord.Name,
+	// 		Line1:      tleRecord.Line_1,
+	// 		Line2:      tleRecord.Line_2,
+	// 		LastUpdate: int(tleRecord.LastUpdate),
+	// 		Expired: time.UnixMilli(tleRecord.EpochTime).UTC().
+	// 			Sub(currentTime).Hours() > tle.EXPIRATION_DAYS.Hours(),
+	// 	})
+	// }
 
 	return tleData, nil
 }
@@ -368,15 +365,15 @@ func (r *queryResolver) GetTLEByID(ctx context.Context, id int) (*model.TLEData,
 		return nil, fmt.Errorf("no  matching TLE record found")
 	}
 
-	currentTime, _ := duration.GetOffsetTime(r.State.RTCTime.TimeOffset)
+	// currentTime, _ := duration.GetOffsetTime(r.State.RTCTime.TimeOffset)
 	return &model.TLEData{
 		ID:         int(tleRecord.ID),
 		Name:       tleRecord.Name,
 		Line1:      tleRecord.Line_1,
 		Line2:      tleRecord.Line_2,
 		LastUpdate: int(tleRecord.LastUpdate),
-		Expired: time.UnixMilli(tleRecord.EpochTime).UTC().
-			Sub(currentTime).Hours() > tle.EXPIRATION_DAYS.Hours(),
+		// Expired: time.UnixMilli(tleRecord.EpochTime).UTC().
+		// 	Sub(currentTime).Hours() > tle.EXPIRATION_DAYS.Hours(),
 	}, nil
 }
 

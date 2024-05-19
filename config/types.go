@@ -11,10 +11,9 @@ type pan_tilt struct {
 	Baud   int    `json:"baud"`
 }
 
-type reference struct {
-	Device      string     `json:"device"`
-	Baud        int        `json:"baud"`
-	Calibration [3]float64 `json:"calibration"`
+type gnss struct {
+	Device string `json:"device"`
+	Baud   int    `json:"baud"`
 }
 
 type monitor struct {
@@ -38,11 +37,17 @@ type server struct {
 	Debug bool   `json:"debug"`
 }
 
+type logger struct {
+	Level string `json:"level" validate:"required,oneof=info warn error fatal"`
+	Path  string `json:"path"`
+}
+
 type Config struct {
-	Station   station   `json:"station_settings"`
-	PanTilt   pan_tilt  `json:"pantilt_settings"`
-	Reference reference `json:"reference_settings"`
-	Monitor   monitor   `json:"monitor_settings"`
-	Database  database  `json:"database_settings"`
-	Server    server    `json:"server_settings"`
+	Station  station  `json:"station_settings"`
+	PanTilt  pan_tilt `json:"pantilt_settings"`
+	GNSS     gnss     `json:"gnss_settings"`
+	Monitor  monitor  `json:"monitor_settings"`
+	Database database `json:"database_settings"`
+	Server   server   `json:"server_settings"`
+	Logger   logger   `json:"logger_settings"`
 }

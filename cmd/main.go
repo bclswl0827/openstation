@@ -3,28 +3,27 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
+	"github.com/bclswl0827/openstation/cleaners"
+	cleaner_database "github.com/bclswl0827/openstation/cleaners/database"
+	cleaner_peripherals "github.com/bclswl0827/openstation/cleaners/peripherals"
 	"github.com/bclswl0827/openstation/config"
 	"github.com/bclswl0827/openstation/drivers/dao"
-	"github.com/bclswl0827/openstation/features"
-	"github.com/bclswl0827/openstation/features/monitor"
-	"github.com/bclswl0827/openstation/features/pan_tilt"
-	"github.com/bclswl0827/openstation/features/reference"
 	"github.com/bclswl0827/openstation/graph"
 	"github.com/bclswl0827/openstation/server"
+	"github.com/bclswl0827/openstation/services"
+	"github.com/bclswl0827/openstation/startups"
+	startup_alignment "github.com/bclswl0827/openstation/startups/alignment"
+	startup_peripherals "github.com/bclswl0827/openstation/startups/peripherals"
+	"github.com/bclswl0827/openstation/utils/logger"
 	"github.com/common-nighthawk/go-figure"
-	"github.com/fatih/color"
-	"github.com/sirupsen/logrus"
-	messagebus "github.com/vardius/message-bus"
+	"go.uber.org/dig"
 )
 
-func parseCommandLine(conf *config.Config) error {
-	var args arguments
+func parseCommandLine() (args arguments) {
 	flag.StringVar(&args.Path, "config", "./config.json", "Path to config file")
 	flag.BoolVar(&args.Version, "version", false, "Print version information")
 	flag.Parse()
@@ -34,29 +33,55 @@ func parseCommandLine(conf *config.Config) error {
 		os.Exit(0)
 	}
 
-	err := conf.Read(args.Path)
-	if err != nil {
-		return err
+	return args
+}
+
+func setupLogger(level, path string) {
+	var err error
+	switch level {
+	case "info":
+		err = logger.SetLevel(logger.INFO)
+	case "warn":
+		err = logger.SetLevel(logger.WARN)
+	case "error":
+		err = logger.SetLevel(logger.ERROR)
+	case "fatal":
+		err = logger.SetLevel(logger.FATAL)
+	default:
+		err = logger.SetLevel(logger.INFO)
 	}
 
-	return conf.Validate()
+	if err != nil {
+		logger.GetLogger(main).Fatalln(err)
+	}
+
+	if len(path) != 0 {
+		logger.SetFile(path)
+	}
 }
 
 func init() {
-	w := color.New(color.FgHiCyan).SprintFunc()
 	t := figure.NewFigure("OpenStation", "standard", true).String()
-	fmt.Println(w(t))
+	fmt.Println(t)
+	logger.Initialize()
 }
 
 func main() {
-	// Read configuration
+	args := parseCommandLine()
+
 	var conf config.Config
-	err := parseCommandLine(&conf)
+	err := conf.Read(args.Path)
 	if err != nil {
-		logrus.Fatalf("main: %v\n", err)
-	} else {
-		logrus.Info("main: global configuration has been loaded")
+		logger.GetLogger(main).Fatalln(err)
 	}
+	err = conf.Validate()
+	if err != nil {
+		logger.GetLogger(main).Fatalln(err)
+	}
+
+	// Setup logger with given configuration
+	setupLogger(conf.Logger.Level, conf.Logger.Path)
+	logger.GetLogger(main).Info("global configuration has been loaded")
 
 	// Connect to database
 	databaseConn, err := dao.Open(
@@ -66,70 +91,105 @@ func main() {
 		conf.Database.Username,
 		conf.Database.Password,
 		conf.Database.Database,
-		30*time.Second,
 	)
 	if err != nil {
-		logrus.Fatalf("main: %v\n", err)
-	} else {
-		logrus.Info("main: database connection has been established")
+		logger.GetLogger(main).Fatalln(err)
 	}
+	logger.GetLogger(main).Info("database connection has been established")
 
 	// Migrate database schema
 	err = migrate(databaseConn)
 	if err != nil {
-		logrus.Fatalf("main: %v\n", err)
-	} else {
-		logrus.Info("main: database schema has been migrated")
+		logger.GetLogger(main).Fatalln(err)
 	}
+	logger.GetLogger(main).Info("database schema has been migrated")
 
-	// Initialize system state
-	var State features.State
-	State.Initialize()
+	// Create dependency injection container
+	depsContainer := dig.New()
 
-	// Initialize message bus
-	messageBus := messagebus.New(math.MaxUint8)
-	logrus.Info("main: message bus has been initialized")
-
-	// Register features
-	regFeatures := []features.Feature{
-		&monitor.Monitor{},
-		&pan_tilt.PanTilt{},
-		&reference.Reference{},
+	// Setup cleaner tasks for graceful shutdown
+	cleanerTasks := []cleaners.CleanerTask{
+		&cleaner_peripherals.PeripheralsCleanerTask{},
+		&cleaner_database.DatabaseCleanerTask{},
 	}
-	featureOptions := features.Options{
+	cleanerOptions := &cleaners.Options{
 		Config:     &conf,
-		State:      &State,
 		Database:   databaseConn,
-		MessageBus: messageBus,
+		Dependency: depsContainer,
 	}
-	for _, s := range regFeatures {
-		go s.Start(&featureOptions)
+	runCleanerTasks := func() {
+		for _, t := range cleanerTasks {
+			taskName := t.GetTaskName()
+			logger.GetLogger(taskName).Infof("running cleaner task for %s", taskName)
+			t.Execute(cleanerOptions)
+		}
+	}
+	defer runCleanerTasks()
+
+	// Setup startup tasks and provide dependencies
+	startupTasks := []startups.StartupTask{
+		&startup_peripherals.PeripheralsStartupTask{},
+		&startup_alignment.AlignmentStartupTask{},
+	}
+	startupOptions := &startups.Options{
+		Config:   &conf,
+		Database: databaseConn,
+	}
+	for _, t := range startupTasks {
+		taskName := t.GetTaskName()
+		err := t.Provide(depsContainer, startupOptions)
+		if err != nil {
+			logger.GetLogger(taskName).Errorln(err)
+			runCleanerTasks()
+			os.Exit(1)
+		}
+		err = t.Execute(startupOptions)
+		if err != nil {
+			logger.GetLogger(taskName).Errorln(err)
+			runCleanerTasks()
+			os.Exit(1)
+		}
 	}
 
-	// Start HTTP server
-	go server.StartDaemon(
+	// Setup background services
+	regServices := []services.Service{}
+	serviceOptions := &services.Options{
+		Config:     &conf,
+		Database:   databaseConn,
+		Dependency: depsContainer,
+		OsSignal:   make(chan os.Signal, 1),
+	}
+	for _, s := range regServices {
+		go s.Start(serviceOptions)
+	}
+
+	// Start HTTP web server
+	graphResolver := &graph.Resolver{
+		Config:     &conf,
+		Database:   databaseConn,
+		Dependency: depsContainer,
+	}
+	go server.Start(
 		conf.Server.Host,
 		conf.Server.Port,
 		&server.Options{
-			Gzip:        GZIP_LEVEL,
-			WebPrefix:   WEB_PREFIX,
-			ApiEndpoint: API_ENDPOINT,
-			CORS:        conf.Server.CORS,
-			Debug:       conf.Server.Debug,
-			GraphResolver: &graph.Resolver{
-				Options: featureOptions,
-			},
+			Gzip:          GZIP_LEVEL,
+			WebPrefix:     WEB_PREFIX,
+			ApiEndpoint:   API_ENDPOINT,
+			CORS:          conf.Server.CORS,
+			Debug:         conf.Server.Debug,
+			GraphResolver: graphResolver,
 		},
 	)
-	logrus.Info("main: http server is listening on ", conf.Server.Host, ":", conf.Server.Port)
+	logger.GetLogger(main).Infof("web server is listening on %s:%d", conf.Server.Host, conf.Server.Port)
 
 	// Receive interrupt signals
-	signal.Notify(State.SigCh, os.Interrupt, syscall.SIGTERM)
-	<-State.SigCh
+	signal.Notify(serviceOptions.OsSignal, os.Interrupt, syscall.SIGTERM)
+	<-serviceOptions.OsSignal
 
-	// Wait for all features to stop
-	logrus.Info("main: daemon is shutting down")
-	for _, s := range regFeatures {
-		s.Terminate(&featureOptions)
+	// Stop services gracefully
+	logger.GetLogger(main).Info("services are shutting down, please wait")
+	for _, s := range regServices {
+		s.Stop(serviceOptions)
 	}
 }
