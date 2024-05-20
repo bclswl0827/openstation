@@ -12,8 +12,9 @@ type pan_tilt struct {
 }
 
 type gnss struct {
-	Device string `json:"device"`
-	Baud   int    `json:"baud"`
+	Device   string  `json:"device"`
+	Baud     int     `json:"baud"`
+	Baseline float64 `json:"baseline"`
 }
 
 type monitor struct {

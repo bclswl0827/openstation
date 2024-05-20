@@ -10,7 +10,8 @@
     },
     "gnss_settings": {
         "device": "/dev/ttyS5",
-        "baudrate": 9600
+        "baudrate": 9600,
+        "baseline": 1.2
     },
     "monitor_settings": {
         "device": "/dev/ttyS6",
@@ -30,7 +31,7 @@
         "cors": true,
         "debug": true
     },
-    "logger_settings":{
+    "logger_settings": {
         "level": "info",
         "path": "/home/yuki/openstation.log"
     }

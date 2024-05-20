@@ -14,9 +14,9 @@ type PanTiltDependency struct {
 type PanTiltDriver interface {
 	IsAvailable(deps *PanTiltDependency) bool
 	Init(deps *PanTiltDependency) error
-	Reset(deps *PanTiltDependency, sig chan bool) error
+	Reset(deps *PanTiltDependency, sig chan<- bool) error
 	GetPan(deps *PanTiltDependency) error
 	GetTilt(deps *PanTiltDependency) error
-	SetPan(deps *PanTiltDependency, newPan float64, sig chan bool) error
-	SetTilt(deps *PanTiltDependency, newTilt float64, sig chan bool) error
+	SetPan(deps *PanTiltDependency, newPan float64, sig chan<- bool) error
+	SetTilt(deps *PanTiltDependency, newTilt float64, sig chan<- bool) error
 }

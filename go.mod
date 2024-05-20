@@ -17,7 +17,6 @@ require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/sirupsen/logrus v1.9.3
 	github.com/vektah/gqlparser/v2 v2.5.11
-	github.com/westphae/geomag v1.0.2
 	go.uber.org/dig v1.17.1
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	gorm.io/driver/mysql v1.5.6

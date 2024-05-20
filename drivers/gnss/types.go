@@ -2,15 +2,21 @@ package gnss
 
 import (
 	"io"
+	"time"
 )
 
+type GnssTime struct {
+	BaseTime time.Time
+	RefTime  time.Time
+}
+
 type GnssState struct {
-	IsPositionValid  bool
-	IsTimestampValid bool
-	Timestamp        int64
-	Latitude         float64
-	Longitude        float64
-	TrueAzimuth      float64
+	IsDataValid bool
+	DataQuality int
+	Latitude    float64
+	Longitude   float64
+	TrueAzimuth float64
+	Time        GnssTime
 }
 
 type GnssDependency struct {
@@ -19,5 +25,7 @@ type GnssDependency struct {
 }
 
 type GnssDriver interface {
+	IsAvailable(deps *GnssDependency) bool
+	SetBaseline(deps *GnssDependency, baseline float64) error
 	GetState(deps *GnssDependency) error
 }

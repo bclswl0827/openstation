@@ -51,7 +51,7 @@ func (d *PanTiltDriverImpl) Init(deps *PanTiltDependency) error {
 	return nil
 }
 
-func (d *PanTiltDriverImpl) Reset(deps *PanTiltDependency, sig chan bool) error {
+func (d *PanTiltDriverImpl) Reset(deps *PanTiltDependency, sig chan<- bool) error {
 	if deps == nil {
 		return fmt.Errorf("dependency is not provided")
 	}
@@ -117,7 +117,7 @@ func (d *PanTiltDriverImpl) GetPan(deps *PanTiltDependency) error {
 	return nil
 }
 
-func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, sig chan bool) error {
+func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, sig chan<- bool) error {
 	if deps == nil {
 		return fmt.Errorf("dependency is not provided")
 	}
@@ -206,7 +206,7 @@ func (d *PanTiltDriverImpl) GetTilt(deps *PanTiltDependency) error {
 	return nil
 }
 
-func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, sig chan bool) error {
+func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, sig chan<- bool) error {
 	if deps == nil {
 		return fmt.Errorf("dependency is not provided")
 	}

@@ -21,5 +21,8 @@ func Open(device string, baud int) (io.ReadWriteCloser, error) {
 		return nil, fmt.Errorf("failed to open %s: %w", device, err)
 	}
 
+	port.SetDTR(true)
+	port.SetRTS(true)
+
 	return port, nil
 }

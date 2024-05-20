@@ -143,7 +143,7 @@ func main() {
 			runCleanerTasks()
 			os.Exit(1)
 		}
-		err = t.Execute(startupOptions)
+		err = t.Execute(depsContainer, startupOptions)
 		if err != nil {
 			logger.GetLogger(taskName).Errorln(err)
 			runCleanerTasks()
