@@ -7,6 +7,6 @@ const (
 )
 
 type arguments struct {
-	Path    string // Path to config file
-	Version bool   // Show version information
+	Path    string
+	Version bool
 }

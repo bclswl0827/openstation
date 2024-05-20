@@ -10,15 +10,15 @@ import (
 
 func (p *PeripheralsCleanerTask) Execute(options *cleaners.Options) {
 	// Close monitor device
-	options.Dependency.Invoke(func(monitor monitor.MonitorDependency) {
+	options.Dependency.Invoke(func(monitor *monitor.MonitorDependency) {
 		serial.Close(monitor.Port)
 	})
 	// Close pan-tilt device
-	options.Dependency.Invoke(func(panTilt pan_tilt.PanTiltDependency) {
+	options.Dependency.Invoke(func(panTilt *pan_tilt.PanTiltDependency) {
 		serial.Close(panTilt.Port)
 	})
 	// Close GNSS device
-	options.Dependency.Invoke(func(gnss gnss.GnssDependency) {
+	options.Dependency.Invoke(func(gnss *gnss.GnssDependency) {
 		serial.Close(gnss.Port)
 	})
 }

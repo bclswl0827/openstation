@@ -13,6 +13,6 @@ type Options struct {
 
 type StartupTask interface {
 	Provide(*dig.Container, *Options) error
-	Execute(*Options) error
+	Execute(*dig.Container, *Options) error
 	GetTaskName() string
 }

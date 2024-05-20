@@ -20,8 +20,8 @@ func (t *PeripheralsStartupTask) Provide(container *dig.Container, options *star
 		return err
 	}
 
-	err = container.Provide(func() monitor.MonitorDependency {
-		return monitor.MonitorDependency{
+	err = container.Provide(func() *monitor.MonitorDependency {
+		return &monitor.MonitorDependency{
 			Port:  monitorPort,
 			State: &monitor.MonitorState{},
 		}
@@ -40,8 +40,8 @@ func (t *PeripheralsStartupTask) Provide(container *dig.Container, options *star
 		return err
 	}
 
-	err = container.Provide(func() pan_tilt.PanTiltDependency {
-		return pan_tilt.PanTiltDependency{Port: panTiltPort}
+	err = container.Provide(func() *pan_tilt.PanTiltDependency {
+		return &pan_tilt.PanTiltDependency{Port: panTiltPort}
 	})
 	if err != nil {
 		return err
@@ -57,8 +57,8 @@ func (t *PeripheralsStartupTask) Provide(container *dig.Container, options *star
 		return err
 	}
 
-	err = container.Provide(func() gnss.GnssDependency {
-		return gnss.GnssDependency{
+	err = container.Provide(func() *gnss.GnssDependency {
+		return &gnss.GnssDependency{
 			Port:  gnssPort,
 			State: &gnss.GnssState{},
 		}

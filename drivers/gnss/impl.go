@@ -1,98 +1,254 @@
 package gnss
 
 import (
-	"bytes"
-	"encoding/binary"
+	"bufio"
+	"errors"
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 	"time"
-	"unsafe"
 
 	"github.com/bclswl0827/openstation/drivers/serial"
-	"github.com/westphae/geomag/pkg/egm96"
-	"github.com/westphae/geomag/pkg/wmm"
 )
 
-type ReferenceDriverImpl struct {
-	Timestamp       int64
-	Coordinates     [2]float64
-	Magnetometer    [3]int16
-	MagnetometerASA [3]int8
-	States          [2]uint8
+// Hardware driver to LC02H GNSS module
+type GnssDriverImpl struct {
+	rmc     string
+	pqtmtar string
 }
 
-func (r *ReferenceDriverImpl) isChecksumValid() error {
-	calcChecksum := uint8(0)
-	for i := 0; i < len(r.Magnetometer); i++ {
-		bytes := (*[2]byte)(unsafe.Pointer(&r.Magnetometer[i]))[:]
-		for j := 0; j < int(unsafe.Sizeof(int16(0))); j++ {
-			calcChecksum ^= bytes[j]
-		}
+func (r *GnssDriverImpl) parseRMC(isDataValid *bool, latitude, longitude *float64, gnssTime *GnssTime) error {
+	if len(r.rmc) == 0 {
+		return errors.New("empty RMC message")
 	}
 
-	recvChecksum := r.States[1]
-	if recvChecksum != calcChecksum {
-		return fmt.Errorf("invalid checksum: expected %d, got %d", calcChecksum, recvChecksum)
+	fields := strings.Split(r.rmc, ",")
+	if len(fields) != 14 {
+		return errors.New("invalid RMC message")
+	}
+
+	// Validity flag: A = valid, V = invalid
+	*isDataValid = fields[2] == "A"
+	if !*isDataValid {
+		return nil
+	}
+
+	// Get system datetime as base time
+	gnssTime.BaseTime = time.Now().UTC()
+
+	// Get GNSS datetime as reference time
+	timeStr, dateStr := fields[1], fields[9]
+	day, err := strconv.Atoi(dateStr[0:2])
+	if err != nil {
+		return err
+	}
+	month, err := strconv.Atoi(dateStr[2:4])
+	if err != nil {
+		return err
+	}
+	year, err := strconv.Atoi(dateStr[4:6])
+	if err != nil {
+		return err
+	}
+	hour, err := strconv.Atoi(timeStr[0:2])
+	if err != nil {
+		return err
+	}
+	minute, err := strconv.Atoi(timeStr[2:4])
+	if err != nil {
+		return err
+	}
+	second, err := strconv.Atoi(timeStr[4:6])
+	if err != nil {
+		return err
+	}
+	millisecond, err := strconv.Atoi(timeStr[7:])
+	if err != nil {
+		return err
+	}
+	gnssTime.RefTime = time.Date(
+		2000+year, time.Month(month), day,
+		hour, minute, second, millisecond*int(time.Millisecond),
+		time.UTC,
+	)
+
+	// Get latitude in decimal degrees
+	lat, err := strconv.ParseFloat(fields[3], 64)
+	if err != nil {
+		return err
+	}
+	latDeg := int(lat / 100)
+	latMin := lat - float64(latDeg*100)
+	*latitude = float64(latDeg) + latMin/60
+	if fields[4] == "S" {
+		*latitude = -*latitude
+	}
+
+	// Get longitude in decimal degrees
+	lon, err := strconv.ParseFloat(fields[5], 64)
+	if err != nil {
+		return err
+	}
+	lonDeg := int(lon / 100)
+	lonMin := lon - float64(lonDeg*100)
+	*longitude = float64(lonDeg) + lonMin/60
+	if fields[6] == "W" {
+		*longitude = -*longitude
 	}
 
 	return nil
 }
 
-func (r *ReferenceDriverImpl) GetState(deps *GnssDependency) error {
+func (r *GnssDriverImpl) parsePQTMTAR(DataQuality *int, trueAzimuth *float64) error {
+	if len(r.pqtmtar) == 0 {
+		return errors.New("empty PQTMTAR message")
+	}
+
+	fields := strings.Split(r.pqtmtar, ",")
+	if len(fields) != 13 {
+		return errors.New("invalid PQTMTAR message")
+	}
+
+	// Data quality: 0 = not available, 4 = RTK fixed, 6 = RTK float
+	quality, err := strconv.Atoi(fields[3])
+	if err != nil {
+		return err
+	}
+	*DataQuality = quality
+
+	if quality == 4 || quality == 6 {
+		azimuth, err := strconv.ParseFloat(fields[8], 64)
+		if err != nil {
+			return err
+		}
+		*trueAzimuth = azimuth
+	}
+
+	return nil
+}
+
+func (r *GnssDriverImpl) getMessageChecksum(msg string) string {
+	var checksum byte
+	for i := 1; i < len(msg); i++ {
+		checksum ^= byte(msg[i])
+	}
+
+	return fmt.Sprintf("%02X", checksum)
+}
+
+func (r *GnssDriverImpl) isMessageValid(msg string) bool {
+	starIndex := strings.LastIndex(msg, "*")
+	if starIndex == -1 || starIndex+3 != len(msg) {
+		return false
+	}
+
+	origChecksum, err := strconv.ParseInt(msg[starIndex+1:], 16, 8)
+	if err != nil {
+		return false
+	}
+
+	calcChecksumStr := r.getMessageChecksum(msg[:starIndex])
+	calcChecksum, err := strconv.ParseInt(calcChecksumStr, 16, 8)
+	if err != nil {
+		return false
+	}
+
+	return calcChecksum == origChecksum
+}
+
+func (r *GnssDriverImpl) getMessages(reader *bufio.Reader, read_attempts int) error {
+	var (
+		rmc     string
+		pqtmtar string
+	)
+	for ; read_attempts > 0; read_attempts-- {
+		line, _ := reader.ReadString('\n')
+		if len(line) == 0 {
+			continue
+		}
+
+		// Strip poential \r and \n characters
+		line = strings.ReplaceAll(line, "\r", "")
+		line = strings.ReplaceAll(line, "\n", "")
+
+		if !r.isMessageValid(line) {
+			continue
+		}
+
+		if strings.Contains(line, "RMC") {
+			rmc = line
+		} else if strings.Contains(line, "PQTMTAR") {
+			pqtmtar = line
+		}
+
+		if rmc != "" && pqtmtar != "" {
+			break
+		}
+	}
+
+	if read_attempts == 0 {
+		return fmt.Errorf("read attempts exhausted")
+	}
+
+	r.rmc = rmc
+	r.pqtmtar = pqtmtar
+	return nil
+}
+
+func (r *GnssDriverImpl) GetState(deps *GnssDependency) error {
 	if deps == nil {
 		return fmt.Errorf("dependency is not provided")
 	}
 
-	SYNC_WORD := []byte{0x1F, 0x2E}
-	err := serial.Filter(deps.Port, SYNC_WORD, math.MaxUint8)
+	reader := bufio.NewReader(deps.Port)
+	err := r.getMessages(reader, math.MaxUint8)
 	if err != nil {
 		return err
 	}
 
-	buffer := make([]byte, unsafe.Sizeof(ReferenceDriverImpl{}))
-	n, err := serial.Read(deps.Port, buffer, 2*time.Second)
+	err = r.parseRMC(&deps.State.IsDataValid, &deps.State.Latitude, &deps.State.Longitude, &deps.State.Time)
 	if err != nil {
 		return err
 	}
 
-	err = binary.Read(bytes.NewReader(buffer[:n]), binary.LittleEndian, r)
+	err = r.parsePQTMTAR(&deps.State.DataQuality, &deps.State.TrueAzimuth)
 	if err != nil {
 		return err
 	}
 
-	err = r.isChecksumValid()
+	return nil
+}
+
+func (r *GnssDriverImpl) IsAvailable(deps *GnssDependency) bool {
+	_, err := serial.Write(deps.Port, []byte("$PQTMVERNO*58\r\n"))
+	if err != nil {
+		return false
+	}
+
+	reader := bufio.NewReader(deps.Port)
+	for i := math.MaxInt8; i > 0; i-- {
+		line, _ := reader.ReadString('\n')
+		if strings.Contains(line, "PQTMVERNO") {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (r *GnssDriverImpl) SetBaseline(deps *GnssDependency, baseline float64) error {
+	if baseline < 0.2 || baseline > 1.0 {
+		return fmt.Errorf("invalid baseline value: %.3f", baseline)
+	}
+
+	command := fmt.Sprintf("$PQTMCFGBLD,W,%.3f", baseline)
+	checksum := r.getMessageChecksum(command)
+	_, err := serial.Write(
+		deps.Port, []byte(fmt.Sprintf("%s*%s\r\n", command, checksum)),
+	)
 	if err != nil {
 		return err
-	}
-
-	deps.State.IsTimestampValid, deps.State.IsPositionValid = r.States[0]&0x01 == 1, r.States[0]>>1 == 1
-	deps.State.Timestamp, deps.State.Latitude, deps.State.Longitude = r.Timestamp, float64(r.Coordinates[0]), float64(r.Coordinates[1])
-
-	mag_asa_x, mag_asa_y, mag_asa_z := r.MagnetometerASA[0], r.MagnetometerASA[1], r.MagnetometerASA[2]
-	mag_raw_x, mag_raw_y, mag_raw_z := float64(r.Magnetometer[0]), float64(r.Magnetometer[1]), float64(r.Magnetometer[2])
-	if mag_asa_x != 0 {
-		mag_raw_x *= ((float64(mag_asa_x) / 128) + 1)
-	}
-	if mag_asa_y != 0 {
-		mag_raw_y *= ((float64(mag_asa_y) / 128) + 1)
-	}
-	if mag_asa_z != 0 {
-		mag_raw_z *= ((float64(mag_asa_z) / 128) + 1)
-	}
-
-	// // If the magnetometer calibration is provided, apply it
-	// if calib[0] != 0 && calib[1] != 0 && calib[2] != 0 {
-	// 	mag_x -= calib[0]
-	// 	mag_y -= calib[1]
-	// 	mag_z -= calib[2]
-	// }
-
-	if deps.State.IsPositionValid {
-		timeObj := time.UnixMilli(deps.State.Timestamp)
-		location := egm96.NewLocationGeodetic(deps.State.Latitude, deps.State.Longitude, 0)
-		decimalYear := float64(timeObj.Year()) + float64(timeObj.Month())/10
-		epochYear := wmm.DecimalYear(decimalYear).ToTime()
-		wmm.CalculateWMMMagneticField(location, epochYear)
 	}
 
 	return nil
