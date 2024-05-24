@@ -2,18 +2,13 @@
 
 package model
 
-type Compass struct {
-	HasCalibrated bool    `json:"hasCalibrated"`
-	MagAzimuth    float64 `json:"magAzimuth"`
-	Declination   float64 `json:"declination"`
-}
-
 type Mutation struct {
 }
 
 type PanTilt struct {
-	IsBusy       bool `json:"isBusy"`
-	HasFindNorth bool `json:"hasFindNorth"`
+	CurrentPan  float64 `json:"currentPan"`
+	CurrentTilt float64 `json:"currentTilt"`
+	NorthOffset float64 `json:"northOffset"`
 }
 
 type Query struct {
@@ -43,10 +38,11 @@ type System struct {
 }
 
 type TLEData struct {
-	ID         int    `json:"id"`
-	Name       string `json:"name"`
-	Line1      string `json:"line_1"`
-	Line2      string `json:"line_2"`
-	Expired    bool   `json:"expired"`
-	LastUpdate int    `json:"lastUpdate"`
+	ID            int    `json:"id"`
+	Name          string `json:"name"`
+	Line1         string `json:"line_1"`
+	Line2         string `json:"line_2"`
+	Expired       bool   `json:"expired"`
+	LastUpdate    int    `json:"lastUpdate"`
+	Geostationary bool   `json:"geostationary"`
 }

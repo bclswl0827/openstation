@@ -10,15 +10,10 @@ type Station {
     taskCountdown: Int!
 }
 
-type Compass {
-    hasCalibrated: Boolean!
-    magAzimuth: Float!
-    declination: Float!
-}
-
 type PanTilt {
-    isBusy: Boolean!
-    hasFindNorth: Boolean!
+    currentPan: Float!
+    currentTilt: Float!
+    northOffset: Float!
 }
 
 type System {
@@ -39,26 +34,22 @@ type TLEData {
     line_2: String!
     expired: Boolean!
     lastUpdate: Int!
+    geostationary: Boolean!
 }
 
 type Query {
     # Station information
     GetStation: Station!
-    # Pan-Tilt information
     GetPanTilt: PanTilt!
-    # Compass information
-    GetCompass: Compass!
-    # Current OS information
     GetSystem: System!
     # Satellite TLEs
-    GetAllTLEs: [TLEData]!
+    GetAllTLEId: [Int]!
     GetTLEById(id: Int!): TLEData
 }
 
 type Mutation {
     # Pan-Tilt control
-    SetPanTiltToAngle(pan: Float!, tilt: Float!): Boolean!
-    SetPanTiltToMagAzimuth(magAzimuth: Float!): Boolean!
+    SetPanTiltToAngle(newPan: Float!, newTilt: Float!): Boolean!
     SetPanTiltToNorth: Boolean!
     # Satellite TLEs
     SetAllTLEs(tleData: [String!]!): Boolean!

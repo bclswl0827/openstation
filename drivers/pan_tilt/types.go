@@ -4,6 +4,13 @@ import "io"
 
 const ERROR_THRESHOLD = 0.3 // 0.3 degree error threshold
 
+const (
+	MAX_PAN  = 359
+	MIN_PAN  = 0
+	MAX_TILT = 90
+	MIN_TILT = 5
+)
+
 type PanTiltDependency struct {
 	Port        io.ReadWriteCloser
 	CurrentPan  float64

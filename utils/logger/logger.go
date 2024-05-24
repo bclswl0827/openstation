@@ -9,9 +9,9 @@ import (
 )
 
 func GetLogger(x any) *logrus.Entry {
-	if _, ok := x.(string); ok {
+	if v, ok := x.(string); ok {
 		return logrus.WithFields(logrus.Fields{
-			"module": strings.ToLower(x.(string)),
+			"module": strings.ToLower(v),
 		})
 	}
 

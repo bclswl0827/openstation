@@ -5,16 +5,16 @@
         "location": "北京"
     },
     "pantilt_settings": {
-        "device": "/dev/ttyS4",
+        "device": "/dev/ttyUSB2",
         "baudrate": 9600
     },
     "gnss_settings": {
-        "device": "/dev/ttyS5",
-        "baudrate": 9600,
-        "baseline": 1.2
+        "device": "/dev/ttyUSB1",
+        "baudrate": 115200,
+        "baseline": 1.0
     },
     "monitor_settings": {
-        "device": "/dev/ttyS6",
+        "device": "/dev/ttyUSB0",
         "baudrate": 9600
     },
     "database_settings": {

@@ -1,6 +1,7 @@
 package pan_tilt
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"time"
@@ -31,7 +32,7 @@ func (d *PanTiltDriverImpl) IsAvailable(deps *PanTiltDependency) bool {
 
 func (d *PanTiltDriverImpl) Init(deps *PanTiltDependency) error {
 	if deps == nil {
-		return fmt.Errorf("dependency is not provided")
+		return errors.New("dependency is not provided")
 	}
 
 	sig := make(chan bool)
@@ -53,7 +54,7 @@ func (d *PanTiltDriverImpl) Init(deps *PanTiltDependency) error {
 
 func (d *PanTiltDriverImpl) Reset(deps *PanTiltDependency, sig chan<- bool) error {
 	if deps == nil {
-		return fmt.Errorf("dependency is not provided")
+		return errors.New("dependency is not provided")
 	}
 
 	resetCmd := []byte{SLAVE_ADDR, 0x00, 0x0F, 0x00, 0x00}
@@ -67,10 +68,10 @@ func (d *PanTiltDriverImpl) Reset(deps *PanTiltDependency, sig chan<- bool) erro
 		return err
 	}
 
-	// Reset takes approximately 130 seconds
+	// Reset takes approximately 120 seconds
 	if sig != nil {
 		go func() {
-			time.Sleep(130 * time.Second)
+			time.Sleep(120 * time.Second)
 			sig <- true
 		}()
 	}
@@ -80,7 +81,7 @@ func (d *PanTiltDriverImpl) Reset(deps *PanTiltDependency, sig chan<- bool) erro
 
 func (d *PanTiltDriverImpl) GetPan(deps *PanTiltDependency) error {
 	if deps == nil {
-		return fmt.Errorf("dependency is not provided")
+		return errors.New("dependency is not provided")
 	}
 
 	// To ensure next command is not sent too early
@@ -119,7 +120,16 @@ func (d *PanTiltDriverImpl) GetPan(deps *PanTiltDependency) error {
 
 func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, sig chan<- bool) error {
 	if deps == nil {
-		return fmt.Errorf("dependency is not provided")
+		return errors.New("dependency is not provided")
+	}
+
+	if newPan > MAX_PAN || newPan < MIN_PAN {
+		return fmt.Errorf("pan angle must be between %d and %d degrees", MIN_PAN, MAX_PAN)
+	}
+
+	// Calculate encoded pan with north offset
+	if deps.NorthOffset != 0 {
+		newPan = 360 - deps.NorthOffset + newPan
 	}
 
 	encodedPan := int(newPan * 100)
@@ -162,7 +172,7 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, sig 
 
 func (d *PanTiltDriverImpl) GetTilt(deps *PanTiltDependency) error {
 	if deps == nil {
-		return fmt.Errorf("dependency is not provided")
+		return errors.New("dependency is not provided")
 	}
 
 	// To ensure next command is not sent too early
@@ -208,13 +218,11 @@ func (d *PanTiltDriverImpl) GetTilt(deps *PanTiltDependency) error {
 
 func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, sig chan<- bool) error {
 	if deps == nil {
-		return fmt.Errorf("dependency is not provided")
+		return errors.New("dependency is not provided")
 	}
 
-	if newTilt < 5 {
-		return fmt.Errorf("tilt angle must be greater than or equal to 5 degrees")
-	} else if newTilt > 90 {
-		return fmt.Errorf("tilt angle must be less than or equal to 90 degrees")
+	if newTilt < MIN_TILT || newTilt > MAX_TILT {
+		return fmt.Errorf("tilt angle must be between %d and %d degrees", MIN_TILT, MAX_TILT)
 	}
 
 	encodedTilt := int((90 - newTilt) * 100)

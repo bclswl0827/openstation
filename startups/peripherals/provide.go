@@ -13,7 +13,7 @@ func (t *PeripheralsStartupTask) Provide(container *dig.Container, options *star
 	// Monitor device
 	var (
 		monitorDeviceName = options.Config.Monitor.Device
-		monitorBaudRate   = options.Config.Monitor.Baud
+		monitorBaudRate   = options.Config.Monitor.BaudRate
 	)
 	monitorPort, err := serial.Open(monitorDeviceName, monitorBaudRate)
 	if err != nil {
@@ -33,7 +33,7 @@ func (t *PeripheralsStartupTask) Provide(container *dig.Container, options *star
 	// Pan-Tilt device
 	var (
 		panTiltDeviceName = options.Config.PanTilt.Device
-		panTiltBaudRate   = options.Config.PanTilt.Baud
+		panTiltBaudRate   = options.Config.PanTilt.BaudRate
 	)
 	panTiltPort, err := serial.Open(panTiltDeviceName, panTiltBaudRate)
 	if err != nil {
@@ -50,7 +50,7 @@ func (t *PeripheralsStartupTask) Provide(container *dig.Container, options *star
 	// GNSS device
 	var (
 		gnssDeviceName = options.Config.GNSS.Device
-		gnssBaudRate   = options.Config.GNSS.Baud
+		gnssBaudRate   = options.Config.GNSS.BaudRate
 	)
 	gnssPort, err := serial.Open(gnssDeviceName, gnssBaudRate)
 	if err != nil {
