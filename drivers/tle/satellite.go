@@ -84,6 +84,7 @@ func (s *Satellite) Parse(tle *TLE, observer *Observer) error {
 	s.Elevation = lookAngles.El * 180 / math.Pi
 	s.Range = lookAngles.Rg
 	s.Poloarization = polarization
+	s.Geostationary = lookAngles.Rg > 35786
 
 	if s.Elevation*180/math.Pi > 3 {
 		s.Observable = true

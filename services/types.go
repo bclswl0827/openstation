@@ -16,9 +16,8 @@ type Options struct {
 }
 
 type Service interface {
-	Start(*Options)
-	Stop(*Options)
-	OnStart(*Options)
-	OnStop(*Options)
-	OnError(error, bool, *Options)
+	Start(options *Options)
+	OnStart()
+	Stop(options *Options)
+	OnStop()
 }

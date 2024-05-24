@@ -20,6 +20,8 @@ func (t *PeripheralsStartupTask) Execute(depsContainer *dig.Container, options *
 
 	// Reset and initialize display screen
 	err := depsContainer.Invoke(func(deps *monitor.MonitorDependency) error {
+		logger.GetLogger(t.GetTaskName()).Infoln("resetting and initializing display screen")
+
 		err := monitorDriver.Reset(deps)
 		if err != nil {
 			return err
@@ -32,7 +34,7 @@ func (t *PeripheralsStartupTask) Execute(depsContainer *dig.Container, options *
 		// Display initializing screen
 		deps.State.Busy = true
 		deps.State.Error = true
-		return monitorDriver.Display(deps, "SYS INIT...", 0, 0)
+		return monitorDriver.Display(deps, "System Init...", 0, 0)
 	})
 	if err != nil {
 		return err
@@ -40,6 +42,8 @@ func (t *PeripheralsStartupTask) Execute(depsContainer *dig.Container, options *
 
 	// Reset PanTilt device, set both pan and tilt to 0
 	err = depsContainer.Invoke(func(deps *pan_tilt.PanTiltDependency) error {
+		logger.GetLogger(t.GetTaskName()).Infoln("resetting and initializing Pan-Tilt device")
+
 		for !panTiltDriver.IsAvailable(deps) {
 			logger.GetLogger(t.GetTaskName()).Infoln("waiting for Pan-Tilt to be available")
 			time.Sleep(time.Second)
@@ -60,12 +64,22 @@ func (t *PeripheralsStartupTask) Execute(depsContainer *dig.Container, options *
 
 	// Check if GNSS is available, wait for position and azimuth
 	err = depsContainer.Invoke(func(deps *gnss.GnssDependency) error {
-		for !gnssDriver.IsAvailable(deps) {
-			logger.GetLogger(t.GetTaskName()).Infoln("waiting for GNSS to be available")
+		logger.GetLogger(t.GetTaskName()).Infoln("setting up GNSS antenna baseline")
+		err := gnssDriver.SetBaseline(deps, options.Config.GNSS.Baseline)
+		if err != nil {
+			return err
+		}
+
+		for !deps.State.IsDataValid {
+			logger.GetLogger(t.GetTaskName()).Infoln("waiting for GNSS data to be valid")
+			err := gnssDriver.GetState(deps)
+			if err != nil {
+				return err
+			}
 			time.Sleep(time.Second)
 		}
 
-		return gnssDriver.SetBaseline(deps, options.Config.GNSS.Baseline)
+		return nil
 	})
 	if err != nil {
 		return err

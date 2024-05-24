@@ -7,7 +7,7 @@ import (
 )
 
 func migrate(databaseConn *gorm.DB) error {
-	err := dao.Migrate(databaseConn, table.TrackingTasks{})
+	err := dao.Migrate(databaseConn, table.TaskQueue{})
 	if err != nil {
 		return err
 	}

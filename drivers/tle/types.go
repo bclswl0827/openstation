@@ -27,4 +27,5 @@ type Satellite struct {
 	Elevation     float64
 	Poloarization float64
 	Observable    bool
+	Geostationary bool
 }

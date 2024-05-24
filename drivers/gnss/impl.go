@@ -220,23 +220,6 @@ func (r *GnssDriverImpl) GetState(deps *GnssDependency) error {
 	return nil
 }
 
-func (r *GnssDriverImpl) IsAvailable(deps *GnssDependency) bool {
-	_, err := serial.Write(deps.Port, []byte("$PQTMVERNO*58\r\n"))
-	if err != nil {
-		return false
-	}
-
-	reader := bufio.NewReader(deps.Port)
-	for i := math.MaxInt8; i > 0; i-- {
-		line, _ := reader.ReadString('\n')
-		if strings.Contains(line, "PQTMVERNO") {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (r *GnssDriverImpl) SetBaseline(deps *GnssDependency, baseline float64) error {
 	if baseline < 0.2 || baseline > 1.0 {
 		return fmt.Errorf("invalid baseline value: %.3f", baseline)

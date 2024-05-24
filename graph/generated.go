@@ -47,37 +47,30 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	Compass struct {
-		Declination   func(childComplexity int) int
-		HasCalibrated func(childComplexity int) int
-		MagAzimuth    func(childComplexity int) int
-	}
-
 	Mutation struct {
-		DeleteTLEByID          func(childComplexity int, id int) int
-		PurgeForecastRecords   func(childComplexity int) int
-		PurgeTLERecords        func(childComplexity int) int
-		PurgeTaskQueue         func(childComplexity int) int
-		RebootSystem           func(childComplexity int) int
-		SetAllTLEs             func(childComplexity int, tleData []string) int
-		SetPanTiltToAngle      func(childComplexity int, pan float64, tilt float64) int
-		SetPanTiltToMagAzimuth func(childComplexity int, magAzimuth float64) int
-		SetPanTiltToNorth      func(childComplexity int) int
-		UpdateTLEByID          func(childComplexity int, id int, tleData string) int
+		DeleteTLEByID        func(childComplexity int, id int) int
+		PurgeForecastRecords func(childComplexity int) int
+		PurgeTLERecords      func(childComplexity int) int
+		PurgeTaskQueue       func(childComplexity int) int
+		RebootSystem         func(childComplexity int) int
+		SetAllTLEs           func(childComplexity int, tleData []string) int
+		SetPanTiltToAngle    func(childComplexity int, newPan float64, newTilt float64) int
+		SetPanTiltToNorth    func(childComplexity int) int
+		UpdateTLEByID        func(childComplexity int, id int, tleData string) int
 	}
 
 	PanTilt struct {
-		HasFindNorth func(childComplexity int) int
-		IsBusy       func(childComplexity int) int
+		CurrentPan  func(childComplexity int) int
+		CurrentTilt func(childComplexity int) int
+		NorthOffset func(childComplexity int) int
 	}
 
 	Query struct {
-		GetAllTLEs func(childComplexity int) int
-		GetCompass func(childComplexity int) int
-		GetPanTilt func(childComplexity int) int
-		GetStation func(childComplexity int) int
-		GetSystem  func(childComplexity int) int
-		GetTLEByID func(childComplexity int, id int) int
+		GetAllTLEId func(childComplexity int) int
+		GetPanTilt  func(childComplexity int) int
+		GetStation  func(childComplexity int) int
+		GetSystem   func(childComplexity int) int
+		GetTLEByID  func(childComplexity int, id int) int
 	}
 
 	Station struct {
@@ -104,18 +97,18 @@ type ComplexityRoot struct {
 	}
 
 	TLEData struct {
-		Expired    func(childComplexity int) int
-		ID         func(childComplexity int) int
-		LastUpdate func(childComplexity int) int
-		Line1      func(childComplexity int) int
-		Line2      func(childComplexity int) int
-		Name       func(childComplexity int) int
+		Expired       func(childComplexity int) int
+		Geostationary func(childComplexity int) int
+		ID            func(childComplexity int) int
+		LastUpdate    func(childComplexity int) int
+		Line1         func(childComplexity int) int
+		Line2         func(childComplexity int) int
+		Name          func(childComplexity int) int
 	}
 }
 
 type MutationResolver interface {
-	SetPanTiltToAngle(ctx context.Context, pan float64, tilt float64) (bool, error)
-	SetPanTiltToMagAzimuth(ctx context.Context, magAzimuth float64) (bool, error)
+	SetPanTiltToAngle(ctx context.Context, newPan float64, newTilt float64) (bool, error)
 	SetPanTiltToNorth(ctx context.Context) (bool, error)
 	SetAllTLEs(ctx context.Context, tleData []string) (bool, error)
 	DeleteTLEByID(ctx context.Context, id int) (bool, error)
@@ -128,9 +121,8 @@ type MutationResolver interface {
 type QueryResolver interface {
 	GetStation(ctx context.Context) (*model.Station, error)
 	GetPanTilt(ctx context.Context) (*model.PanTilt, error)
-	GetCompass(ctx context.Context) (*model.Compass, error)
 	GetSystem(ctx context.Context) (*model.System, error)
-	GetAllTLEs(ctx context.Context) ([]*model.TLEData, error)
+	GetAllTLEId(ctx context.Context) ([]*int, error)
 	GetTLEByID(ctx context.Context, id int) (*model.TLEData, error)
 }
 
@@ -152,27 +144,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
-
-	case "Compass.declination":
-		if e.complexity.Compass.Declination == nil {
-			break
-		}
-
-		return e.complexity.Compass.Declination(childComplexity), true
-
-	case "Compass.hasCalibrated":
-		if e.complexity.Compass.HasCalibrated == nil {
-			break
-		}
-
-		return e.complexity.Compass.HasCalibrated(childComplexity), true
-
-	case "Compass.magAzimuth":
-		if e.complexity.Compass.MagAzimuth == nil {
-			break
-		}
-
-		return e.complexity.Compass.MagAzimuth(childComplexity), true
 
 	case "Mutation.DeleteTLEById":
 		if e.complexity.Mutation.DeleteTLEByID == nil {
@@ -236,19 +207,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SetPanTiltToAngle(childComplexity, args["pan"].(float64), args["tilt"].(float64)), true
-
-	case "Mutation.SetPanTiltToMagAzimuth":
-		if e.complexity.Mutation.SetPanTiltToMagAzimuth == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_SetPanTiltToMagAzimuth_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SetPanTiltToMagAzimuth(childComplexity, args["magAzimuth"].(float64)), true
+		return e.complexity.Mutation.SetPanTiltToAngle(childComplexity, args["newPan"].(float64), args["newTilt"].(float64)), true
 
 	case "Mutation.SetPanTiltToNorth":
 		if e.complexity.Mutation.SetPanTiltToNorth == nil {
@@ -269,33 +228,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateTLEByID(childComplexity, args["id"].(int), args["tleData"].(string)), true
 
-	case "PanTilt.hasFindNorth":
-		if e.complexity.PanTilt.HasFindNorth == nil {
+	case "PanTilt.currentPan":
+		if e.complexity.PanTilt.CurrentPan == nil {
 			break
 		}
 
-		return e.complexity.PanTilt.HasFindNorth(childComplexity), true
+		return e.complexity.PanTilt.CurrentPan(childComplexity), true
 
-	case "PanTilt.isBusy":
-		if e.complexity.PanTilt.IsBusy == nil {
+	case "PanTilt.currentTilt":
+		if e.complexity.PanTilt.CurrentTilt == nil {
 			break
 		}
 
-		return e.complexity.PanTilt.IsBusy(childComplexity), true
+		return e.complexity.PanTilt.CurrentTilt(childComplexity), true
 
-	case "Query.GetAllTLEs":
-		if e.complexity.Query.GetAllTLEs == nil {
+	case "PanTilt.northOffset":
+		if e.complexity.PanTilt.NorthOffset == nil {
 			break
 		}
 
-		return e.complexity.Query.GetAllTLEs(childComplexity), true
+		return e.complexity.PanTilt.NorthOffset(childComplexity), true
 
-	case "Query.GetCompass":
-		if e.complexity.Query.GetCompass == nil {
+	case "Query.GetAllTLEId":
+		if e.complexity.Query.GetAllTLEId == nil {
 			break
 		}
 
-		return e.complexity.Query.GetCompass(childComplexity), true
+		return e.complexity.Query.GetAllTLEId(childComplexity), true
 
 	case "Query.GetPanTilt":
 		if e.complexity.Query.GetPanTilt == nil {
@@ -455,6 +414,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TLEData.Expired(childComplexity), true
+
+	case "TLEData.geostationary":
+		if e.complexity.TLEData.Geostationary == nil {
+			break
+		}
+
+		return e.complexity.TLEData.Geostationary(childComplexity), true
 
 	case "TLEData.id":
 		if e.complexity.TLEData.ID == nil {
@@ -648,38 +614,23 @@ func (ec *executionContext) field_Mutation_SetPanTiltToAngle_args(ctx context.Co
 	var err error
 	args := map[string]interface{}{}
 	var arg0 float64
-	if tmp, ok := rawArgs["pan"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pan"))
+	if tmp, ok := rawArgs["newPan"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newPan"))
 		arg0, err = ec.unmarshalNFloat2float64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["pan"] = arg0
+	args["newPan"] = arg0
 	var arg1 float64
-	if tmp, ok := rawArgs["tilt"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tilt"))
+	if tmp, ok := rawArgs["newTilt"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newTilt"))
 		arg1, err = ec.unmarshalNFloat2float64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["tilt"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_SetPanTiltToMagAzimuth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 float64
-	if tmp, ok := rawArgs["magAzimuth"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("magAzimuth"))
-		arg0, err = ec.unmarshalNFloat2float64(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["magAzimuth"] = arg0
+	args["newTilt"] = arg1
 	return args, nil
 }
 
@@ -775,138 +726,6 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Compass_hasCalibrated(ctx context.Context, field graphql.CollectedField, obj *model.Compass) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Compass_hasCalibrated(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.HasCalibrated, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Compass_hasCalibrated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Compass",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Compass_magAzimuth(ctx context.Context, field graphql.CollectedField, obj *model.Compass) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Compass_magAzimuth(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MagAzimuth, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Compass_magAzimuth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Compass",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Float does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Compass_declination(ctx context.Context, field graphql.CollectedField, obj *model.Compass) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Compass_declination(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Declination, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Compass_declination(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Compass",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Float does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Mutation_SetPanTiltToAngle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_SetPanTiltToAngle(ctx, field)
 	if err != nil {
@@ -921,7 +740,7 @@ func (ec *executionContext) _Mutation_SetPanTiltToAngle(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SetPanTiltToAngle(rctx, fc.Args["pan"].(float64), fc.Args["tilt"].(float64))
+		return ec.resolvers.Mutation().SetPanTiltToAngle(rctx, fc.Args["newPan"].(float64), fc.Args["newTilt"].(float64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -956,61 +775,6 @@ func (ec *executionContext) fieldContext_Mutation_SetPanTiltToAngle(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_SetPanTiltToAngle_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_SetPanTiltToMagAzimuth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_SetPanTiltToMagAzimuth(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SetPanTiltToMagAzimuth(rctx, fc.Args["magAzimuth"].(float64))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_SetPanTiltToMagAzimuth(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_SetPanTiltToMagAzimuth_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -1402,8 +1166,8 @@ func (ec *executionContext) fieldContext_Mutation_PurgeForecastRecords(_ context
 	return fc, nil
 }
 
-func (ec *executionContext) _PanTilt_isBusy(ctx context.Context, field graphql.CollectedField, obj *model.PanTilt) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PanTilt_isBusy(ctx, field)
+func (ec *executionContext) _PanTilt_currentPan(ctx context.Context, field graphql.CollectedField, obj *model.PanTilt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PanTilt_currentPan(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1416,7 +1180,7 @@ func (ec *executionContext) _PanTilt_isBusy(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.IsBusy, nil
+		return obj.CurrentPan, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1428,26 +1192,26 @@ func (ec *executionContext) _PanTilt_isBusy(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.(float64)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PanTilt_isBusy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PanTilt_currentPan(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PanTilt",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			return nil, errors.New("field of type Float does not have child fields")
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _PanTilt_hasFindNorth(ctx context.Context, field graphql.CollectedField, obj *model.PanTilt) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PanTilt_hasFindNorth(ctx, field)
+func (ec *executionContext) _PanTilt_currentTilt(ctx context.Context, field graphql.CollectedField, obj *model.PanTilt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PanTilt_currentTilt(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1460,7 +1224,7 @@ func (ec *executionContext) _PanTilt_hasFindNorth(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.HasFindNorth, nil
+		return obj.CurrentTilt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1472,19 +1236,63 @@ func (ec *executionContext) _PanTilt_hasFindNorth(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.(float64)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PanTilt_hasFindNorth(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PanTilt_currentTilt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PanTilt",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PanTilt_northOffset(ctx context.Context, field graphql.CollectedField, obj *model.PanTilt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PanTilt_northOffset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NorthOffset, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PanTilt_northOffset(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PanTilt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1593,64 +1401,14 @@ func (ec *executionContext) fieldContext_Query_GetPanTilt(_ context.Context, fie
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "isBusy":
-				return ec.fieldContext_PanTilt_isBusy(ctx, field)
-			case "hasFindNorth":
-				return ec.fieldContext_PanTilt_hasFindNorth(ctx, field)
+			case "currentPan":
+				return ec.fieldContext_PanTilt_currentPan(ctx, field)
+			case "currentTilt":
+				return ec.fieldContext_PanTilt_currentTilt(ctx, field)
+			case "northOffset":
+				return ec.fieldContext_PanTilt_northOffset(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PanTilt", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_GetCompass(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_GetCompass(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetCompass(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Compass)
-	fc.Result = res
-	return ec.marshalNCompass2ᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐCompass(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_GetCompass(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "hasCalibrated":
-				return ec.fieldContext_Compass_hasCalibrated(ctx, field)
-			case "magAzimuth":
-				return ec.fieldContext_Compass_magAzimuth(ctx, field)
-			case "declination":
-				return ec.fieldContext_Compass_declination(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Compass", field.Name)
 		},
 	}
 	return fc, nil
@@ -1718,8 +1476,8 @@ func (ec *executionContext) fieldContext_Query_GetSystem(_ context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_GetAllTLEs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_GetAllTLEs(ctx, field)
+func (ec *executionContext) _Query_GetAllTLEId(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_GetAllTLEId(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1732,7 +1490,7 @@ func (ec *executionContext) _Query_GetAllTLEs(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetAllTLEs(rctx)
+		return ec.resolvers.Query().GetAllTLEId(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1744,33 +1502,19 @@ func (ec *executionContext) _Query_GetAllTLEs(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.TLEData)
+	res := resTmp.([]*int)
 	fc.Result = res
-	return ec.marshalNTLEData2ᚕᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐTLEData(ctx, field.Selections, res)
+	return ec.marshalNInt2ᚕᚖint(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_GetAllTLEs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_GetAllTLEId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_TLEData_id(ctx, field)
-			case "name":
-				return ec.fieldContext_TLEData_name(ctx, field)
-			case "line_1":
-				return ec.fieldContext_TLEData_line_1(ctx, field)
-			case "line_2":
-				return ec.fieldContext_TLEData_line_2(ctx, field)
-			case "expired":
-				return ec.fieldContext_TLEData_expired(ctx, field)
-			case "lastUpdate":
-				return ec.fieldContext_TLEData_lastUpdate(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type TLEData", field.Name)
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1824,6 +1568,8 @@ func (ec *executionContext) fieldContext_Query_GetTLEById(ctx context.Context, f
 				return ec.fieldContext_TLEData_expired(ctx, field)
 			case "lastUpdate":
 				return ec.fieldContext_TLEData_lastUpdate(ctx, field)
+			case "geostationary":
+				return ec.fieldContext_TLEData_geostationary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TLEData", field.Name)
 		},
@@ -2978,6 +2724,50 @@ func (ec *executionContext) fieldContext_TLEData_lastUpdate(_ context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TLEData_geostationary(ctx context.Context, field graphql.CollectedField, obj *model.TLEData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TLEData_geostationary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Geostationary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TLEData_geostationary(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TLEData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4764,55 +4554,6 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(_ context.Context
 
 // region    **************************** object.gotpl ****************************
 
-var compassImplementors = []string{"Compass"}
-
-func (ec *executionContext) _Compass(ctx context.Context, sel ast.SelectionSet, obj *model.Compass) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, compassImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Compass")
-		case "hasCalibrated":
-			out.Values[i] = ec._Compass_hasCalibrated(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "magAzimuth":
-			out.Values[i] = ec._Compass_magAzimuth(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "declination":
-			out.Values[i] = ec._Compass_declination(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -4835,13 +4576,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "SetPanTiltToAngle":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_SetPanTiltToAngle(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "SetPanTiltToMagAzimuth":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_SetPanTiltToMagAzimuth(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -4936,13 +4670,18 @@ func (ec *executionContext) _PanTilt(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("PanTilt")
-		case "isBusy":
-			out.Values[i] = ec._PanTilt_isBusy(ctx, field, obj)
+		case "currentPan":
+			out.Values[i] = ec._PanTilt_currentPan(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "hasFindNorth":
-			out.Values[i] = ec._PanTilt_hasFindNorth(ctx, field, obj)
+		case "currentTilt":
+			out.Values[i] = ec._PanTilt_currentTilt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "northOffset":
+			out.Values[i] = ec._PanTilt_northOffset(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -5032,28 +4771,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "GetCompass":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_GetCompass(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "GetSystem":
 			field := field
 
@@ -5076,7 +4793,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "GetAllTLEs":
+		case "GetAllTLEId":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -5085,7 +4802,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_GetAllTLEs(ctx, field)
+				res = ec._Query_GetAllTLEId(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -5339,6 +5056,11 @@ func (ec *executionContext) _TLEData(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "lastUpdate":
 			out.Values[i] = ec._TLEData_lastUpdate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "geostationary":
+			out.Values[i] = ec._TLEData_geostationary(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -5706,20 +5428,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNCompass2githubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐCompass(ctx context.Context, sel ast.SelectionSet, v model.Compass) graphql.Marshaler {
-	return ec._Compass(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNCompass2ᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐCompass(ctx context.Context, sel ast.SelectionSet, v *model.Compass) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Compass(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
 	res, err := graphql.UnmarshalFloatContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -5748,6 +5456,32 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNInt2ᚕᚖint(ctx context.Context, v interface{}) ([]*int, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*int, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOInt2ᚖint(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNInt2ᚕᚖint(ctx context.Context, sel ast.SelectionSet, v []*int) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOInt2ᚖint(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNPanTilt2githubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐPanTilt(ctx context.Context, sel ast.SelectionSet, v model.PanTilt) graphql.Marshaler {
@@ -5837,44 +5571,6 @@ func (ec *executionContext) marshalNSystem2ᚖgithubᚗcomᚋbclswl0827ᚋopenst
 		return graphql.Null
 	}
 	return ec._System(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNTLEData2ᚕᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐTLEData(ctx context.Context, sel ast.SelectionSet, v []*model.TLEData) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOTLEData2ᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐTLEData(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -6153,6 +5849,22 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	res := graphql.MarshalBoolean(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt(*v)
 	return res
 }
 

@@ -15,6 +15,8 @@ import (
 	"github.com/bclswl0827/openstation/graph"
 	"github.com/bclswl0827/openstation/server"
 	"github.com/bclswl0827/openstation/services"
+	service_forecast "github.com/bclswl0827/openstation/services/forecast"
+	service_tracking "github.com/bclswl0827/openstation/services/tracking"
 	"github.com/bclswl0827/openstation/startups"
 	startup_alignment "github.com/bclswl0827/openstation/startups/alignment"
 	startup_peripherals "github.com/bclswl0827/openstation/startups/peripherals"
@@ -152,7 +154,10 @@ func main() {
 	}
 
 	// Setup background services
-	regServices := []services.Service{}
+	regServices := []services.Service{
+		&service_forecast.ForecastService{},
+		&service_tracking.TrackingService{},
+	}
 	serviceOptions := &services.Options{
 		Config:     &conf,
 		Database:   databaseConn,
@@ -161,6 +166,7 @@ func main() {
 	}
 	for _, s := range regServices {
 		go s.Start(serviceOptions)
+		s.OnStart()
 	}
 
 	// Start HTTP web server
@@ -191,5 +197,6 @@ func main() {
 	logger.GetLogger(main).Info("services are shutting down, please wait")
 	for _, s := range regServices {
 		s.Stop(serviceOptions)
+		s.OnStop()
 	}
 }

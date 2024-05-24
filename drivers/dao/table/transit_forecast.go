@@ -11,6 +11,7 @@ type TransitForcast struct {
 	Altitude     float64 `gorm:"column:altitude;not null"`
 	MaxElevation float64 `gorm:"column:max_elevation;not null;index"`
 	Timestamp    int64   `gorm:"column:timestamp;not null;index"`
+	EpochTime    int64   `gorm:"column:epoch;not null;index"`
 	LastUpdate   int64   `gorm:"column:last_update;not null;index"`
 }
 
