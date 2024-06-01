@@ -34,10 +34,10 @@ func (s *Satellite) getEpoch(tle *TLE) (time.Time, error) {
 	return finalTime, nil
 }
 
-func (s *Satellite) Parse(tle *TLE, observer *Observer) error {
+func (s *Satellite) Parse(tle *TLE, observer *Observer, observeTime time.Time) error {
 	var (
-		yr, mo, da   = observer.Time.Date()
-		hr, min, sec = observer.Time.Clock()
+		yr, mo, da   = observeTime.Date()
+		hr, min, sec = observeTime.Clock()
 	)
 	position, _ := satellite.Propagate(
 		satellite.TLEToSat(tle.Line_1, tle.Line_2, "wgs84"),
@@ -72,19 +72,19 @@ func (s *Satellite) Parse(tle *TLE, observer *Observer) error {
 		longitude = longitude + 360
 	}
 
-	epoch, err := s.getEpoch(tle)
+	epochTime, err := s.getEpoch(tle)
 	if err != nil {
 		return err
 	}
 
-	s.Epoch = epoch
+	s.EpochTime = epochTime
 	s.Latitude = coordinate.Latitude * 180 / math.Pi
 	s.Longitude = longitude
 	s.Azimuth = lookAngles.Az * 180 / math.Pi
 	s.Elevation = lookAngles.El * 180 / math.Pi
 	s.Range = lookAngles.Rg
 	s.Poloarization = polarization
-	s.Geostationary = lookAngles.Rg > 35786
+	s.Geostationary = lookAngles.Rg > 42164
 
 	if s.Elevation*180/math.Pi > 3 {
 		s.Observable = true
@@ -93,4 +93,49 @@ func (s *Satellite) Parse(tle *TLE, observer *Observer) error {
 	}
 
 	return nil
+}
+
+// Predict calculates the transits of a satellite over an observer between startTime and endTime.
+func (s *Satellite) Predict(tle *TLE, observer *Observer, startTime, endTime time.Time, step time.Duration) ([]Transit, error) {
+	var (
+		transits       []Transit
+		currentTransit *Transit
+	)
+	for t := startTime; t.Before(endTime); t = t.Add(step) {
+		var sat Satellite
+		err := sat.Parse(tle, observer, t)
+		if err != nil {
+			return nil, err
+		}
+
+		// Check if satellite becomes observable
+		if sat.Observable {
+			if currentTransit == nil {
+				// Start of a new transit
+				currentTransit = &Transit{
+					StartTime:    t,
+					MaxElevation: sat.Elevation,
+					EntryAzimuth: sat.Azimuth,
+				}
+			} else {
+				// Update the maximum elevation
+				if sat.Elevation > currentTransit.MaxElevation {
+					currentTransit.MaxElevation = sat.Elevation
+				}
+			}
+		} else if currentTransit != nil {
+			// End of current transit
+			currentTransit.EndTime = t
+			transits = append(transits, *currentTransit)
+			currentTransit = nil
+		}
+	}
+
+	// Check if the last transit extends to the end time
+	if currentTransit != nil {
+		currentTransit.EndTime = endTime
+		transits = append(transits, *currentTransit)
+	}
+
+	return transits, nil
 }

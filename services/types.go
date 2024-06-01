@@ -20,4 +20,5 @@ type Service interface {
 	OnStart()
 	Stop(options *Options)
 	OnStop()
+	GetTaskName() string
 }

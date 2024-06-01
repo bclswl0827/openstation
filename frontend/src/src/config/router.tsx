@@ -27,7 +27,7 @@ const Home = lazy(() => import("../views/Home"));
 const Tasks = lazy(() => import("../views/Tasks"));
 const Satellite = lazy(() => import("../views/Satellite"));
 const Control = lazy(() => import("../views/Control"));
-const Diagnose = lazy(() => import("../views/Diagnose"));
+const Debug = lazy(() => import("../views/Debug"));
 const NotFound = lazy(() => import("../views/NotFound"));
 
 export const routerConfig: RouterConfig = {
@@ -75,13 +75,13 @@ export const routerConfig: RouterConfig = {
 			}
 		},
 		diagnose: {
-			uri: "/diagnose",
+			uri: "/debug",
 			pattern: "",
-			element: Diagnose,
+			element: Debug,
 			title: {
 				"en-US": "Diagnose",
-				"zh-TW": "装置诊断",
-				"zh-CN": "装置诊断"
+				"zh-TW": "装置调试",
+				"zh-CN": "装置调试"
 			}
 		},
 		default: {

@@ -6,10 +6,10 @@ import (
 )
 
 func (g *GnssTime) GetTime() (time.Time, error) {
-	if g.BaseTime.IsZero() {
-		return g.RefTime, errors.New("empty BaseTime is not allowed")
+	if g.BaseTime.IsZero() || g.RefTime.IsZero() {
+		return time.Time{}, errors.New("empty BaseTime or RefTime is not allowed")
 	}
 
-	elapsed := time.Since(g.BaseTime)
-	return g.RefTime.Add(elapsed), nil
+	elapsed := time.Since(g.BaseTime.UTC())
+	return g.RefTime.Add(elapsed).UTC(), nil
 }

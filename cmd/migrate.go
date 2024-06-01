@@ -15,7 +15,7 @@ func migrate(databaseConn *gorm.DB) error {
 	if err != nil {
 		return err
 	}
-	err = dao.Migrate(databaseConn, table.TransitForcast{})
+	err = dao.Migrate(databaseConn, table.TransitForecast{})
 	if err != nil {
 		return err
 	}

@@ -1,7 +1,10 @@
 {
     "station_settings": {
         "name": "北京 1.2 公尺 L/S 站",
-        "remark": "测试站",
+        "remarks": [
+            "测试站",
+            "临时站"
+        ],
         "location": "北京"
     },
     "pantilt_settings": {
@@ -18,12 +21,12 @@
         "baudrate": 9600
     },
     "database_settings": {
-        "engine": "sqlite",
-        "host": "",
-        "port": 0,
-        "username": "",
-        "password": "",
-        "database": "/home/yuki/openstation.db"
+        "engine": "postgresql",
+        "host": "127.0.0.1",
+        "port": 5432,
+        "username": "postgres",
+        "password": "passw0rd",
+        "database": "openstation"
     },
     "server_settings": {
         "host": "0.0.0.0",

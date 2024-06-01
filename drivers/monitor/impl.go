@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"time"
 
 	"github.com/bclswl0827/openstation/drivers/serial"
 )
@@ -25,6 +26,15 @@ const (
 )
 
 type MonitorDriverImpl struct{}
+
+func (d *MonitorDriverImpl) getChecksum(cmd []byte) byte {
+	var checksum byte
+	for _, v := range cmd {
+		checksum ^= v
+	}
+
+	return checksum
+}
 
 func (d *MonitorDriverImpl) Display(deps *MonitorDependency, str string, x, y int) error {
 	if deps == nil {
@@ -54,26 +64,32 @@ func (d *MonitorDriverImpl) Display(deps *MonitorDependency, str string, x, y in
 		}
 	}
 
-	// To ensure that the text is displayed correctly
-	for i := 0; i < 2; i++ {
+	for n := 0; n < 2; n++ {
 		for columnIndex, column := range strArr {
 			if len(column) > DISPLAY_WIDTH {
 				return errors.New("string length exceeds display size")
 			}
-			for charIndex, char := range column {
-				_, err := serial.Write(deps.Port, []byte{
+			for charIndex := 0; charIndex < len(column); {
+				cmd := []byte{
 					SYNC_WORD,
 					PRINT_CMD,
 					byte(x + charIndex),
 					byte(y + columnIndex),
-					byte(char),
+					byte(column[charIndex]),
 					byte(led),
-				})
+				}
+
+				_, err := serial.Write(deps.Port, append(cmd, d.getChecksum(cmd)))
 				if err != nil {
 					return err
 				}
 
-				serial.Filter(deps.Port, []byte{ACK_WORD}, math.MaxInt8)
+				err = serial.Filter(deps.Port, []byte{ACK_WORD}, math.MaxInt8)
+				if err != nil {
+					continue
+				}
+
+				charIndex++
 			}
 		}
 	}
@@ -86,12 +102,13 @@ func (d *MonitorDriverImpl) Clear(deps *MonitorDependency) error {
 		return fmt.Errorf("dependency is not provided")
 	}
 
-	_, err := serial.Write(deps.Port, []byte{SYNC_WORD, CLEAR_CMD})
+	cmd := []byte{SYNC_WORD, CLEAR_CMD}
+	_, err := serial.Write(deps.Port, append(cmd, d.getChecksum(cmd)))
 	if err != nil {
 		return err
 	}
 
-	serial.Filter(deps.Port, []byte{ACK_WORD}, math.MaxInt8)
+	time.Sleep(time.Second)
 	return nil
 }
 
@@ -100,15 +117,21 @@ func (d *MonitorDriverImpl) Reset(deps *MonitorDependency) error {
 		return fmt.Errorf("dependency is not provided")
 	}
 
-	_, err := serial.Write(deps.Port, []byte{SYNC_WORD, RESET_CMD})
+	cmd := []byte{SYNC_WORD, RESET_CMD}
+	_, err := serial.Write(deps.Port, append(cmd, d.getChecksum(cmd)))
 	if err != nil {
 		return err
 	}
 
-	serial.Filter(deps.Port, []byte{ACK_WORD}, math.MaxInt8)
+	time.Sleep(2 * time.Second)
 	return nil
 }
 
 func (d *MonitorDriverImpl) Init(deps *MonitorDependency) error {
+	err := d.Clear(deps)
+	if err != nil {
+		return err
+	}
+
 	return d.Clear(deps)
 }

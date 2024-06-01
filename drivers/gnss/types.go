@@ -13,8 +13,10 @@ type GnssTime struct {
 type GnssState struct {
 	IsDataValid bool
 	DataQuality int
+	Satellites  int
 	Latitude    float64
 	Longitude   float64
+	Elevation   float64
 	TrueAzimuth float64
 	Time        GnssTime
 }

@@ -5,29 +5,40 @@ package model
 type Mutation struct {
 }
 
+type Query struct {
+}
+
+type Gnss struct {
+	Timestamp   int64   `json:"timestamp"`
+	Latitude    float64 `json:"latitude"`
+	Longitude   float64 `json:"longitude"`
+	Elevation   float64 `json:"elevation"`
+	TrueAzimuth float64 `json:"trueAzimuth"`
+	DataQuality int     `json:"dataQuality"`
+	Satellites  int     `json:"satellites"`
+}
+
 type PanTilt struct {
 	CurrentPan  float64 `json:"currentPan"`
 	CurrentTilt float64 `json:"currentTilt"`
 	NorthOffset float64 `json:"northOffset"`
-}
-
-type Query struct {
+	IsBusy      bool    `json:"isBusy"`
 }
 
 type Station struct {
-	Name          string  `json:"name"`
-	Remark        string  `json:"remark"`
-	Location      string  `json:"location"`
-	Latitude      float64 `json:"latitude"`
-	Longitude     float64 `json:"longitude"`
-	Altitude      float64 `json:"altitude"`
-	Satellites    int     `json:"satellites"`
-	PendingTasks  int     `json:"pendingTasks"`
-	TaskCountdown int     `json:"taskCountdown"`
+	Name          string   `json:"name"`
+	Remarks       []string `json:"remarks"`
+	Location      string   `json:"location"`
+	Satellites    int64    `json:"satellites"`
+	PendingTasks  int64    `json:"pendingTasks"`
+	TotalForecast int64    `json:"totalForecast"`
+	TotalTasks    int64    `json:"totalTasks"`
+	ClockOffset   int      `json:"clockOffset"`
 }
 
 type System struct {
-	Uptime    int      `json:"uptime"`
+	Timestamp int64    `json:"timestamp"`
+	Uptime    int64    `json:"uptime"`
 	CPUUsage  float64  `json:"cpuUsage"`
 	MemUsage  float64  `json:"memUsage"`
 	DiskUsage float64  `json:"diskUsage"`
@@ -37,12 +48,13 @@ type System struct {
 	IP        []string `json:"ip"`
 }
 
-type TLEData struct {
-	ID            int    `json:"id"`
+type TleData struct {
+	ID            int64  `json:"id"`
 	Name          string `json:"name"`
 	Line1         string `json:"line_1"`
 	Line2         string `json:"line_2"`
-	Expired       bool   `json:"expired"`
-	LastUpdate    int    `json:"lastUpdate"`
+	EpochTime     int64  `json:"epochTime"`
+	CreatedAt     int64  `json:"createdAt"`
+	UpdatedAt     int64  `json:"updatedAt"`
 	Geostationary bool   `json:"geostationary"`
 }

@@ -23,3 +23,6 @@ clean:
 pre-build: 
 	@echo REACT_APP_VERSION=$(VERSION) > .env
 	@echo REACT_APP_RELEASE=$(COMMIT)-$(RELEASE) >> .env
+	@echo REACT_APP_GRAPHQL_PROD_URL=/api >> .env
+	@echo REACT_APP_GRAPHQL_DEVL_URL=http://127.0.0.1:8073/api >> .env
+

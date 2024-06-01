@@ -1,6 +1,6 @@
 module github.com/bclswl0827/openstation
 
-go 1.22.1
+go 1.22.0
 
 require (
 	github.com/99designs/gqlgen v0.17.47
@@ -14,6 +14,7 @@ require (
 	github.com/go-playground/validator/v10 v10.19.0
 	github.com/joshuaferrara/go-satellite v0.0.0-20220611180459-512638c64e5b
 	github.com/json-iterator/go v1.1.12
+	github.com/mackerelio/go-osstat v0.2.4
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/sirupsen/logrus v1.9.3

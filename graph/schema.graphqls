@@ -1,23 +1,26 @@
-type Station {
+scalar Int64
+
+type station {
     name: String!
-    remark: String!
+    remarks: [String!]!
     location: String!
-    latitude: Float!
-    longitude: Float!
-    altitude: Float!
-    satellites: Int!
-    pendingTasks: Int!
-    taskCountdown: Int!
+    satellites: Int64!
+    pendingTasks: Int64!
+    totalForecast: Int64!
+    totalTasks: Int64!
+    clockOffset: Int!
 }
 
-type PanTilt {
+type panTilt {
     currentPan: Float!
     currentTilt: Float!
     northOffset: Float!
+    isBusy: Boolean!
 }
 
-type System {
-    uptime: Int!
+type system {
+    timestamp: Int64!
+    uptime: Int64!
     cpuUsage: Float!
     memUsage: Float!
     diskUsage: Float!
@@ -27,37 +30,50 @@ type System {
     ip: [String!]!
 }
 
-type TLEData {
-    id: Int!
+type gnss {
+    timestamp: Int64!
+    latitude: Float!
+    longitude: Float!
+    elevation: Float!
+    trueAzimuth: Float!
+    dataQuality: Int!
+    satellites: Int!
+}
+
+type tleData {
+    id: Int64!
     name: String!
     line_1: String!
     line_2: String!
-    expired: Boolean!
-    lastUpdate: Int!
+    epochTime: Int64!
+    createdAt: Int64!
+    updatedAt: Int64!
     geostationary: Boolean!
 }
 
 type Query {
     # Station information
-    GetStation: Station!
-    GetPanTilt: PanTilt!
-    GetSystem: System!
+    getStation: station!
+    getPanTilt: panTilt!
+    getSystem: system!
+    getGnss(acquire: Boolean!): gnss!
     # Satellite TLEs
-    GetAllTLEId: [Int]!
-    GetTLEById(id: Int!): TLEData
+    getAllTLEIds: [Int64]!
+    getTLEById(id: Int64!): tleData
 }
 
 type Mutation {
     # Pan-Tilt control
-    SetPanTiltToAngle(newPan: Float!, newTilt: Float!): Boolean!
-    SetPanTiltToNorth: Boolean!
+    setPanTilt(newPan: Float!, newTilt: Float!, sync: Boolean!): Boolean!
+    setPanTiltToNorth: Boolean!
     # Satellite TLEs
-    SetAllTLEs(tleData: [String!]!): Boolean!
-    DeleteTLEById(id: Int!): Boolean!
-    UpdateTLEById(id: Int!, tleData: String!): Boolean!
+    setAllTLEs(tleData: String!, overwrite: Boolean!): Int!
+    addNewTLE(tleData: String!): Boolean!
+    deleteTLEById(id: Int64!): Boolean!
+    updateTLEById(id: Int64!, tleData: String!): Boolean!
     # Dangerous operations
-    RebootSystem: Boolean!
-    PurgeTaskQueue: Boolean!
-    PurgeTLERecords: Boolean!
-    PurgeForecastRecords: Boolean!
+    rebootSystem: Boolean!
+    purgeTaskQueue: Boolean!
+    purgeTLERecords: Boolean!
+    purgeForecastRecords: Boolean!
 }

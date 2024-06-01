@@ -1,9 +1,9 @@
 package config
 
 type station struct {
-	Name     string `json:"name"`
-	Remark   string `json:"remark"`
-	Location string `json:"location"`
+	Name     string   `json:"name"`
+	Remarks  []string `json:"remarks"`
+	Location string   `json:"location"`
 }
 
 type pan_tilt struct {

@@ -1,24 +1,27 @@
 package table
 
-import "github.com/bclswl0827/openstation/drivers/dao"
+import (
+	"github.com/bclswl0827/openstation/drivers/dao"
+)
 
-type TransitForcast struct {
+type TransitForecast struct {
 	dao.BaseModel
 	ID           int64   `gorm:"column:id;not null;index"`
-	Name         string  `gorm:"column:name;type:text;not null;index"`
+	Name         string  `gorm:"column:name;not null;index"`
 	Latitude     float64 `gorm:"column:latitude;not null"`
 	Longitude    float64 `gorm:"column:longitude;not null"`
-	Altitude     float64 `gorm:"column:altitude;not null"`
+	EntryAzimuth float64 `gorm:"column:entry_azimuth;not null"`
 	MaxElevation float64 `gorm:"column:max_elevation;not null;index"`
-	Timestamp    int64   `gorm:"column:timestamp;not null;index"`
-	EpochTime    int64   `gorm:"column:epoch;not null;index"`
-	LastUpdate   int64   `gorm:"column:last_update;not null;index"`
+	StartTime    int64   `gorm:"column:start_time;not null;index;unique"`
+	EndTime      int64   `gorm:"column:end_time;not null;index;unique"`
+	EpochTime    int64   `gorm:"column:epoch_time;not null;index"`
+	CreatedAt    int64   `gorm:"column:created_at;not null;index"`
 }
 
-func (t TransitForcast) GetModel() TransitForcast {
-	return TransitForcast{}
+func (t TransitForecast) GetModel() TransitForecast {
+	return TransitForecast{}
 }
 
-func (t TransitForcast) GetName() string {
+func (t TransitForecast) GetName() string {
 	return "transit_forecast"
 }

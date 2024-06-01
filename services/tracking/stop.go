@@ -6,9 +6,9 @@ import (
 )
 
 func (s *TrackingService) Stop(options *services.Options) {
-	logger.GetLogger(s.OnStart).Infoln("service is stopping")
+	logger.GetLogger(s.GetTaskName()).Infoln("service is stopping")
 }
 
 func (s *TrackingService) OnStop() {
-	logger.GetLogger(s.OnStart).Infoln("service has stopped")
+	logger.GetLogger(s.GetTaskName()).Infoln("service has been stopped")
 }

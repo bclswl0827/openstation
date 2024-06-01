@@ -1,8 +1,10 @@
 #include <Arduino.h>
+
+#include "modules/checksum.h"
 #include "modules/lcd1602.h"
 
 #define FIEMWARE_NAME "OpenStation....."
-#define FIEMWARE_VERSION "FWVER: v0.0.3"
+#define FIEMWARE_VERSION "FWVER: v0.1.4"
 
 #define SYNC_WORD 0xFF
 #define ACK_WORD 0xEE
@@ -18,7 +20,7 @@
 #define LED_BUSY 23
 #define LED_ERROR 22
 
-void set_ping(uint8_t val) {
+void setup_ping(uint8_t val) {
     digitalWrite(LED_PING, val);
 }
 
@@ -34,9 +36,7 @@ void setup_led(uint8_t val) {
 void setup_lcd() {
     delay(500);
     LCD1602Init();
-    delay(500);
     LCD1602Clear();
-    delay(500);
 }
 
 void setup_serial() {
@@ -44,20 +44,20 @@ void setup_serial() {
     Serial_write(ACK_WORD);
 }
 
-void display_release() {
+void print_release() {
     LCD1602GotoXY(0, 0);
     LCD1602Print(FIEMWARE_NAME);
     LCD1602GotoXY(1, 0);
     LCD1602Print(FIEMWARE_VERSION);
-    delay(1000);
+    delay(300);
     LCD1602Clear();
 }
 
 void setup() {
     setup_lcd();
-    set_ping(LOW);
-    display_release();
     setup_led(0x00);
+    setup_ping(HIGH);
+    print_release();
     setup_serial();
 }
 
@@ -68,22 +68,43 @@ void loop() {
         if (Serial_available() && Serial_read() == SYNC_WORD) {
             uint8_t cmd = Serial_read();
             if (cmd == RESET_CMD) {
-                setup();
-                Serial_write(ACK_WORD);
+                uint8_t recv_checksum = Serial_read();
+                uint8_t calc_checksum = get_checksum(2, SYNC_WORD, cmd);
+                if (calc_checksum == recv_checksum) {
+                    setup();
+                    Serial_write(ACK_WORD);
+                } else {
+                    Serial_write(NACK_WORD);
+                }
             } else if (cmd == CLEAR_CMD) {
-                setup_lcd();
-                Serial_write(ACK_WORD);
+                uint8_t recv_checksum = Serial_read();
+                uint8_t calc_checksum = get_checksum(2, SYNC_WORD, cmd);
+                if (calc_checksum == recv_checksum) {
+                    setup_lcd();
+                    Serial_write(ACK_WORD);
+                } else {
+                    Serial_write(NACK_WORD);
+                }
             } else if (cmd == PRINT_CMD) {
                 uint8_t x = Serial_read();
                 uint8_t y = Serial_read();
                 uint8_t ch = Serial_read();
                 uint8_t led = Serial_read();
-                LCD1602Draw(x, y, ch);
-                setup_led(led);
-                Serial_write(ACK_WORD);
+                uint8_t recv_checksum = Serial_read();
+                uint8_t calc_checksum =
+                    get_checksum(6, SYNC_WORD, cmd, x, y, ch, led);
+                if (calc_checksum == recv_checksum) {
+                    setup_led(led);
+                    LCD1602Draw(x, y, ch);
+                    Serial_write(ACK_WORD);
+                } else {
+                    Serial_write(NACK_WORD);
+                }
+            } else {
+                Serial_write(NACK_WORD);
             }
         }
 
-        set_ping(led_ping-- > 0 ? HIGH : LOW);
+        setup_ping(led_ping-- > 0 ? HIGH : LOW);
     }
 }

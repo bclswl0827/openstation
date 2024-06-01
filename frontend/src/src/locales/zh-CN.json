@@ -1,1 +1,16 @@
-{}
+{
+    "common": {
+        "submit": "提交",
+        "cancel": "取消",
+        "close": "关闭",
+        "confirm": "确定",
+        "delete": "删除",
+        "edit": "编辑",
+        "save": "保存"
+    },
+    "not_found": {
+        "heading": "404 Not Found",
+        "content": "您访问的页面不存在",
+        "go_back": "返回上一页"
+    }
+}
