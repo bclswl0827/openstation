@@ -6,9 +6,9 @@ import (
 )
 
 func (s *ForecastService) Stop(options *services.Options) {
-	logger.GetLogger(s.OnStart).Infoln("service is stopping")
+	logger.GetLogger(s.GetTaskName()).Infoln("forecast service is stopping")
 }
 
 func (s *ForecastService) OnStop() {
-	logger.GetLogger(s.OnStart).Infoln("service has stopped")
+	logger.GetLogger(s.GetTaskName()).Infoln("forecast service has been stopped")
 }

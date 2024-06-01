@@ -1,6 +1,8 @@
 package system
 
 import (
+	"os"
+
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/mem"
@@ -27,20 +29,15 @@ func GetMemUsage() (float64, error) {
 }
 
 func GetDiskUsage() (float64, error) {
-	partitions, err := disk.Partitions(true)
+	cwd, err := os.Getwd()
 	if err != nil {
 		return -1, err
 	}
 
-	var totalUsage float64
-	for _, partition := range partitions {
-		usage, err := disk.Usage(partition.Mountpoint)
-		if err != nil {
-			return -1, err
-		}
-		totalUsage += usage.UsedPercent
+	usage, err := disk.Usage(cwd)
+	if err != nil {
+		return -1, err
 	}
 
-	avgDiskUsage := totalUsage / float64(len(partitions))
-	return avgDiskUsage, nil
+	return usage.UsedPercent, nil
 }

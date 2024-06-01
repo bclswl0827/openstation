@@ -127,6 +127,12 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, sig 
 		return fmt.Errorf("pan angle must be between %d and %d degrees", MIN_PAN, MAX_PAN)
 	}
 
+	// Check if pan tilt is currently busy
+	if deps.IsBusy {
+		return errors.New("Pan-Tilt is currently busy")
+	}
+	deps.IsBusy = true
+
 	// Calculate encoded pan with north offset
 	if deps.NorthOffset != 0 {
 		newPan = 360 - deps.NorthOffset + newPan
@@ -142,6 +148,7 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, sig 
 	// Send set command
 	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, setCmd...))
 	if err != nil {
+		deps.IsBusy = false
 		return err
 	}
 
@@ -155,11 +162,13 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, sig 
 
 				// Check if currentPan is within ERROR_THRESHOLD
 				if math.Abs(deps.CurrentPan-newPan) <= ERROR_THRESHOLD || math.Abs(deps.CurrentPan-360-newPan) <= ERROR_THRESHOLD {
+					deps.IsBusy = false
 					sig <- true
 					return
 				}
 
 				if i == math.MaxUint8 {
+					deps.IsBusy = false
 					sig <- false
 					return
 				}
@@ -167,6 +176,7 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, sig 
 		}()
 	}
 
+	deps.IsBusy = false
 	return nil
 }
 
@@ -225,6 +235,12 @@ func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, si
 		return fmt.Errorf("tilt angle must be between %d and %d degrees", MIN_TILT, MAX_TILT)
 	}
 
+	// Check if pan tilt is currently busy
+	if deps.IsBusy {
+		return errors.New("Pan-Tilt is currently busy")
+	}
+	deps.IsBusy = true
+
 	encodedTilt := int((90 - newTilt) * 100)
 	tmsb, tlsb := byte(encodedTilt>>8), byte(encodedTilt&0xFF)
 
@@ -235,6 +251,7 @@ func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, si
 	// Send set command
 	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, setCmd...))
 	if err != nil {
+		deps.IsBusy = false
 		return err
 	}
 
@@ -248,11 +265,13 @@ func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, si
 
 				// Check if currentTilt is within ERROR_THRESHOLD
 				if math.Abs(deps.CurrentTilt-newTilt) <= ERROR_THRESHOLD {
+					deps.IsBusy = false
 					sig <- true
 					return
 				}
 
 				if i == math.MaxUint8 {
+					deps.IsBusy = false
 					sig <- false
 					return
 				}
@@ -260,5 +279,6 @@ func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, si
 		}()
 	}
 
+	deps.IsBusy = false
 	return nil
 }

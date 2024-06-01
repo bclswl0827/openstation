@@ -6,17 +6,18 @@ import { Link, useLocation } from "react-router-dom";
 
 import { Translation } from "../config/locale";
 import { MenuItem } from "../config/menu";
+import { useLocaleStore } from "../stores/locale";
 
 interface Props {
 	readonly logo: string;
 	readonly release: string;
+	readonly version: string;
 	readonly menu: MenuItem[];
-	readonly locale: string;
 	readonly open: PrimitiveAtom<boolean>;
 	readonly title: Translation;
 }
 
-export const AsideMenu = ({ menu, open, logo, title, release, locale }: Props) => {
+export const AsideMenu = ({ menu, open, logo, title, version, release }: Props) => {
 	const [homeURL, setHomeURL] = useState<string>("/");
 
 	useEffect(() => {
@@ -24,6 +25,7 @@ export const AsideMenu = ({ menu, open, logo, title, release, locale }: Props) =
 	}, [menu]);
 
 	const { pathname } = useLocation();
+	const { locale } = useLocaleStore();
 	const [isAsideMenuOpen, setIsAsideMenuOpen] = useAtom(open);
 
 	return (
@@ -35,7 +37,7 @@ export const AsideMenu = ({ menu, open, logo, title, release, locale }: Props) =
 				/>
 			)}
 			<div
-				className={`fixed overflow-auto inset-y-0 left-0 z-20 w-64 bg-gray-900 transition-transform ${isAsideMenuOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:h-screen lg:static flex flex-col`}
+				className={`fixed border-r border-gray-700 overflow-auto inset-y-0 left-0 z-20 w-64 bg-gray-900 transition-transform ${isAsideMenuOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:h-screen lg:static flex flex-col`}
 			>
 				<div className="sticky top-0 py-5 px-2 flex justify-between font-semibold text-gray-200 border-b border-gray-800 bg-gray-900">
 					<Link to={homeURL} title={title[locale]}>
@@ -60,8 +62,9 @@ export const AsideMenu = ({ menu, open, logo, title, release, locale }: Props) =
 						</Link>
 					))}
 				</div>
-				<div className="p-1 flex justify-center text-xs text-gray-300/30 border-gray-800 border-t">
-					{release}
+				<div className="p-1 flex flex-col text-center text-xs text-gray-300/30 border-gray-800 border-t">
+					<span>{version}</span>
+					<span>{release}</span>
 				</div>
 			</div>
 		</>

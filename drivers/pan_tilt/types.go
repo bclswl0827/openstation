@@ -16,6 +16,7 @@ type PanTiltDependency struct {
 	CurrentPan  float64
 	CurrentTilt float64
 	NorthOffset float64
+	IsBusy      bool
 }
 
 type PanTiltDriver interface {

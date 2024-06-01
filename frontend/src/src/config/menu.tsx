@@ -1,8 +1,8 @@
 import {
 	mdiCalendarCheck,
 	mdiCameraControl,
+	mdiDebugStepOver,
 	mdiHomeAccount,
-	mdiLifebuoy,
 	mdiSatelliteVariant
 } from "@mdi/js";
 
@@ -21,8 +21,8 @@ export const menuConfig: MenuItem[] = [
 		url: "/",
 		label: {
 			"en-US": "Station Status",
-			"zh-TW": "當前站況",
-			"zh-CN": "测站状态"
+			"zh-TW": "站況總覽",
+			"zh-CN": "状态总览"
 		},
 		icon: mdiHomeAccount
 	},
@@ -54,12 +54,12 @@ export const menuConfig: MenuItem[] = [
 		icon: mdiCameraControl
 	},
 	{
-		url: "/diagnose",
+		url: "/debug",
 		label: {
-			"en-US": "Diagnose",
-			"zh-TW": "装置诊断",
-			"zh-CN": "装置诊断"
+			"en-US": "Debug",
+			"zh-TW": "装置调试",
+			"zh-CN": "装置调试"
 		},
-		icon: mdiLifebuoy
+		icon: mdiDebugStepOver
 	}
 ];

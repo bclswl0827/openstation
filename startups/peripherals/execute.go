@@ -40,29 +40,7 @@ func (t *PeripheralsStartupTask) Execute(depsContainer *dig.Container, options *
 		return err
 	}
 
-	// Reset PanTilt device, set both pan and tilt to 0
-	err = depsContainer.Invoke(func(deps *pan_tilt.PanTiltDependency) error {
-		logger.GetLogger(t.GetTaskName()).Infoln("resetting and initializing Pan-Tilt device")
-
-		for !panTiltDriver.IsAvailable(deps) {
-			logger.GetLogger(t.GetTaskName()).Infoln("waiting for Pan-Tilt to be available")
-			time.Sleep(time.Second)
-		}
-
-		done := make(chan bool, 1)
-		err := panTiltDriver.Reset(deps, done)
-		if err != nil {
-			return err
-		}
-		<-done
-
-		return panTiltDriver.Init(deps)
-	})
-	if err != nil {
-		return err
-	}
-
-	// Check if GNSS is available, wait for position and azimuth
+	// Set GNSS baseline and wait for position data
 	err = depsContainer.Invoke(func(deps *gnss.GnssDependency) error {
 		logger.GetLogger(t.GetTaskName()).Infoln("setting up GNSS antenna baseline")
 		err := gnssDriver.SetBaseline(deps, options.Config.GNSS.Baseline)
@@ -80,6 +58,28 @@ func (t *PeripheralsStartupTask) Execute(depsContainer *dig.Container, options *
 		}
 
 		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// Reset PanTilt device, set both pan and tilt to 0
+	err = depsContainer.Invoke(func(deps *pan_tilt.PanTiltDependency) error {
+		logger.GetLogger(t.GetTaskName()).Infoln("resetting and initializing Pan-Tilt device")
+
+		for !panTiltDriver.IsAvailable(deps) {
+			logger.GetLogger(t.GetTaskName()).Infoln("waiting for Pan-Tilt to be available")
+			time.Sleep(time.Second)
+		}
+
+		done := make(chan bool, 1)
+		err := panTiltDriver.Reset(deps, done)
+		if err != nil {
+			return err
+		}
+		<-done
+
+		return panTiltDriver.Init(deps)
 	})
 	if err != nil {
 		return err

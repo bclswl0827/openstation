@@ -1,0 +1,30 @@
+scalar Int64
+
+query getDebugData {
+	getGnss(acquire: true) {
+		timestamp
+		latitude
+		longitude
+		elevation
+		trueAzimuth
+		dataQuality
+		satellites
+	}
+	getPanTilt {
+		currentPan
+		currentTilt
+		northOffset
+		isBusy
+	}
+	getSystem {
+		timestamp
+		uptime
+		cpuUsage
+		memUsage
+		diskUsage
+		release
+		arch
+		hostname
+		ip
+	}
+}

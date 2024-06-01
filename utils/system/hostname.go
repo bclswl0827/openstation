@@ -1,15 +1,11 @@
 package system
 
-import (
-	"github.com/shirou/gopsutil/host"
-)
+import "os"
 
 func GetHostname() (string, error) {
-	info, err := host.Info()
+	hostname, err := os.Hostname()
 	if err != nil {
 		return "", err
 	}
-
-	hostname := info.Hostname
 	return hostname, nil
 }

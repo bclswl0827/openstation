@@ -9,5 +9,5 @@ func (s *TrackingService) Start(options *services.Options) {
 }
 
 func (s *TrackingService) OnStart() {
-	logger.GetLogger(s.OnStart).Infoln("start")
+	logger.GetLogger(s.GetTaskName()).Infoln("tracking service has been started")
 }

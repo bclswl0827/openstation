@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"strconv"
 	"strings"
@@ -14,24 +15,19 @@ import (
 
 // Hardware driver to LC02H GNSS module
 type GnssDriverImpl struct {
+	gga     string
 	rmc     string
 	pqtmtar string
 }
 
 func (r *GnssDriverImpl) parseRMC(isDataValid *bool, latitude, longitude *float64, gnssTime *GnssTime) error {
 	if len(r.rmc) == 0 {
-		return errors.New("empty RMC message")
+		return errors.New("got empty RMC message")
 	}
 
 	fields := strings.Split(r.rmc, ",")
 	if len(fields) != 14 {
-		return errors.New("invalid RMC message")
-	}
-
-	// Validity flag: A = valid, V = invalid
-	*isDataValid = fields[2] == "A"
-	if !*isDataValid {
-		return nil
+		return errors.New("got invalid RMC message")
 	}
 
 	// Get system datetime as base time
@@ -85,6 +81,12 @@ func (r *GnssDriverImpl) parseRMC(isDataValid *bool, latitude, longitude *float6
 		*latitude = -*latitude
 	}
 
+	// Validity flag: A = valid, V = invalid
+	*isDataValid = fields[2] == "A"
+	if !*isDataValid {
+		return nil
+	}
+
 	// Get longitude in decimal degrees
 	lon, err := strconv.ParseFloat(fields[5], 64)
 	if err != nil {
@@ -100,14 +102,41 @@ func (r *GnssDriverImpl) parseRMC(isDataValid *bool, latitude, longitude *float6
 	return nil
 }
 
+func (r *GnssDriverImpl) parseGGA(satellites *int, elevation *float64) error {
+	if len(r.gga) == 0 {
+		return errors.New("got empty GGA message")
+	}
+
+	fields := strings.Split(r.gga, ",")
+	if len(fields) != 15 {
+		return errors.New("got invalid GGA message")
+	}
+
+	// Get numbers of satellites in use
+	sats, err := strconv.Atoi(fields[7])
+	if err != nil {
+		return err
+	}
+	*satellites = sats
+
+	// Get elevation in meters
+	elev, err := strconv.ParseFloat(fields[9], 64)
+	if err != nil {
+		return err
+	}
+	*elevation = elev
+
+	return nil
+}
+
 func (r *GnssDriverImpl) parsePQTMTAR(DataQuality *int, trueAzimuth *float64) error {
 	if len(r.pqtmtar) == 0 {
-		return errors.New("empty PQTMTAR message")
+		return errors.New("got empty PQTMTAR message")
 	}
 
 	fields := strings.Split(r.pqtmtar, ",")
 	if len(fields) != 13 {
-		return errors.New("invalid PQTMTAR message")
+		return errors.New("got invalid PQTMTAR message")
 	}
 
 	// Data quality: 0 = not available, 4 = RTK fixed, 6 = RTK float
@@ -157,57 +186,107 @@ func (r *GnssDriverImpl) isMessageValid(msg string) bool {
 	return calcChecksum == origChecksum
 }
 
-func (r *GnssDriverImpl) getMessages(reader *bufio.Reader, read_attempts int) error {
+func (e *GnssDriverImpl) extractMessage(text, keyword string) (string, error) {
+	scanner := bufio.NewScanner(strings.NewReader(text))
+	var lines []string
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	for i := len(lines) - 1; i >= 0; i-- {
+		if strings.Contains(lines[i], keyword) {
+			return lines[i], nil
+		}
+	}
+
+	return "", errors.New("no message found with the given keyword")
+}
+
+func (r *GnssDriverImpl) getMessages(port io.ReadWriteCloser, read_attempts int) error {
 	var (
 		rmc     string
+		gga     string
 		pqtmtar string
 	)
 	for ; read_attempts > 0; read_attempts-- {
-		line, _ := reader.ReadString('\n')
-		if len(line) == 0 {
-			continue
+		buffer := make([]byte, 512)
+		serial.Filter(port, []byte{'\n'}, math.MaxInt8)
+		serial.Read(port, buffer, time.Second)
+		lines := string(buffer[:])
+
+		// Try to extract RMC message
+		if len(rmc) == 0 {
+			line, err := r.extractMessage(lines, "RMC")
+			if err == nil && len(line) > 0 {
+				// Strip poential \r and \n characters
+				line = strings.ReplaceAll(line, "\r", "")
+				line = strings.ReplaceAll(line, "\n", "")
+				// Check if message is valid
+				if r.isMessageValid(line) {
+					rmc = line
+				}
+			}
 		}
 
-		// Strip poential \r and \n characters
-		line = strings.ReplaceAll(line, "\r", "")
-		line = strings.ReplaceAll(line, "\n", "")
-
-		if !r.isMessageValid(line) {
-			continue
+		// Try to extract GGA message
+		if len(gga) == 0 {
+			line, err := r.extractMessage(lines, "GGA")
+			if err == nil && len(line) > 0 {
+				// Strip poential \r and \n characters
+				line = strings.ReplaceAll(line, "\r", "")
+				line = strings.ReplaceAll(line, "\n", "")
+				// Check if message is valid
+				if r.isMessageValid(line) {
+					gga = line
+				}
+			}
 		}
 
-		if strings.Contains(line, "RMC") {
-			rmc = line
-		} else if strings.Contains(line, "PQTMTAR") {
-			pqtmtar = line
+		// Try to extract PQTMTAR message
+		if len(pqtmtar) == 0 {
+			line, err := r.extractMessage(lines, "PQTMTAR")
+			if err == nil && len(line) > 0 {
+				// Strip poential \r and \n characters
+				line = strings.ReplaceAll(line, "\r", "")
+				line = strings.ReplaceAll(line, "\n", "")
+				// Check if message is valid
+				if r.isMessageValid(line) {
+					pqtmtar = line
+				}
+			}
 		}
 
-		if rmc != "" && pqtmtar != "" {
+		if len(rmc) > 0 && len(gga) > 0 && len(pqtmtar) > 0 {
 			break
 		}
 	}
 
 	if read_attempts == 0 {
-		return fmt.Errorf("read attempts exhausted")
+		return errors.New("read attempts exhausted")
 	}
 
 	r.rmc = rmc
+	r.gga = gga
 	r.pqtmtar = pqtmtar
 	return nil
 }
 
 func (r *GnssDriverImpl) GetState(deps *GnssDependency) error {
 	if deps == nil {
-		return fmt.Errorf("dependency is not provided")
+		return errors.New("dependency is not provided")
 	}
 
-	reader := bufio.NewReader(deps.Port)
-	err := r.getMessages(reader, math.MaxUint8)
+	err := r.getMessages(deps.Port, math.MaxUint8)
 	if err != nil {
 		return err
 	}
 
 	err = r.parseRMC(&deps.State.IsDataValid, &deps.State.Latitude, &deps.State.Longitude, &deps.State.Time)
+	if err != nil {
+		return err
+	}
+
+	err = r.parseGGA(&deps.State.Satellites, &deps.State.Elevation)
 	if err != nil {
 		return err
 	}

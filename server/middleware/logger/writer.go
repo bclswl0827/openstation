@@ -30,32 +30,21 @@ func WriteLog(logger logrus.FieldLogger, notLogged ...string) gin.HandlerFunc {
 		statusCode := c.Writer.Status()
 		clientIP := c.ClientIP()
 		clientUserAgent := c.Request.UserAgent()
-		referer := c.Request.Referer()
 
 		if _, ok := skip[path]; ok {
 			return
 		}
 
-		entry := logger.WithFields(logrus.Fields{
-			"statusCode": statusCode,
-			"latency":    latency,
-			"clientIP":   clientIP,
-			"method":     c.Request.Method,
-			"path":       path,
-			"referer":    referer,
-			"userAgent":  clientUserAgent,
-		})
-
 		if len(c.Errors) > 0 {
-			entry.Error(c.Errors.ByType(gin.ErrorTypePrivate).String())
+			logger.Error(c.Errors.ByType(gin.ErrorTypePrivate).String())
 		} else {
-			msg := fmt.Sprintf("%s - \"%s %s\" %d \"%s\" \"%s\" (%dms)", clientIP, c.Request.Method, path, statusCode, referer, clientUserAgent, latency)
+			msg := fmt.Sprintf("%s - \"%s %s\" %d \"%s\" (%d ms)", clientIP, c.Request.Method, path, statusCode, clientUserAgent, latency)
 			if statusCode >= http.StatusInternalServerError {
-				entry.Error(msg)
+				logger.Error(msg)
 			} else if statusCode >= http.StatusBadRequest {
-				entry.Warn(msg)
+				logger.Warn(msg)
 			} else {
-				entry.Info(msg)
+				logger.Info(msg)
 			}
 		}
 	}

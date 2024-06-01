@@ -1,0 +1,27 @@
+scalar Int64
+
+query getHomeData {
+	getStation {
+		name
+		location
+		remarks
+		satellites
+		pendingTasks
+		totalTasks
+		totalForecast
+		clockOffset
+	}
+	getGnss(acquire: false) {
+		timestamp
+		latitude
+		longitude
+		elevation
+		trueAzimuth
+		dataQuality
+		satellites
+	}
+	getSystem {
+		cpuUsage
+		memUsage
+	}
+}

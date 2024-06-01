@@ -4,6 +4,7 @@ import { getVersion } from "../helpers/app/getVersion";
 import { Translation } from "./locale";
 
 interface GlobalConfig {
+	readonly repository: string;
 	readonly logo: string;
 	readonly version: string;
 	readonly release: string;
@@ -19,13 +20,14 @@ export const globalConfig: GlobalConfig = {
 	release,
 	logo,
 	name: {
-		"en-US": "OpenStation Project",
-		"zh-CN": "OpenStation Project",
-		"zh-TW": "OpenStation Project"
+		"en-US": "OpenStation",
+		"zh-CN": "OpenStation",
+		"zh-TW": "OpenStation"
 	},
 	footer: {
-		"en-US": "123",
-		"zh-CN": "123",
-		"zh-TW": "123"
-	}
+		"en-US": "OpenStation Project.",
+		"zh-CN": "OpenStation Project.",
+		"zh-TW": "OpenStation Project."
+	},
+	repository: "https://github.com/bclswl0827/openstation"
 };

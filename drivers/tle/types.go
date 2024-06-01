@@ -2,8 +2,6 @@ package tle
 
 import "time"
 
-const EXPIRATION_DAYS = time.Duration(24 * 3 * time.Hour)
-
 type TLE struct {
 	ID     int64
 	Name   string
@@ -12,14 +10,20 @@ type TLE struct {
 }
 
 type Observer struct {
-	Time      time.Time
 	Altitude  float64
 	Latitude  float64
 	Longitude float64
 }
 
+type Transit struct {
+	StartTime    time.Time
+	EndTime      time.Time
+	MaxElevation float64
+	EntryAzimuth float64
+}
+
 type Satellite struct {
-	Epoch         time.Time
+	EpochTime     time.Time
 	Latitude      float64
 	Longitude     float64
 	Range         float64

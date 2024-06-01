@@ -1,5 +1,5 @@
-#ifndef __MODULE_LCD_LCD1602_H
-#define __MODULE_LCD_LCD1602_H
+#ifndef __MODULE_LCD1602_H
+#define __MODULE_LCD1602_H
 
 #ifndef __SDCC
 #error "This header file must be used for SDCC compiler !"

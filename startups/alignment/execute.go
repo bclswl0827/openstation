@@ -43,12 +43,12 @@ func (t *AlignmentStartupTask) Execute(depsContainer *dig.Container, options *st
 		for {
 			var azimuthBuffer []float64
 			for i := 0; i <= AZI_COLLECT_COUNT; i++ {
-				logger.GetLogger(t.GetTaskName()).Infof("collecting azimuth data %.2f%%", float64(i)/AZI_COLLECT_COUNT*100)
 				err := gnssDriver.GetState(gnssDeps)
 				if err != nil {
 					return err
 				}
 
+				logger.GetLogger(t.GetTaskName()).Infof("collecting azimuth data %.2f%%, current azimuth is %.2f", float64(i)/AZI_COLLECT_COUNT*100, gnssDeps.State.TrueAzimuth)
 				azimuthBuffer = append(azimuthBuffer, gnssDeps.State.TrueAzimuth)
 			}
 
