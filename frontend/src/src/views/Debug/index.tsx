@@ -191,7 +191,10 @@ const Diagnose = () => {
 					...prev.panTiltNorthOffset,
 					value: String(getPanTilt.northOffset)
 				},
-				panTiltIsBusy: { name: "转台正北偏角", value: getPanTilt.isBusy ? "正忙" : "空闲" },
+				panTiltIsBusy: {
+					...prev.panTiltIsBusy,
+					value: getPanTilt.isBusy ? "正忙" : "空闲"
+				},
 				systemArch: { ...prev.systemArch, value: getSystem.arch },
 				systemCPUUsage: { ...prev.systemCPUUsage, value: String(getSystem.cpuUsage) },
 				systemMemUsage: { ...prev.systemMemUsage, value: String(getSystem.memUsage) },
@@ -209,23 +212,15 @@ const Diagnose = () => {
 	}, [data, error, loading]);
 
 	return !error ? (
-		<div className="p-8 space-y-4">
+		<div className="p-8 space-y-4 min-h-screen">
 			<Panel heading="系统资讯">
 				<TableContainer>
 					<Table>
 						<TableBody>
 							{Object.values(diagnoseRows).map((row, index) => (
 								<TableRow key={index}>
-									<TableCell>
-										<span className="font-medium text-gray-700 dark:text-gray-400">
-											{row.name}
-										</span>
-									</TableCell>
-									<TableCell>
-										<span className="text-gray-700 dark:text-gray-400">
-											{row.value}
-										</span>
-									</TableCell>
+									<TableCell>{row.name}</TableCell>
+									<TableCell>{row.value}</TableCell>
 								</TableRow>
 							))}
 						</TableBody>

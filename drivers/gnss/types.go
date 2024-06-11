@@ -1,8 +1,9 @@
 package gnss
 
 import (
-	"io"
 	"time"
+
+	"github.com/bclswl0827/go-serial"
 )
 
 type GnssTime struct {
@@ -22,11 +23,12 @@ type GnssState struct {
 }
 
 type GnssDependency struct {
-	Port  io.ReadWriteCloser
+	Port  *serial.Port
 	State *GnssState
 }
 
 type GnssDriver interface {
 	SetBaseline(deps *GnssDependency, baseline float64) error
+	GetBaseline(deps *GnssDependency) (float64, error)
 	GetState(deps *GnssDependency) error
 }

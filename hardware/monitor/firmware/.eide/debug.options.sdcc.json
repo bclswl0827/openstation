@@ -8,7 +8,7 @@
         "misc-controls": "--iram-size 256 --xram-size 0 --code-size 8192"
     },
     "c/cpp-compiler": {
-        "language-c": "c99"
+        "language-c": "c11"
     },
     "asm-compiler": {},
     "linker": {

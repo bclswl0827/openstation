@@ -36,7 +36,7 @@ export const menuConfig: MenuItem[] = [
 		icon: mdiCalendarCheck
 	},
 	{
-		url: "/satellite",
+		url: "/satellites",
 		label: {
 			"en-US": "Satellite Orbit",
 			"zh-TW": "衛星轨道",

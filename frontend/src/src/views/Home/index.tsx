@@ -16,7 +16,6 @@ import { Error } from "../../components/Error";
 import { Holder } from "../../components/Holder";
 import { MapBox, MapBoxProps } from "../../components/MapBox";
 import { useGetHomeDataQuery } from "../../graphql";
-import { sendUserAlert } from "../../helpers/interact/sendUserAlert";
 
 const RETENTION_THRESHOLD_MS = 1000 * 60 * 5;
 
@@ -171,13 +170,11 @@ const Home = () => {
 				center: [getGnss.latitude, getGnss.longitude],
 				marker: [getGnss.latitude, getGnss.longitude]
 			}));
-		} else if (error) {
-			sendUserAlert("Failed to fetch station information.", true);
 		}
 	}, [data, error, loading]);
 
 	return !error ? (
-		<div className="p-8">
+		<div className="p-8 min-h-screen">
 			<div className="p-4">
 				<div className="flex space-x-4 text-gray-800 dark:text-gray-300">
 					<Icon path={mdiSatelliteUplink} size={1} />

@@ -16,7 +16,6 @@ import (
 	"github.com/bclswl0827/openstation/server"
 	"github.com/bclswl0827/openstation/services"
 	service_forecast "github.com/bclswl0827/openstation/services/forecast"
-	service_monitor "github.com/bclswl0827/openstation/services/monitor"
 	service_tracking "github.com/bclswl0827/openstation/services/tracking"
 	"github.com/bclswl0827/openstation/startups"
 
@@ -159,7 +158,7 @@ func main() {
 	regServices := []services.Service{
 		&service_forecast.ForecastService{},
 		&service_tracking.TrackingService{},
-		&service_monitor.MonitorService{},
+		// &service_monitor.MonitorService{},
 	}
 	serviceOptions := &services.Options{
 		Config:     &conf,

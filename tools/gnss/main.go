@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"time"
 
 	"github.com/bclswl0827/openstation/drivers/gnss"
 	"github.com/bclswl0827/openstation/drivers/serial"
@@ -11,8 +12,8 @@ import (
 
 func parseCommandLine(args *arguments) {
 	flag.StringVar(&args.gnssDevice, "gnss-device", "/dev/ttyUSB0", "Path to GNSS device")
-	flag.IntVar(&args.gnssBaudrate, "gnss-baudurate", 9600, "Baudrate for GNSS device")
-	flag.Float64Var(&args.gnssBaseline, "gnss-baseline", 1, "Baseline for GNSS device")
+	flag.IntVar(&args.gnssBaudrate, "gnss-baudurate", 115200, "Baudrate for GNSS device")
+	flag.Float64Var(&args.gnssBaseline, "gnss-baseline", 0, "Baseline for GNSS device")
 	flag.Parse()
 }
 
@@ -40,6 +41,13 @@ func main() {
 		}
 	}
 
+	baseline, err := gnssDriver.GetBaseline(gnssDependency)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	log.Printf("GNSS antenna baseline: %.2f\n", baseline)
+
 	for {
 		err = gnssDriver.GetState(gnssDependency)
 		if err != nil {
@@ -47,5 +55,6 @@ func main() {
 		}
 
 		spew.Dump(gnssDependency.State)
+		time.Sleep(time.Millisecond * 10)
 	}
 }

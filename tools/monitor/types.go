@@ -8,4 +8,6 @@ type arguments struct {
 	isErrorLED      bool
 	startX          int
 	startY          int
+	reset           bool
+	init            bool
 }

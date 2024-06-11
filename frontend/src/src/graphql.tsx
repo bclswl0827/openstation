@@ -29,6 +29,7 @@ export type Mutation = {
   rebootSystem: Scalars['Boolean']['output'];
   setAllTLEs: Scalars['Int']['output'];
   setPanTilt: Scalars['Boolean']['output'];
+  setPanTiltOffset: Scalars['Boolean']['output'];
   setPanTiltToNorth: Scalars['Boolean']['output'];
   updateTLEById: Scalars['Boolean']['output'];
 };
@@ -54,6 +55,11 @@ export type MutationSetPanTiltArgs = {
   newPan: Scalars['Float']['input'];
   newTilt: Scalars['Float']['input'];
   sync: Scalars['Boolean']['input'];
+};
+
+
+export type MutationSetPanTiltOffsetArgs = {
+  newOffset: Scalars['Float']['input'];
 };
 
 
@@ -138,6 +144,21 @@ export type TleData = {
   updatedAt: Scalars['Int64']['output'];
 };
 
+export type GetControlDataQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetControlDataQuery = { __typename?: 'Query', getGnss: { __typename?: 'gnss', trueAzimuth: number }, getPanTilt: { __typename?: 'panTilt', currentPan: number, currentTilt: number, northOffset: number, isBusy: boolean } };
+
+export type SetPanTiltMutationVariables = Exact<{
+  newPan: Scalars['Float']['input'];
+  newTilt: Scalars['Float']['input'];
+  newOffset: Scalars['Float']['input'];
+  sync: Scalars['Boolean']['input'];
+}>;
+
+
+export type SetPanTiltMutation = { __typename?: 'Mutation', setPanTiltOffset: boolean, setPanTilt: boolean };
+
 export type GetDebugDataQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -174,6 +195,86 @@ export type GetHomeDataQueryVariables = Exact<{ [key: string]: never; }>;
 export type GetHomeDataQuery = { __typename?: 'Query', getStation: { __typename?: 'station', name: string, location: string, remarks: Array<string>, satellites: number, pendingTasks: number, totalTasks: number, totalForecast: number, clockOffset: number }, getGnss: { __typename?: 'gnss', timestamp: number, latitude: number, longitude: number, elevation: number, trueAzimuth: number, dataQuality: number, satellites: number }, getSystem: { __typename?: 'system', cpuUsage: number, memUsage: number } };
 
 
+export const GetControlDataDocument = gql`
+    query getControlData {
+  getGnss(acquire: true) {
+    trueAzimuth
+  }
+  getPanTilt {
+    currentPan
+    currentTilt
+    northOffset
+    isBusy
+  }
+}
+    `;
+
+/**
+ * __useGetControlDataQuery__
+ *
+ * To run a query within a React component, call `useGetControlDataQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetControlDataQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetControlDataQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetControlDataQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetControlDataQuery, GetControlDataQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetControlDataQuery, GetControlDataQueryVariables>(GetControlDataDocument, options);
+      }
+export function useGetControlDataLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetControlDataQuery, GetControlDataQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetControlDataQuery, GetControlDataQueryVariables>(GetControlDataDocument, options);
+        }
+export function useGetControlDataSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetControlDataQuery, GetControlDataQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<GetControlDataQuery, GetControlDataQueryVariables>(GetControlDataDocument, options);
+        }
+export type GetControlDataQueryHookResult = ReturnType<typeof useGetControlDataQuery>;
+export type GetControlDataLazyQueryHookResult = ReturnType<typeof useGetControlDataLazyQuery>;
+export type GetControlDataSuspenseQueryHookResult = ReturnType<typeof useGetControlDataSuspenseQuery>;
+export type GetControlDataQueryResult = ApolloReactCommon.QueryResult<GetControlDataQuery, GetControlDataQueryVariables>;
+export const SetPanTiltDocument = gql`
+    mutation setPanTilt($newPan: Float!, $newTilt: Float!, $newOffset: Float!, $sync: Boolean!) {
+  setPanTiltOffset(newOffset: $newOffset)
+  setPanTilt(newPan: $newPan, newTilt: $newTilt, sync: $sync)
+}
+    `;
+export type SetPanTiltMutationFn = ApolloReactCommon.MutationFunction<SetPanTiltMutation, SetPanTiltMutationVariables>;
+
+/**
+ * __useSetPanTiltMutation__
+ *
+ * To run a mutation, you first call `useSetPanTiltMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSetPanTiltMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [setPanTiltMutation, { data, loading, error }] = useSetPanTiltMutation({
+ *   variables: {
+ *      newPan: // value for 'newPan'
+ *      newTilt: // value for 'newTilt'
+ *      newOffset: // value for 'newOffset'
+ *      sync: // value for 'sync'
+ *   },
+ * });
+ */
+export function useSetPanTiltMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<SetPanTiltMutation, SetPanTiltMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<SetPanTiltMutation, SetPanTiltMutationVariables>(SetPanTiltDocument, options);
+      }
+export type SetPanTiltMutationHookResult = ReturnType<typeof useSetPanTiltMutation>;
+export type SetPanTiltMutationResult = ApolloReactCommon.MutationResult<SetPanTiltMutation>;
+export type SetPanTiltMutationOptions = ApolloReactCommon.BaseMutationOptions<SetPanTiltMutation, SetPanTiltMutationVariables>;
 export const GetDebugDataDocument = gql`
     query getDebugData {
   getGnss(acquire: true) {

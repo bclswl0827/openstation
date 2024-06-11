@@ -1,0 +1,11 @@
+query getControlData {
+	getGnss(acquire: true) {
+		trueAzimuth
+	}
+	getPanTilt {
+		currentPan
+		currentTilt
+		northOffset
+		isBusy
+	}
+}

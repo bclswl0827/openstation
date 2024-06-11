@@ -63,15 +63,15 @@ func (d *PanTiltDriverImpl) Reset(deps *PanTiltDependency, sig chan<- bool) erro
 
 	// Wait for 300ms before sending reset command
 	time.Sleep(300 * time.Millisecond)
-	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, resetCmd...))
+	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, resetCmd...), false)
 	if err != nil {
 		return err
 	}
 
-	// Reset takes approximately 120 seconds
+	// Reset takes approximately 95 seconds
 	if sig != nil {
 		go func() {
-			time.Sleep(120 * time.Second)
+			time.Sleep(95 * time.Second)
 			sig <- true
 		}()
 	}
@@ -89,7 +89,7 @@ func (d *PanTiltDriverImpl) GetPan(deps *PanTiltDependency) error {
 
 	// Send query command and wait approximately 50ms
 	queryCmd := []byte{SLAVE_ADDR, 0x00, 0x51, 0x00, 0x00, 0x52}
-	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, queryCmd...))
+	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, queryCmd...), false)
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (d *PanTiltDriverImpl) GetPan(deps *PanTiltDependency) error {
 
 	// Read response
 	response := make([]byte, 7)
-	_, err = serial.Read(deps.Port, response, READ_TIMEOUT)
+	_, err = serial.Read(deps.Port, response, READ_TIMEOUT, false)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,14 @@ func (d *PanTiltDriverImpl) GetPan(deps *PanTiltDependency) error {
 
 	// Calculate pan angle
 	pmsb, plsb := response[4], response[5]
-	deps.CurrentPan = (float64(pmsb)*256 + float64(plsb)) / 100
+	pan := (float64(pmsb)*256 + float64(plsb)) / 100
+
+	// Absolute pan angle with north offset
+	deps.CurrentPan = pan + deps.NorthOffset
+	if deps.CurrentPan > 360 {
+		deps.CurrentPan = deps.CurrentPan - 360
+	}
+
 	return nil
 }
 
@@ -124,7 +131,7 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, sig 
 	}
 
 	if newPan > MAX_PAN || newPan < MIN_PAN {
-		return fmt.Errorf("pan angle must be between %d and %d degrees", MIN_PAN, MAX_PAN)
+		return fmt.Errorf("pan angle must be between %.2f and %.2f degrees", MIN_PAN, MAX_PAN)
 	}
 
 	// Check if pan tilt is currently busy
@@ -134,11 +141,15 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, sig 
 	deps.IsBusy = true
 
 	// Calculate encoded pan with north offset
+	newPanWithOffset := newPan
 	if deps.NorthOffset != 0 {
-		newPan = 360 - deps.NorthOffset + newPan
+		newPanWithOffset = 360 - deps.NorthOffset + newPanWithOffset
+		if newPanWithOffset > 360 {
+			newPanWithOffset = newPanWithOffset - 360
+		}
 	}
 
-	encodedPan := int(newPan * 100)
+	encodedPan := int(newPanWithOffset * 100)
 	pmsb, plsb := byte(encodedPan>>8), byte(encodedPan&0xFF)
 
 	setCmd := []byte{SLAVE_ADDR, 0x00, 0x4B, pmsb, plsb}
@@ -146,7 +157,7 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, sig 
 	setCmd = append(setCmd, checksum)
 
 	// Send set command
-	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, setCmd...))
+	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, setCmd...), false)
 	if err != nil {
 		deps.IsBusy = false
 		return err
@@ -172,6 +183,8 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, sig 
 					sig <- false
 					return
 				}
+
+				time.Sleep(time.Millisecond * 10)
 			}
 		}()
 	}
@@ -190,7 +203,7 @@ func (d *PanTiltDriverImpl) GetTilt(deps *PanTiltDependency) error {
 
 	// Send query command and wait approximately 50ms
 	queryCmd := []byte{SLAVE_ADDR, 0x00, 0x53, 0x00, 0x00, 0x54}
-	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, queryCmd...))
+	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, queryCmd...), false)
 	if err != nil {
 		return err
 	}
@@ -198,7 +211,7 @@ func (d *PanTiltDriverImpl) GetTilt(deps *PanTiltDependency) error {
 
 	// Read response
 	response := make([]byte, 7)
-	_, err = serial.Read(deps.Port, response, READ_TIMEOUT)
+	_, err = serial.Read(deps.Port, response, READ_TIMEOUT, false)
 	if err != nil {
 		return err
 	}
@@ -249,7 +262,7 @@ func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, si
 	setCmd = append(setCmd, checksum)
 
 	// Send set command
-	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, setCmd...))
+	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, setCmd...), false)
 	if err != nil {
 		deps.IsBusy = false
 		return err
@@ -275,6 +288,8 @@ func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, si
 					sig <- false
 					return
 				}
+
+				time.Sleep(time.Millisecond * 10)
 			}
 		}()
 	}

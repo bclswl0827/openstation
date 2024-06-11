@@ -1,9 +1,5 @@
 #include "framework/digital.h"
 
-#define GET_STATE(port, pin) (port >> pin) & 0x01
-#define SET_STATE(port, pin, state) \
-    (port = state ? (port | (1 << pin)) : (port & ~(1 << pin)))
-
 // Set pin state
 void digitalWrite(uint8_t pinNum, uint8_t state) {
     uint8_t port = pinNum / 10;
@@ -11,16 +7,16 @@ void digitalWrite(uint8_t pinNum, uint8_t state) {
 
     switch (port) {
         case 0:
-            SET_STATE(P0, pin, state);
+            __SET_STATE(P0, pin, state);
             break;
         case 1:
-            SET_STATE(P1, pin, state);
+            __SET_STATE(P1, pin, state);
             break;
         case 2:
-            SET_STATE(P2, pin, state);
+            __SET_STATE(P2, pin, state);
             break;
         case 3:
-            SET_STATE(P3, pin, state);
+            __SET_STATE(P3, pin, state);
             break;
         default:
             return;
@@ -34,13 +30,13 @@ uint8_t digitalRead(uint8_t pinNum) {
 
     switch (port) {
         case 0:
-            return GET_STATE(P0, pin);
+            return __GET_STATE(P0, pin);
         case 1:
-            return GET_STATE(P1, pin);
+            return __GET_STATE(P1, pin);
         case 2:
-            return GET_STATE(P2, pin);
+            return __GET_STATE(P2, pin);
         case 3:
-            return GET_STATE(P3, pin);
+            return __GET_STATE(P3, pin);
     }
 
     return 0;

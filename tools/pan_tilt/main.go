@@ -13,7 +13,9 @@ func parseCommandLine(args *arguments) {
 	flag.IntVar(&args.pantiltBaudrate, "pantilt-baudurate", 9600, "Baudrate for monitor device")
 	flag.Float64Var(&args.pan, "pan", 0.0, "Pan value")
 	flag.Float64Var(&args.tilt, "tilt", 90.0, "Tilt value")
+	flag.Float64Var(&args.offset, "offset", 0, "Offset to true north")
 	flag.BoolVar(&args.reset, "reset", false, "Reset pan-tilt device")
+	flag.BoolVar(&args.init, "init", false, "Init pan-tilt device")
 	flag.Parse()
 }
 
@@ -28,7 +30,8 @@ func main() {
 	defer serial.Close(panTiltPort)
 
 	panTiltDependency := &pan_tilt.PanTiltDependency{
-		Port: panTiltPort,
+		Port:        panTiltPort,
+		NorthOffset: args.offset,
 	}
 	panTiltDriver := pan_tilt.PanTiltDriver(&pan_tilt.PanTiltDriverImpl{})
 
@@ -43,12 +46,14 @@ func main() {
 		<-sig
 	}
 
-	log.Println("pan-tilt device is being initialized")
-	err = panTiltDriver.Init(panTiltDependency)
-	if err != nil {
-		log.Fatalln(err)
+	if args.init {
+		log.Println("pan-tilt device is being initialized")
+		err = panTiltDriver.Init(panTiltDependency)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		log.Println("pan-tilt device has been initialized")
 	}
-	log.Println("pan-tilt device has been initialized")
 
 	log.Println("pan-tilt device is moving to specified position")
 	sig := make(chan bool)

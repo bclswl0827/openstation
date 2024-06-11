@@ -25,7 +25,7 @@ type RouterConfig = {
 
 const Home = lazy(() => import("../views/Home"));
 const Tasks = lazy(() => import("../views/Tasks"));
-const Satellite = lazy(() => import("../views/Satellite"));
+const Satellites = lazy(() => import("../views/Satellites"));
 const Control = lazy(() => import("../views/Control"));
 const Debug = lazy(() => import("../views/Debug"));
 const NotFound = lazy(() => import("../views/NotFound"));
@@ -55,11 +55,11 @@ export const routerConfig: RouterConfig = {
 			}
 		},
 		satellite: {
-			uri: "/satellite",
+			uri: "/satellites",
 			pattern: "",
-			element: Satellite,
+			element: Satellites,
 			title: {
-				"en-US": "Satellite Orbit",
+				"en-US": "Satellite Orbits",
 				"zh-TW": "衛星轨道",
 				"zh-CN": "卫星轨道"
 			}

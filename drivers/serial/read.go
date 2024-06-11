@@ -4,9 +4,19 @@ import (
 	"fmt"
 	"io"
 	"time"
+
+	"github.com/bclswl0827/go-serial"
 )
 
-func Read(r io.Reader, buf []byte, timeout time.Duration) (n int, err error) {
+func Read(r *serial.Port, buf []byte, timeout time.Duration, flush bool) (n int, err error) {
+	if r == nil {
+		return -1, fmt.Errorf("port is nil")
+	}
+
+	if flush {
+		r.ResetInputBuffer()
+	}
+
 	min := len(buf)
 
 	if len(buf) < min {

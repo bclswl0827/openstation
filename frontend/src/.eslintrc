@@ -9,10 +9,11 @@
 		"plugin:@typescript-eslint/eslint-recommended"
 	],
 	"rules": {
+		"@typescript-eslint/no-var-requires": "off",
+		"@typescript-eslint/no-non-null-assertion": "off",
 		"no-unused-vars": "off",
 		"simple-import-sort/imports": "error",
 		"simple-import-sort/exports": "error",
-		"@typescript-eslint/no-non-null-assertion": "off",
 		"no-empty": "error",
 		"no-undef": "error",
 		"block-scoped-var": "error",

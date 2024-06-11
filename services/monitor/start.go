@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/bclswl0827/openstation/drivers/monitor"
 	"github.com/bclswl0827/openstation/drivers/pan_tilt"
@@ -12,16 +11,20 @@ import (
 
 func (s *MonitorService) Start(options *services.Options) {
 	driver := monitor.MonitorDriver(&monitor.MonitorDriverImpl{})
+	var (
+		monitorDeps *monitor.MonitorDependency
+		panTiltDeps *pan_tilt.PanTiltDependency
+	)
+	options.Dependency.Invoke(func(md *monitor.MonitorDependency, pd *pan_tilt.PanTiltDependency) {
+		monitorDeps = md
+		panTiltDeps = pd
+		md.ForceMode = false
+	})
 	for {
-		options.Dependency.Invoke(func(monitorDeps *monitor.MonitorDependency, panTiltDeps *pan_tilt.PanTiltDependency) {
-			var (
-				pan  = panTiltDeps.CurrentPan
-				tilt = panTiltDeps.CurrentTilt
-			)
-			driver.Display(monitorDeps, fmt.Sprintf("Pan: %.2f deg\nTilt: %.2f deg", pan, tilt), 0, 0)
-		})
-
-		time.Sleep(time.Second)
+		err := driver.Display(monitorDeps, fmt.Sprintf("Pan: %.2f deg\nTilt: %.2f deg", panTiltDeps.CurrentPan, panTiltDeps.CurrentTilt), 0, 0)
+		if err != nil {
+			break
+		}
 	}
 }
 
