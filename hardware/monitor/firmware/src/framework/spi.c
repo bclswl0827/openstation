@@ -1,7 +1,7 @@
 #include "framework/spi.h"
 
-uint8_t __spi_bit_order = MSBFIRST;   // 位顺序
-uint8_t __spi_data_mode = SPI_MODE0;  // 数据模式
+uint8_t __spi_bit_order = MSBFIRST;
+uint8_t __spi_data_mode = SPI_MODE0;
 
 void __spi_setSCK(uint8_t val) {
     SCK = val ? 1 : 0;

@@ -3,14 +3,18 @@ package serial
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"time"
+
+	"github.com/bclswl0827/go-serial"
 )
 
-func Filter(port io.ReadWriteCloser, signature []byte, filter_attempts int) error {
+func Filter(port *serial.Port, signature []byte, filter_attempts int) error {
 	if port == nil {
 		return fmt.Errorf("port is nil")
 	}
+
+	port.ResetInputBuffer()
+	port.ResetOutputBuffer()
 
 	header := make([]byte, len(signature))
 	for i := 0; i < filter_attempts; i++ {

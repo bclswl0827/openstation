@@ -2,12 +2,11 @@ package serial
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/bclswl0827/go-serial"
 )
 
-func Open(device string, baud int) (io.ReadWriteCloser, error) {
+func Open(device string, baud int) (*serial.Port, error) {
 	port, err := serial.Open(device,
 		serial.WithHUPCL(true),
 		serial.WithDataBits(8),

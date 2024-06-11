@@ -56,17 +56,18 @@ type ComplexityRoot struct {
 		RebootSystem         func(childComplexity int) int
 		SetAllTLEs           func(childComplexity int, tleData string, overwrite bool) int
 		SetPanTilt           func(childComplexity int, newPan float64, newTilt float64, sync bool) int
+		SetPanTiltOffset     func(childComplexity int, newOffset float64) int
 		SetPanTiltToNorth    func(childComplexity int) int
 		UpdateTLEByID        func(childComplexity int, id int64, tleData string) int
 	}
 
 	Query struct {
-		GetAllTLEIds func(childComplexity int) int
-		GetGnss      func(childComplexity int, acquire bool) int
-		GetPanTilt   func(childComplexity int) int
-		GetStation   func(childComplexity int) int
-		GetSystem    func(childComplexity int) int
-		GetTLEByID   func(childComplexity int, id int64) int
+		GetGnss            func(childComplexity int, acquire bool) int
+		GetPanTilt         func(childComplexity int) int
+		GetStation         func(childComplexity int) int
+		GetSystem          func(childComplexity int) int
+		GetTLEByID         func(childComplexity int, id int64) int
+		GetTLEIdsByKeyword func(childComplexity int, keyword string) int
 	}
 
 	Gnss struct {
@@ -123,6 +124,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	SetPanTilt(ctx context.Context, newPan float64, newTilt float64, sync bool) (bool, error)
+	SetPanTiltOffset(ctx context.Context, newOffset float64) (bool, error)
 	SetPanTiltToNorth(ctx context.Context) (bool, error)
 	SetAllTLEs(ctx context.Context, tleData string, overwrite bool) (int, error)
 	AddNewTle(ctx context.Context, tleData string) (bool, error)
@@ -138,8 +140,8 @@ type QueryResolver interface {
 	GetPanTilt(ctx context.Context) (*model.PanTilt, error)
 	GetSystem(ctx context.Context) (*model.System, error)
 	GetGnss(ctx context.Context, acquire bool) (*model.Gnss, error)
-	GetAllTLEIds(ctx context.Context) ([]*int64, error)
 	GetTLEByID(ctx context.Context, id int64) (*model.TleData, error)
+	GetTLEIdsByKeyword(ctx context.Context, keyword string) ([]*int64, error)
 }
 
 type executableSchema struct {
@@ -237,6 +239,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SetPanTilt(childComplexity, args["newPan"].(float64), args["newTilt"].(float64), args["sync"].(bool)), true
 
+	case "Mutation.setPanTiltOffset":
+		if e.complexity.Mutation.SetPanTiltOffset == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setPanTiltOffset_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetPanTiltOffset(childComplexity, args["newOffset"].(float64)), true
+
 	case "Mutation.setPanTiltToNorth":
 		if e.complexity.Mutation.SetPanTiltToNorth == nil {
 			break
@@ -255,13 +269,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateTLEByID(childComplexity, args["id"].(int64), args["tleData"].(string)), true
-
-	case "Query.getAllTLEIds":
-		if e.complexity.Query.GetAllTLEIds == nil {
-			break
-		}
-
-		return e.complexity.Query.GetAllTLEIds(childComplexity), true
 
 	case "Query.getGnss":
 		if e.complexity.Query.GetGnss == nil {
@@ -307,6 +314,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetTLEByID(childComplexity, args["id"].(int64)), true
+
+	case "Query.getTLEIdsByKeyword":
+		if e.complexity.Query.GetTLEIdsByKeyword == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getTLEIdsByKeyword_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetTLEIdsByKeyword(childComplexity, args["keyword"].(string)), true
 
 	case "gnss.dataQuality":
 		if e.complexity.Gnss.DataQuality == nil {
@@ -737,6 +756,21 @@ func (ec *executionContext) field_Mutation_setAllTLEs_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_setPanTiltOffset_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 float64
+	if tmp, ok := rawArgs["newOffset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newOffset"))
+		arg0, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["newOffset"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_setPanTilt_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -839,6 +873,21 @@ func (ec *executionContext) field_Query_getTLEById_args(ctx context.Context, raw
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_getTLEIdsByKeyword_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["keyword"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keyword"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["keyword"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -926,6 +975,61 @@ func (ec *executionContext) fieldContext_Mutation_setPanTilt(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_setPanTilt_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_setPanTiltOffset(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_setPanTiltOffset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SetPanTiltOffset(rctx, fc.Args["newOffset"].(float64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_setPanTiltOffset(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_setPanTiltOffset_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -1623,50 +1727,6 @@ func (ec *executionContext) fieldContext_Query_getGnss(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_getAllTLEIds(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_getAllTLEIds(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetAllTLEIds(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*int64)
-	fc.Result = res
-	return ec.marshalNInt642ᚕᚖint64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_getAllTLEIds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int64 does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_getTLEById(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_getTLEById(ctx, field)
 	if err != nil {
@@ -1731,6 +1791,61 @@ func (ec *executionContext) fieldContext_Query_getTLEById(ctx context.Context, f
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_getTLEById_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getTLEIdsByKeyword(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getTLEIdsByKeyword(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetTLEIdsByKeyword(rctx, fc.Args["keyword"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*int64)
+	fc.Result = res
+	return ec.marshalNInt642ᚕᚖint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getTLEIdsByKeyword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getTLEIdsByKeyword_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5257,6 +5372,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "setPanTiltOffset":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_setPanTiltOffset(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "setPanTiltToNorth":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_setPanTiltToNorth(ctx, field)
@@ -5450,28 +5572,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "getAllTLEIds":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_getAllTLEIds(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "getTLEById":
 			field := field
 
@@ -5482,6 +5582,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getTLEById(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getTLEIdsByKeyword":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getTLEIdsByKeyword(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 

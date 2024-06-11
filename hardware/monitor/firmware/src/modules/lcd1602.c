@@ -15,7 +15,7 @@ void LCD1602WriteChip(uint8_t dat) {
 
 void LCD1602EnableLCD(uint8_t value) {
     LCD1602WriteChip(value | LCD1602_EN);
-    LCD1602WriteChip(value & (~4));
+    LCD1602WriteChip(value & (~LCD1602_EN));
 }
 
 void LCD1602WriteData(uint8_t type, uint8_t dat) {
@@ -65,10 +65,10 @@ void LCD1602Clear() {
 }
 
 void LCD1602GotoXY(uint8_t x, uint8_t y) {
-    if (x % 2 == 0) {
-        LCD1602WriteData(LCD1602_CMD, 0x80 + y);
+    if (y % 2 == 0) {
+        LCD1602WriteData(LCD1602_CMD, 0x80 + x);
     } else {
-        LCD1602WriteData(LCD1602_CMD, (0x80 + 0x40 + y));
+        LCD1602WriteData(LCD1602_CMD, (0x80 + 0x40 + x));
     }
 }
 

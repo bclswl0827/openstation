@@ -1,6 +1,6 @@
 package monitor
 
-import "io"
+import "github.com/bclswl0827/go-serial"
 
 type MonitorState struct {
 	Busy  bool
@@ -8,8 +8,9 @@ type MonitorState struct {
 }
 
 type MonitorDependency struct {
-	Port  io.ReadWriteCloser
-	State *MonitorState
+	ForceMode bool
+	Port      *serial.Port
+	State     *MonitorState
 }
 
 type MonitorDriver interface {

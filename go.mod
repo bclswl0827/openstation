@@ -1,9 +1,9 @@
 module github.com/bclswl0827/openstation
 
-go 1.22.0
+go 1.21.5
 
 require (
-	github.com/99designs/gqlgen v0.17.47
+	github.com/99designs/gqlgen v0.17.48
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
 	github.com/bclswl0827/go-serial v0.0.1
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be
@@ -20,7 +20,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/vektah/gqlparser/v2 v2.5.12
 	go.uber.org/dig v1.17.1
-	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	gorm.io/driver/mysql v1.5.6
 	gorm.io/driver/postgres v1.5.7
 	gorm.io/driver/sqlserver v1.5.3
@@ -44,6 +43,7 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect

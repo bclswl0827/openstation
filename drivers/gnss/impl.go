@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"strconv"
 	"strings"
 	"time"
 
+	libserial "github.com/bclswl0827/go-serial"
 	"github.com/bclswl0827/openstation/drivers/serial"
 )
 
@@ -72,7 +72,7 @@ func (r *GnssDriverImpl) parseRMC(isDataValid *bool, latitude, longitude *float6
 	// Get latitude in decimal degrees
 	lat, err := strconv.ParseFloat(fields[3], 64)
 	if err != nil {
-		return err
+		lat = 0
 	}
 	latDeg := int(lat / 100)
 	latMin := lat - float64(latDeg*100)
@@ -90,7 +90,7 @@ func (r *GnssDriverImpl) parseRMC(isDataValid *bool, latitude, longitude *float6
 	// Get longitude in decimal degrees
 	lon, err := strconv.ParseFloat(fields[5], 64)
 	if err != nil {
-		return err
+		lon = 0
 	}
 	lonDeg := int(lon / 100)
 	lonMin := lon - float64(lonDeg*100)
@@ -122,7 +122,7 @@ func (r *GnssDriverImpl) parseGGA(satellites *int, elevation *float64) error {
 	// Get elevation in meters
 	elev, err := strconv.ParseFloat(fields[9], 64)
 	if err != nil {
-		return err
+		elev = 0
 	}
 	*elevation = elev
 
@@ -202,16 +202,15 @@ func (e *GnssDriverImpl) extractMessage(text, keyword string) (string, error) {
 	return "", errors.New("no message found with the given keyword")
 }
 
-func (r *GnssDriverImpl) getMessages(port io.ReadWriteCloser, read_attempts int) error {
+func (r *GnssDriverImpl) getMessages(port *libserial.Port, read_attempts int) error {
 	var (
 		rmc     string
 		gga     string
 		pqtmtar string
 	)
 	for ; read_attempts > 0; read_attempts-- {
-		buffer := make([]byte, 512)
-		serial.Filter(port, []byte{'\n'}, math.MaxInt8)
-		serial.Read(port, buffer, time.Second)
+		buffer := make([]byte, 1024)
+		serial.Read(port, buffer, time.Millisecond*500, true)
 		lines := string(buffer[:])
 
 		// Try to extract RMC message
@@ -307,11 +306,52 @@ func (r *GnssDriverImpl) SetBaseline(deps *GnssDependency, baseline float64) err
 	command := fmt.Sprintf("$PQTMCFGBLD,W,%.3f", baseline)
 	checksum := r.getMessageChecksum(command)
 	_, err := serial.Write(
-		deps.Port, []byte(fmt.Sprintf("%s*%s\r\n", command, checksum)),
+		deps.Port, []byte(fmt.Sprintf("%s*%s\r\n", command, checksum)), false,
 	)
 	if err != nil {
 		return err
 	}
 
+	// Check module's response
+	err = serial.Filter(deps.Port, []byte("$PQTMCFGBLD,OK"), math.MaxInt8)
+	if err != nil {
+		return err
+	}
+
+	// Save baseline
+	_, err = serial.Write(deps.Port, []byte("$PQTMSAVEPAR*5A\r\n"), false)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (r *GnssDriverImpl) GetBaseline(deps *GnssDependency) (float64, error) {
+	_, err := serial.Write(deps.Port, []byte("$PQTMCFGBLD,R*6E\r\n"), false)
+	if err != nil {
+		return 0, err
+	}
+
+	buffer := make([]byte, 128)
+	serial.Read(deps.Port, buffer, time.Millisecond*500, true)
+	lines := strings.Split(string(buffer[:]), "\n")
+	for _, line := range lines {
+		line = strings.ReplaceAll(line, "\r", "")
+		if strings.Contains(line, "$PQTMCFGBLD") {
+			if !r.isMessageValid(line) {
+				return 0, errors.New("got invalid $PQTMCFGBLD message, checksum mismatch")
+			}
+
+			fields := strings.Split(line, ",")
+			if len(fields) != 3 {
+				return 0, errors.New("got invalid $PQTMCFGBLD message, fields count mismatch")
+			}
+
+			baseline, err := strconv.ParseFloat((fields[2][:len(fields[2])-3]), 64)
+			return baseline, err
+		}
+	}
+
+	return 0, errors.New("failed to get baseline")
 }

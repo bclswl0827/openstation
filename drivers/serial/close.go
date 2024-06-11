@@ -1,8 +1,8 @@
 package serial
 
-import "io"
+import "github.com/bclswl0827/go-serial"
 
-func Close(port io.ReadWriteCloser) error {
+func Close(port *serial.Port) error {
 	if port == nil {
 		return nil
 	}

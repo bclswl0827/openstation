@@ -64,7 +64,12 @@ func (d *MonitorDriverImpl) Display(deps *MonitorDependency, str string, x, y in
 		}
 	}
 
-	for n := 0; n < 2; n++ {
+	writeTimes := 1
+	if deps.ForceMode {
+		writeTimes = 2
+	}
+
+	for i := 0; i < writeTimes; i++ {
 		for columnIndex, column := range strArr {
 			if len(column) > DISPLAY_WIDTH {
 				return errors.New("string length exceeds display size")
@@ -79,7 +84,7 @@ func (d *MonitorDriverImpl) Display(deps *MonitorDependency, str string, x, y in
 					byte(led),
 				}
 
-				_, err := serial.Write(deps.Port, append(cmd, d.getChecksum(cmd)))
+				_, err := serial.Write(deps.Port, append(cmd, d.getChecksum(cmd)), true)
 				if err != nil {
 					return err
 				}
@@ -103,7 +108,7 @@ func (d *MonitorDriverImpl) Clear(deps *MonitorDependency) error {
 	}
 
 	cmd := []byte{SYNC_WORD, CLEAR_CMD}
-	_, err := serial.Write(deps.Port, append(cmd, d.getChecksum(cmd)))
+	_, err := serial.Write(deps.Port, append(cmd, d.getChecksum(cmd)), true)
 	if err != nil {
 		return err
 	}
@@ -118,7 +123,7 @@ func (d *MonitorDriverImpl) Reset(deps *MonitorDependency) error {
 	}
 
 	cmd := []byte{SYNC_WORD, RESET_CMD}
-	_, err := serial.Write(deps.Port, append(cmd, d.getChecksum(cmd)))
+	_, err := serial.Write(deps.Port, append(cmd, d.getChecksum(cmd)), true)
 	if err != nil {
 		return err
 	}
@@ -128,10 +133,5 @@ func (d *MonitorDriverImpl) Reset(deps *MonitorDependency) error {
 }
 
 func (d *MonitorDriverImpl) Init(deps *MonitorDependency) error {
-	err := d.Clear(deps)
-	if err != nil {
-		return err
-	}
-
 	return d.Clear(deps)
 }

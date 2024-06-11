@@ -7,12 +7,21 @@ import (
 )
 
 func (s *MonitorService) Stop(options *services.Options) {
-	options.Dependency.Invoke(func(deps *monitor.MonitorDependency) {
+	driver := monitor.MonitorDriver(&monitor.MonitorDriverImpl{})
+	var tempMonitorDeps monitor.MonitorDependency
+
+	options.Dependency.Invoke(func(monitorDeps *monitor.MonitorDependency) {
+		monitorDeps.ForceMode = true
+		tempMonitorDeps = *monitorDeps
+		monitorDeps.Port = nil
+
 		// Display farewell message
-		driver := monitor.MonitorDriver(&monitor.MonitorDriverImpl{})
-		deps.State.Busy = false
-		deps.State.Error = false
-		driver.Display(deps, "System Shutdown", 0, 0)
+		tempMonitorDeps.State.Busy = false
+		tempMonitorDeps.State.Error = false
+		driver.Clear(&tempMonitorDeps)
+		driver.Display(&tempMonitorDeps, "System Shutdown\n", 0, 0)
+
+		monitorDeps.Port = tempMonitorDeps.Port
 	})
 }
 

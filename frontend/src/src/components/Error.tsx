@@ -24,7 +24,7 @@ export const Error = ({ code, heading, content, action, debug }: ErrorProps) => 
 	}, []);
 
 	return (
-		<div className="p-5 flex min-h-screen flex-col items-center text-center justify-center space-y-4">
+		<div className="p-5 flex min-h-screen flex-col items-center justify-center space-y-4">
 			<h1 className="text-6xl font-bold tracking-tight text-gray-800 dark:text-gray-200">
 				{code ?? ":-("}
 			</h1>
