@@ -17,11 +17,6 @@ type gnss struct {
 	Baseline float64 `json:"baseline"`
 }
 
-type monitor struct {
-	Device   string `json:"device"`
-	BaudRate int    `json:"baudrate"`
-}
-
 type database struct {
 	Engine   string `json:"engine"`
 	Host     string `json:"host"`
@@ -47,7 +42,6 @@ type Config struct {
 	Station  station  `json:"station_settings"`
 	PanTilt  pan_tilt `json:"pantilt_settings"`
 	GNSS     gnss     `json:"gnss_settings"`
-	Monitor  monitor  `json:"monitor_settings"`
 	Database database `json:"database_settings"`
 	Server   server   `json:"server_settings"`
 	Logger   logger   `json:"logger_settings"`

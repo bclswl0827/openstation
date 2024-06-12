@@ -12,10 +12,11 @@ func parseCommandLine(args *arguments) {
 	flag.StringVar(&args.pantiltDevice, "pantilt-device", "/dev/ttyUSB0", "Path to pan-tilt device")
 	flag.IntVar(&args.pantiltBaudrate, "pantilt-baudurate", 9600, "Baudrate for monitor device")
 	flag.Float64Var(&args.pan, "pan", 0.0, "Pan value")
-	flag.Float64Var(&args.tilt, "tilt", 90.0, "Tilt value")
+	flag.Float64Var(&args.tilt, "tilt", 0.0, "Tilt value")
 	flag.Float64Var(&args.offset, "offset", 0, "Offset to true north")
 	flag.BoolVar(&args.reset, "reset", false, "Reset pan-tilt device")
-	flag.BoolVar(&args.init, "init", false, "Init pan-tilt device")
+	flag.BoolVar(&args.zero, "zero", false, "Set pan-tilt to both 0")
+	flag.BoolVar(&args.wait, "wait", false, "Wait for pan-tilt device")
 	flag.Parse()
 }
 
@@ -46,30 +47,25 @@ func main() {
 		<-sig
 	}
 
-	if args.init {
-		log.Println("pan-tilt device is being initialized")
-		err = panTiltDriver.Init(panTiltDependency)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		log.Println("pan-tilt device has been initialized")
+	log.Println("pan-tilt device is being initialized")
+	err = panTiltDriver.Init(panTiltDependency, args.zero)
+	if err != nil {
+		log.Fatalln(err)
 	}
+	log.Println("pan-tilt device has been initialized")
 
 	log.Println("pan-tilt device is moving to specified position")
-	sig := make(chan bool)
-	err = panTiltDriver.SetPan(panTiltDependency, args.pan, sig)
+	err = panTiltDriver.SetPan(panTiltDependency, args.pan, args.wait)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	<-sig
 	log.Printf("current pan value: %f", args.pan)
 
-	err = panTiltDriver.SetTilt(panTiltDependency, args.tilt, sig)
+	err = panTiltDriver.SetTilt(panTiltDependency, args.tilt, args.wait)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	<-sig
 	log.Printf("current tilt value: %f", args.tilt)
 }

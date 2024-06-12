@@ -2,7 +2,6 @@ package peripherals
 
 import (
 	"github.com/bclswl0827/openstation/drivers/gnss"
-	"github.com/bclswl0827/openstation/drivers/monitor"
 	"github.com/bclswl0827/openstation/drivers/pan_tilt"
 	"github.com/bclswl0827/openstation/drivers/serial"
 	"github.com/bclswl0827/openstation/startups"
@@ -10,26 +9,6 @@ import (
 )
 
 func (t *PeripheralsStartupTask) Provide(container *dig.Container, options *startups.Options) error {
-	// Monitor device
-	var (
-		monitorDeviceName = options.Config.Monitor.Device
-		monitorBaudRate   = options.Config.Monitor.BaudRate
-	)
-	monitorPort, err := serial.Open(monitorDeviceName, monitorBaudRate)
-	if err != nil {
-		return err
-	}
-
-	err = container.Provide(func() *monitor.MonitorDependency {
-		return &monitor.MonitorDependency{
-			Port:  monitorPort,
-			State: &monitor.MonitorState{},
-		}
-	})
-	if err != nil {
-		return err
-	}
-
 	// Pan-Tilt device
 	var (
 		panTiltDeviceName = options.Config.PanTilt.Device

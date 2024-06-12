@@ -24,30 +24,16 @@ import (
 )
 
 // SetPanTilt is the resolver for the setPanTilt field.
-func (r *mutationResolver) SetPanTilt(ctx context.Context, newPan float64, newTilt float64, sync bool) (bool, error) {
+func (r *mutationResolver) SetPanTilt(ctx context.Context, newPan float64, newTilt float64) (bool, error) {
 	driver := pan_tilt.PanTiltDriver(&pan_tilt.PanTiltDriverImpl{})
 	err := r.Dependency.Invoke(func(deps *pan_tilt.PanTiltDependency) error {
-		if sync {
-			sig := make(chan bool)
-			err := driver.SetPan(deps, newPan, sig)
-			if err != nil {
-				return err
-			}
-			<-sig
-			err = driver.SetTilt(deps, newTilt, sig)
-			if err != nil {
-				return err
-			}
-			<-sig
-		} else {
-			err := driver.SetPan(deps, newPan, nil)
-			if err != nil {
-				return err
-			}
-			err = driver.SetTilt(deps, newTilt, nil)
-			if err != nil {
-				return err
-			}
+		err := driver.SetPan(deps, newPan, false)
+		if err != nil {
+			return err
+		}
+		err = driver.SetTilt(deps, newTilt, false)
+		if err != nil {
+			return err
 		}
 
 		return nil
@@ -522,19 +508,8 @@ func (r *queryResolver) GetPanTilt(ctx context.Context) (*model.PanTilt, error) 
 		isBusy      bool
 	)
 	err := r.Dependency.Invoke(func(deps *pan_tilt.PanTiltDependency) error {
-		driver := pan_tilt.PanTiltDriver(&pan_tilt.PanTiltDriverImpl{})
-		err := driver.GetPan(deps)
-		if err != nil {
-			return err
-		}
 		currentPan = deps.CurrentPan
-
-		err = driver.GetTilt(deps)
-		if err != nil {
-			return err
-		}
 		currentTilt = deps.CurrentTilt
-
 		northOffset = deps.NorthOffset
 		isBusy = deps.IsBusy
 		return nil
@@ -616,7 +591,7 @@ func (r *queryResolver) GetSystem(ctx context.Context) (*model.System, error) {
 }
 
 // GetGnss is the resolver for the getGnss field.
-func (r *queryResolver) GetGnss(ctx context.Context, acquire bool) (*model.Gnss, error) {
+func (r *queryResolver) GetGnss(ctx context.Context) (*model.Gnss, error) {
 	var (
 		timestamp   int64
 		latitude    float64
@@ -627,14 +602,6 @@ func (r *queryResolver) GetGnss(ctx context.Context, acquire bool) (*model.Gnss,
 		satellites  int
 	)
 	err := r.Dependency.Invoke(func(deps *gnss.GnssDependency) error {
-		if acquire {
-			driver := gnss.GnssDriver(&gnss.GnssDriverImpl{})
-			err := driver.GetState(deps)
-			if err != nil {
-				return err
-			}
-		}
-
 		t, err := deps.State.Time.GetTime()
 		if err != nil {
 			return err

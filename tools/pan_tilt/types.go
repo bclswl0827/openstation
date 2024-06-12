@@ -6,6 +6,7 @@ type arguments struct {
 	pan             float64
 	tilt            float64
 	reset           bool
-	init            bool
+	zero            bool
+	wait            bool
 	offset          float64
 }

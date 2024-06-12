@@ -1,7 +1,7 @@
 scalar Int64
 
 query getDebugData {
-	getGnss(acquire: true) {
+	getGnss {
 		timestamp
 		latitude
 		longitude
