@@ -4,18 +4,21 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/bclswl0827/openstation/drivers/serial"
 )
 
 const (
-	SYNC_WORD    = 0xFF
-	SLAVE_ADDR   = 0x01
-	READ_TIMEOUT = 5 * time.Second
+	SYNC_WORD   = 0xFF
+	SLAVE_ADDR  = 0x01
+	DUMMY_VALUE = -ERROR_THRESHOLD * 10
 )
 
-type PanTiltDriverImpl struct{}
+type PanTiltDriverImpl struct {
+	mutex sync.Mutex
+}
 
 func (*PanTiltDriverImpl) getChecksum(data []byte) byte {
 	var checksum int
@@ -26,90 +29,36 @@ func (*PanTiltDriverImpl) getChecksum(data []byte) byte {
 	return byte(checksum % 256)
 }
 
-func (d *PanTiltDriverImpl) IsAvailable(deps *PanTiltDependency) bool {
-	return d.GetPan(deps) == nil
-}
-
-func (d *PanTiltDriverImpl) Init(deps *PanTiltDependency) error {
+func (d *PanTiltDriverImpl) getPan(deps *PanTiltDependency) (float64, error) {
 	if deps == nil {
-		return errors.New("dependency is not provided")
+		return 0, errors.New("dependency is not provided")
 	}
 
-	sig := make(chan bool)
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
 
-	err := d.SetPan(deps, 0, sig)
+	// Send query command and wait approximately for some time
+	queryCmd := []byte{SYNC_WORD, SLAVE_ADDR, 0x00, 0x51, 0x00, 0x00, 0x52}
+	_, err := serial.Write(deps.Port, queryCmd, false)
 	if err != nil {
-		return err
-	}
-	<-sig
-
-	err = d.SetTilt(deps, 90, sig)
-	if err != nil {
-		return err
-	}
-	<-sig
-
-	return nil
-}
-
-func (d *PanTiltDriverImpl) Reset(deps *PanTiltDependency, sig chan<- bool) error {
-	if deps == nil {
-		return errors.New("dependency is not provided")
+		return 0, err
 	}
 
-	resetCmd := []byte{SLAVE_ADDR, 0x00, 0x0F, 0x00, 0x00}
-	checksum := d.getChecksum(resetCmd)
-	resetCmd = append(resetCmd, checksum)
-
-	// Wait for 300ms before sending reset command
-	time.Sleep(300 * time.Millisecond)
-	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, resetCmd...), false)
-	if err != nil {
-		return err
-	}
-
-	// Reset takes approximately 95 seconds
-	if sig != nil {
-		go func() {
-			time.Sleep(95 * time.Second)
-			sig <- true
-		}()
-	}
-
-	return nil
-}
-
-func (d *PanTiltDriverImpl) GetPan(deps *PanTiltDependency) error {
-	if deps == nil {
-		return errors.New("dependency is not provided")
-	}
-
-	// To ensure next command is not sent too early
-	time.Sleep(50 * time.Millisecond)
-
-	// Send query command and wait approximately 50ms
-	queryCmd := []byte{SLAVE_ADDR, 0x00, 0x51, 0x00, 0x00, 0x52}
-	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, queryCmd...), false)
-	if err != nil {
-		return err
-	}
-	time.Sleep(100 * time.Millisecond)
-
-	// Read response
+	// Read pan angle response
 	response := make([]byte, 7)
-	_, err = serial.Read(deps.Port, response, READ_TIMEOUT, false)
+	_, err = serial.Read(deps.Port, response, time.Millisecond*100, true)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// Check if first byte is SYNC_WORD
 	if response[0] != SYNC_WORD {
-		return fmt.Errorf("invalid response, expected SYNC_WORD %d, got %d", SYNC_WORD, response[0])
+		return 0, fmt.Errorf("invalid response, expected SYNC_WORD %d, got %d", SYNC_WORD, response[0])
 	}
 
 	// Check response checksum
 	if d.getChecksum(response[1:6]) != response[6] {
-		return fmt.Errorf("checksum mismatch, expected %d, got %d", d.getChecksum(response[:5]), response[5])
+		return 0, fmt.Errorf("checksum mismatch, expected %d, got %d", d.getChecksum(response[:5]), response[5])
 	}
 
 	// Calculate pan angle
@@ -117,113 +66,47 @@ func (d *PanTiltDriverImpl) GetPan(deps *PanTiltDependency) error {
 	pan := (float64(pmsb)*256 + float64(plsb)) / 100
 
 	// Absolute pan angle with north offset
-	deps.CurrentPan = pan + deps.NorthOffset
-	if deps.CurrentPan > 360 {
-		deps.CurrentPan = deps.CurrentPan - 360
+	currentPan := pan + deps.NorthOffset
+	if currentPan > 360 {
+		currentPan = currentPan - 360
+	}
+	if currentPan == 360 {
+		currentPan = 0
 	}
 
-	return nil
+	return currentPan, nil
 }
 
-func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, sig chan<- bool) error {
+func (d *PanTiltDriverImpl) getTilt(deps *PanTiltDependency) (float64, error) {
 	if deps == nil {
-		return errors.New("dependency is not provided")
+		return 0, errors.New("dependency is not provided")
 	}
 
-	if newPan > MAX_PAN || newPan < MIN_PAN {
-		return fmt.Errorf("pan angle must be between %.2f and %.2f degrees", MIN_PAN, MAX_PAN)
-	}
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
 
-	// Check if pan tilt is currently busy
-	if deps.IsBusy {
-		return errors.New("Pan-Tilt is currently busy")
-	}
-	deps.IsBusy = true
-
-	// Calculate encoded pan with north offset
-	newPanWithOffset := newPan
-	if deps.NorthOffset != 0 {
-		newPanWithOffset = 360 - deps.NorthOffset + newPanWithOffset
-		if newPanWithOffset > 360 {
-			newPanWithOffset = newPanWithOffset - 360
-		}
-	}
-
-	encodedPan := int(newPanWithOffset * 100)
-	pmsb, plsb := byte(encodedPan>>8), byte(encodedPan&0xFF)
-
-	setCmd := []byte{SLAVE_ADDR, 0x00, 0x4B, pmsb, plsb}
-	checksum := d.getChecksum(setCmd)
-	setCmd = append(setCmd, checksum)
-
-	// Send set command
-	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, setCmd...), false)
+	// Send query command and wait for some time
+	queryCmd := []byte{SYNC_WORD, SLAVE_ADDR, 0x00, 0x53, 0x00, 0x00, 0x54}
+	_, err := serial.Write(deps.Port, queryCmd, false)
 	if err != nil {
-		deps.IsBusy = false
-		return err
+		return 0, err
 	}
 
-	if sig != nil {
-		go func() {
-			for i := 0; ; i++ {
-				err := d.GetPan(deps)
-				if err != nil {
-					continue
-				}
-
-				// Check if currentPan is within ERROR_THRESHOLD
-				if math.Abs(deps.CurrentPan-newPan) <= ERROR_THRESHOLD || math.Abs(deps.CurrentPan-360-newPan) <= ERROR_THRESHOLD {
-					deps.IsBusy = false
-					sig <- true
-					return
-				}
-
-				if i == math.MaxUint8 {
-					deps.IsBusy = false
-					sig <- false
-					return
-				}
-
-				time.Sleep(time.Millisecond * 10)
-			}
-		}()
-	}
-
-	deps.IsBusy = false
-	return nil
-}
-
-func (d *PanTiltDriverImpl) GetTilt(deps *PanTiltDependency) error {
-	if deps == nil {
-		return errors.New("dependency is not provided")
-	}
-
-	// To ensure next command is not sent too early
-	time.Sleep(50 * time.Millisecond)
-
-	// Send query command and wait approximately 50ms
-	queryCmd := []byte{SLAVE_ADDR, 0x00, 0x53, 0x00, 0x00, 0x54}
-	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, queryCmd...), false)
-	if err != nil {
-		return err
-	}
-	time.Sleep(100 * time.Millisecond)
-
-	// Read response
+	// Read tilt angle response
 	response := make([]byte, 7)
-	_, err = serial.Read(deps.Port, response, READ_TIMEOUT, false)
+	_, err = serial.Read(deps.Port, response, time.Millisecond*100, true)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// Check if first byte is SYNC_WORD
 	if response[0] != SYNC_WORD {
-		return fmt.Errorf("invalid response, expected SYNC_WORD %d, got %d", SYNC_WORD, response[0])
+		return 0, fmt.Errorf("invalid response, expected SYNC_WORD %d, got %d", SYNC_WORD, response[0])
 	}
 
 	// Check response checksum
 	if d.getChecksum(response[1:6]) != response[6] {
-		return fmt.Errorf("checksum mismatch, expected %d, got %d", d.getChecksum(response[:5]), response[5])
+		return 0, fmt.Errorf("checksum mismatch, expected %d, got %d", d.getChecksum(response[:5]), response[5])
 	}
 
 	// Calculate tilt angle
@@ -235,11 +118,187 @@ func (d *PanTiltDriverImpl) GetTilt(deps *PanTiltDependency) error {
 		tdata2 = tdata1
 	}
 
-	deps.CurrentTilt = 90 - (tdata2 / 100)
+	return (tdata2 / 100), nil
+}
+
+func (d *PanTiltDriverImpl) readerDaemon(deps *PanTiltDependency) {
+	ticker := time.NewTicker(time.Millisecond * 500)
+	defer ticker.Stop()
+
+	for {
+		<-ticker.C
+
+		pan, err := d.getPan(deps)
+		if err != nil {
+			continue
+		}
+
+		tilt, err := d.getTilt(deps)
+		if err != nil {
+			continue
+		}
+
+		deps.CurrentPan = pan
+		deps.CurrentTilt = tilt
+	}
+}
+
+func (d *PanTiltDriverImpl) IsAvailable(deps *PanTiltDependency) bool {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	// Send pan query command and wait for some time
+	queryCmd := []byte{SLAVE_ADDR, 0x00, 0x51, 0x00, 0x00, 0x52}
+	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, queryCmd...), false)
+	if err != nil {
+		return false
+	}
+	time.Sleep(time.Millisecond * 100)
+
+	// Read response
+	response := make([]byte, 7)
+	_, err = serial.Read(deps.Port, response, time.Millisecond*100, false)
+	if err != nil {
+		return false
+	}
+
+	// Check if first byte is SYNC_WORD
+	if response[0] != SYNC_WORD {
+		return false
+	}
+
+	// Check response checksum
+	if d.getChecksum(response[1:6]) != response[6] {
+		return true
+	}
+
+	return true
+}
+
+func (d *PanTiltDriverImpl) Reset(deps *PanTiltDependency, sig chan<- bool) error {
+	if deps == nil {
+		return errors.New("dependency is not provided")
+	}
+
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	// Sleep for 300ms before sending reset command
+	time.Sleep(time.Millisecond * 300)
+
+	resetCmd := []byte{SLAVE_ADDR, 0x00, 0x0F, 0x00, 0x00}
+	checksum := d.getChecksum(resetCmd)
+	resetCmd = append(resetCmd, checksum)
+	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, resetCmd...), false)
+	if err != nil {
+		return err
+	}
+
+	// Reset action takes approximately 93 seconds
+	if sig != nil {
+		go func() {
+			deps.IsBusy = true
+			defer func() {
+				deps.IsBusy = false
+				sig <- true
+			}()
+
+			time.Sleep(93 * time.Second)
+		}()
+	}
+
 	return nil
 }
 
-func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, sig chan<- bool) error {
+func (d *PanTiltDriverImpl) Init(deps *PanTiltDependency, zeroPosition bool) error {
+	if deps == nil {
+		return errors.New("dependency is not provided")
+	}
+
+	// Start reader daemon
+	deps.CurrentPan = DUMMY_VALUE
+	deps.CurrentTilt = DUMMY_VALUE
+	go d.readerDaemon(deps)
+
+	// Set pan tilt to zero position if zeroPosition is true
+	if zeroPosition {
+		err := d.SetTilt(deps, 0, true)
+		if err != nil {
+			return err
+		}
+
+		err = d.SetPan(deps, 0, true)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, wait bool) error {
+	if deps == nil {
+		return errors.New("dependency is not provided")
+	}
+
+	if newPan > MAX_PAN || newPan < MIN_PAN {
+		return fmt.Errorf("pan angle must be between %d and %d degrees", MIN_PAN, MAX_PAN)
+	}
+
+	if newPan == 360 {
+		newPan = 0
+	}
+
+	// Check if pan tilt is currently busy
+	if deps.IsBusy {
+		return errors.New("failed to set pan due because Pan-Tilt is currently busy")
+	}
+
+	// Set busy flag
+	deps.IsBusy = true
+	defer func() { deps.IsBusy = false }()
+
+	// Calculate encoded pan with north offset
+	newPanWithOffset := newPan
+	if deps.NorthOffset != 0 {
+		newPanWithOffset = 360 - deps.NorthOffset + newPanWithOffset
+	}
+	if newPanWithOffset >= 360 {
+		newPanWithOffset = math.Mod(newPanWithOffset, 360)
+	}
+
+	// Encode pan angle
+	encodedPan := int(newPanWithOffset * 100)
+	pmsb, plsb := byte(encodedPan>>8), byte(encodedPan&0xFF)
+
+	// Send set command
+	setCmd := []byte{SLAVE_ADDR, 0x00, 0x4B, pmsb, plsb}
+	checksum := d.getChecksum(setCmd)
+	setCmd = append(setCmd, checksum)
+
+	d.mutex.Lock()
+	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, setCmd...), false)
+	d.mutex.Unlock()
+	if err != nil {
+		return err
+	}
+
+	// Wait until the pan angle is within ERROR_THRESHOLD
+	if wait {
+		for i := 0; i <= math.MaxUint8; i++ {
+			if math.Abs(deps.CurrentPan-newPan) <= ERROR_THRESHOLD ||
+				math.Abs(deps.CurrentPan-360-newPan) <= ERROR_THRESHOLD {
+				return nil
+			}
+
+			time.Sleep(time.Millisecond * 100)
+		}
+	}
+
+	return nil
+}
+
+func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, wait bool) error {
 	if deps == nil {
 		return errors.New("dependency is not provided")
 	}
@@ -250,50 +309,39 @@ func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, si
 
 	// Check if pan tilt is currently busy
 	if deps.IsBusy {
-		return errors.New("Pan-Tilt is currently busy")
+		return errors.New("failed to set tilt due because Pan-Tilt is currently busy")
 	}
-	deps.IsBusy = true
 
-	encodedTilt := int((90 - newTilt) * 100)
+	// Set busy flag
+	deps.IsBusy = true
+	defer func() { deps.IsBusy = false }()
+
+	// Encode tilt angle
+	encodedTilt := int(newTilt * 100)
 	tmsb, tlsb := byte(encodedTilt>>8), byte(encodedTilt&0xFF)
 
+	// Send set command
 	setCmd := []byte{SLAVE_ADDR, 0x00, 0x4D, tmsb, tlsb}
 	checksum := d.getChecksum(setCmd)
 	setCmd = append(setCmd, checksum)
 
-	// Send set command
+	d.mutex.Lock()
 	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, setCmd...), false)
+	d.mutex.Unlock()
 	if err != nil {
-		deps.IsBusy = false
 		return err
 	}
 
-	if sig != nil {
-		go func() {
-			for i := 0; ; i++ {
-				err := d.GetTilt(deps)
-				if err != nil {
-					continue
-				}
-
-				// Check if currentTilt is within ERROR_THRESHOLD
-				if math.Abs(deps.CurrentTilt-newTilt) <= ERROR_THRESHOLD {
-					deps.IsBusy = false
-					sig <- true
-					return
-				}
-
-				if i == math.MaxUint8 {
-					deps.IsBusy = false
-					sig <- false
-					return
-				}
-
-				time.Sleep(time.Millisecond * 10)
+	// Wait until the tilt angle is within ERROR_THRESHOLD
+	if wait {
+		for i := 0; i <= math.MaxUint8; i++ {
+			if math.Abs(deps.CurrentTilt-newTilt) <= ERROR_THRESHOLD {
+				return nil
 			}
-		}()
+
+			time.Sleep(time.Millisecond * 100)
+		}
 	}
 
-	deps.IsBusy = false
 	return nil
 }

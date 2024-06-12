@@ -13,7 +13,7 @@ import (
 	"github.com/bclswl0827/openstation/drivers/serial"
 )
 
-// Hardware driver to LC02H GNSS module
+// Hardware driver to LC02HB(A/C) GNSS module
 type GnssDriverImpl struct {
 	gga     string
 	rmc     string
@@ -199,7 +199,7 @@ func (e *GnssDriverImpl) extractMessage(text, keyword string) (string, error) {
 		}
 	}
 
-	return "", errors.New("no message found with the given keyword")
+	return "", errors.New("no NMEA message found with the given keyword")
 }
 
 func (r *GnssDriverImpl) getMessages(port *libserial.Port, read_attempts int) error {
@@ -217,10 +217,9 @@ func (r *GnssDriverImpl) getMessages(port *libserial.Port, read_attempts int) er
 		if len(rmc) == 0 {
 			line, err := r.extractMessage(lines, "RMC")
 			if err == nil && len(line) > 0 {
-				// Strip poential \r and \n characters
+				// Check if message is valid
 				line = strings.ReplaceAll(line, "\r", "")
 				line = strings.ReplaceAll(line, "\n", "")
-				// Check if message is valid
 				if r.isMessageValid(line) {
 					rmc = line
 				}
@@ -231,10 +230,9 @@ func (r *GnssDriverImpl) getMessages(port *libserial.Port, read_attempts int) er
 		if len(gga) == 0 {
 			line, err := r.extractMessage(lines, "GGA")
 			if err == nil && len(line) > 0 {
-				// Strip poential \r and \n characters
+				// Check if message is valid
 				line = strings.ReplaceAll(line, "\r", "")
 				line = strings.ReplaceAll(line, "\n", "")
-				// Check if message is valid
 				if r.isMessageValid(line) {
 					gga = line
 				}
@@ -245,10 +243,9 @@ func (r *GnssDriverImpl) getMessages(port *libserial.Port, read_attempts int) er
 		if len(pqtmtar) == 0 {
 			line, err := r.extractMessage(lines, "PQTMTAR")
 			if err == nil && len(line) > 0 {
-				// Strip poential \r and \n characters
+				// Check if message is valid
 				line = strings.ReplaceAll(line, "\r", "")
 				line = strings.ReplaceAll(line, "\n", "")
-				// Check if message is valid
 				if r.isMessageValid(line) {
 					pqtmtar = line
 				}
@@ -270,31 +267,35 @@ func (r *GnssDriverImpl) getMessages(port *libserial.Port, read_attempts int) er
 	return nil
 }
 
-func (r *GnssDriverImpl) GetState(deps *GnssDependency) error {
+func (r *GnssDriverImpl) readerDaemon(deps *GnssDependency) {
+	if deps == nil {
+		return
+	}
+
+	for {
+		err := r.getMessages(deps.Port, math.MaxUint8)
+		if err != nil {
+			time.Sleep(time.Millisecond * 10)
+			continue
+		}
+
+		r.parseRMC(&deps.State.IsDataValid, &deps.State.Latitude, &deps.State.Longitude, &deps.State.Time)
+		r.parseGGA(&deps.State.Satellites, &deps.State.Elevation)
+		r.parsePQTMTAR(&deps.State.DataQuality, &deps.State.TrueAzimuth)
+	}
+}
+
+func (r *GnssDriverImpl) IsAvailable(deps *GnssDependency) bool {
+	err := r.getMessages(deps.Port, math.MaxInt8)
+	return err == nil
+}
+
+func (r *GnssDriverImpl) Init(deps *GnssDependency) error {
 	if deps == nil {
 		return errors.New("dependency is not provided")
 	}
 
-	err := r.getMessages(deps.Port, math.MaxUint8)
-	if err != nil {
-		return err
-	}
-
-	err = r.parseRMC(&deps.State.IsDataValid, &deps.State.Latitude, &deps.State.Longitude, &deps.State.Time)
-	if err != nil {
-		return err
-	}
-
-	err = r.parseGGA(&deps.State.Satellites, &deps.State.Elevation)
-	if err != nil {
-		return err
-	}
-
-	err = r.parsePQTMTAR(&deps.State.DataQuality, &deps.State.TrueAzimuth)
-	if err != nil {
-		return err
-	}
-
+	go r.readerDaemon(deps)
 	return nil
 }
 
@@ -312,13 +313,14 @@ func (r *GnssDriverImpl) SetBaseline(deps *GnssDependency, baseline float64) err
 		return err
 	}
 
-	// Check module's response
-	err = serial.Filter(deps.Port, []byte("$PQTMCFGBLD,OK"), math.MaxInt8)
-	if err != nil {
-		return err
+	// Check if GNSS module accepted the command
+	buffer := make([]byte, 128)
+	serial.Read(deps.Port, buffer, time.Millisecond*500, true)
+	if !strings.Contains(string(buffer[:]), "$PQTMCFGBLD,OK") {
+		return errors.New("failed to set GNSS baseline")
 	}
 
-	// Save baseline
+	// To save baseline configuration
 	_, err = serial.Write(deps.Port, []byte("$PQTMSAVEPAR*5A\r\n"), false)
 	if err != nil {
 		return err
@@ -336,6 +338,7 @@ func (r *GnssDriverImpl) GetBaseline(deps *GnssDependency) (float64, error) {
 	buffer := make([]byte, 128)
 	serial.Read(deps.Port, buffer, time.Millisecond*500, true)
 	lines := strings.Split(string(buffer[:]), "\n")
+
 	for _, line := range lines {
 		line = strings.ReplaceAll(line, "\r", "")
 		if strings.Contains(line, "$PQTMCFGBLD") {
@@ -353,5 +356,5 @@ func (r *GnssDriverImpl) GetBaseline(deps *GnssDependency) (float64, error) {
 		}
 	}
 
-	return 0, errors.New("failed to get baseline")
+	return 0, errors.New("failed to get GNSS baseline")
 }

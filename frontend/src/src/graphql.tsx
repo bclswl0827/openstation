@@ -54,7 +54,6 @@ export type MutationSetAllTlEsArgs = {
 export type MutationSetPanTiltArgs = {
   newPan: Scalars['Float']['input'];
   newTilt: Scalars['Float']['input'];
-  sync: Scalars['Boolean']['input'];
 };
 
 
@@ -70,22 +69,22 @@ export type MutationUpdateTleByIdArgs = {
 
 export type Query = {
   __typename?: 'Query';
-  getAllTLEIds: Array<Maybe<Scalars['Int64']['output']>>;
   getGnss: Gnss;
   getPanTilt: PanTilt;
   getStation: Station;
   getSystem: System;
   getTLEById?: Maybe<TleData>;
-};
-
-
-export type QueryGetGnssArgs = {
-  acquire: Scalars['Boolean']['input'];
+  getTLEIdsByKeyword: Array<Maybe<Scalars['Int64']['output']>>;
 };
 
 
 export type QueryGetTleByIdArgs = {
   id: Scalars['Int64']['input'];
+};
+
+
+export type QueryGetTleIdsByKeywordArgs = {
+  keyword: Scalars['String']['input'];
 };
 
 export type Gnss = {
@@ -153,7 +152,6 @@ export type SetPanTiltMutationVariables = Exact<{
   newPan: Scalars['Float']['input'];
   newTilt: Scalars['Float']['input'];
   newOffset: Scalars['Float']['input'];
-  sync: Scalars['Boolean']['input'];
 }>;
 
 
@@ -197,7 +195,7 @@ export type GetHomeDataQuery = { __typename?: 'Query', getStation: { __typename?
 
 export const GetControlDataDocument = gql`
     query getControlData {
-  getGnss(acquire: true) {
+  getGnss {
     trueAzimuth
   }
   getPanTilt {
@@ -241,9 +239,9 @@ export type GetControlDataLazyQueryHookResult = ReturnType<typeof useGetControlD
 export type GetControlDataSuspenseQueryHookResult = ReturnType<typeof useGetControlDataSuspenseQuery>;
 export type GetControlDataQueryResult = ApolloReactCommon.QueryResult<GetControlDataQuery, GetControlDataQueryVariables>;
 export const SetPanTiltDocument = gql`
-    mutation setPanTilt($newPan: Float!, $newTilt: Float!, $newOffset: Float!, $sync: Boolean!) {
+    mutation setPanTilt($newPan: Float!, $newTilt: Float!, $newOffset: Float!) {
   setPanTiltOffset(newOffset: $newOffset)
-  setPanTilt(newPan: $newPan, newTilt: $newTilt, sync: $sync)
+  setPanTilt(newPan: $newPan, newTilt: $newTilt)
 }
     `;
 export type SetPanTiltMutationFn = ApolloReactCommon.MutationFunction<SetPanTiltMutation, SetPanTiltMutationVariables>;
@@ -264,7 +262,6 @@ export type SetPanTiltMutationFn = ApolloReactCommon.MutationFunction<SetPanTilt
  *      newPan: // value for 'newPan'
  *      newTilt: // value for 'newTilt'
  *      newOffset: // value for 'newOffset'
- *      sync: // value for 'sync'
  *   },
  * });
  */
@@ -277,7 +274,7 @@ export type SetPanTiltMutationResult = ApolloReactCommon.MutationResult<SetPanTi
 export type SetPanTiltMutationOptions = ApolloReactCommon.BaseMutationOptions<SetPanTiltMutation, SetPanTiltMutationVariables>;
 export const GetDebugDataDocument = gql`
     query getDebugData {
-  getGnss(acquire: true) {
+  getGnss {
     timestamp
     latitude
     longitude
@@ -499,7 +496,7 @@ export const GetHomeDataDocument = gql`
     totalForecast
     clockOffset
   }
-  getGnss(acquire: false) {
+  getGnss {
     timestamp
     latitude
     longitude

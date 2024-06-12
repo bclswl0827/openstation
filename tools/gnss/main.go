@@ -45,16 +45,19 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	log.Printf("GNSS antenna baseline: %.2f\n", baseline)
 
-	for {
-		err = gnssDriver.GetState(gnssDependency)
-		if err != nil {
-			log.Fatalln(err)
-		}
+	err = gnssDriver.Init(gnssDependency)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-		spew.Dump(gnssDependency.State)
+	var prevTime gnss.GnssTime
+	for {
+		if prevTime.RefTime.UnixMilli() != gnssDependency.State.Time.RefTime.UnixMilli() {
+			spew.Dump(gnssDependency.State)
+			prevTime = gnssDependency.State.Time
+		}
 		time.Sleep(time.Millisecond * 10)
 	}
 }

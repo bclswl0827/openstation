@@ -18,18 +18,10 @@ const Control = () => {
 	const handleSetPanTilt = async ({
 		newPan,
 		newTilt,
-		newOffset,
-		sync
+		newOffset
 	}: SetPanTiltMutationVariables) => {
 		await sendPromiseAlert(
-			setPanTiltMutation({
-				variables: {
-					newPan,
-					newTilt,
-					newOffset,
-					sync
-				}
-			}),
+			setPanTiltMutation({ variables: { newPan, newTilt, newOffset } }),
 			"正在设置转台方位",
 			"指令下发完成",
 			"指令下发失败",
@@ -142,8 +134,7 @@ const Control = () => {
 								{
 									newPan: data?.getPanTilt.currentPan,
 									newTilt: data?.getPanTilt.currentTilt,
-									newOffset: data?.getPanTilt.northOffset,
-									sync: false
+									newOffset: data?.getPanTilt.northOffset
 								} as SetPanTiltMutationVariables
 							}
 							validate={(values) => {
@@ -155,8 +146,8 @@ const Control = () => {
 								if (values.newPan < 0 || values.newPan > 360) {
 									errors.newPan = "方位角应在 0 到 360 之间";
 								}
-								if (values.newTilt < 5 || values.newTilt > 90) {
-									errors.newTilt = "俯仰角应在 5 到 90 之间";
+								if (values.newTilt < 0 || values.newTilt > 85) {
+									errors.newTilt = "俯仰角应在 0 到 85 之间";
 								}
 								if (values.newOffset < 0 || values.newOffset > 360) {
 									errors.newOffset = "北偏角应在 0 到 360 之间";
@@ -216,13 +207,6 @@ const Control = () => {
 											type="number"
 											name="newOffset"
 										/>
-									</div>
-
-									<div className="space-x-2">
-										<Field type="checkbox" name="sync" />
-										<label className="text-sm font-medium text-gray-800 dark:text-white">
-											使能等待转台
-										</label>
 									</div>
 
 									<button

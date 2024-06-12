@@ -1,5 +1,5 @@
 query getControlData {
-	getGnss(acquire: true) {
+	getGnss {
 		trueAzimuth
 	}
 	getPanTilt {

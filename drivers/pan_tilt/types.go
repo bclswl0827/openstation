@@ -5,10 +5,10 @@ import "github.com/bclswl0827/go-serial"
 const ERROR_THRESHOLD = 0.2 // 0.2 degree error threshold
 
 const (
-	MAX_PAN  = 359.99
-	MIN_PAN  = 0.0
-	MAX_TILT = 90
-	MIN_TILT = 5
+	MAX_PAN  = 360
+	MIN_PAN  = 0
+	MAX_TILT = 85
+	MIN_TILT = 0
 )
 
 type PanTiltDependency struct {
@@ -20,10 +20,10 @@ type PanTiltDependency struct {
 }
 
 type PanTiltDriver interface {
+	readerDaemon(deps *PanTiltDependency)
 	IsAvailable(deps *PanTiltDependency) bool
-	Init(deps *PanTiltDependency) error
 	Reset(deps *PanTiltDependency, sig chan<- bool) error
-	GetPanTilt(deps *PanTiltDependency, daemon bool) error
-	SetPan(deps *PanTiltDependency, newPan float64, sig chan<- bool) error
-	SetTilt(deps *PanTiltDependency, newTilt float64, sig chan<- bool) error
+	Init(deps *PanTiltDependency, zeroPosition bool) error
+	SetPan(deps *PanTiltDependency, newPan float64, wait bool) error
+	SetTilt(deps *PanTiltDependency, newTilt float64, wait bool) error
 }

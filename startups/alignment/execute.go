@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/bclswl0827/openstation/drivers/gnss"
-	"github.com/bclswl0827/openstation/drivers/monitor"
 	"github.com/bclswl0827/openstation/drivers/pan_tilt"
 	"github.com/bclswl0827/openstation/startups"
 	"github.com/bclswl0827/openstation/utils/logger"
@@ -13,55 +12,40 @@ import (
 )
 
 func (t *AlignmentStartupTask) Execute(depsContainer *dig.Container, options *startups.Options) error {
-	var (
-		monitorDriver = monitor.MonitorDriver(&monitor.MonitorDriverImpl{})
-		panTiltDriver = pan_tilt.PanTiltDriver(&pan_tilt.PanTiltDriverImpl{})
-		gnssDriver    = gnss.GnssDriver(&gnss.GnssDriverImpl{})
-	)
-
-	// Change display screen to alignment screen
-	err := depsContainer.Invoke(func(deps *monitor.MonitorDependency) error {
-		deps.State.Busy = true
-		deps.State.Error = false
-		return monitorDriver.Display(deps, "Finding North...", 0, 0)
-	})
-	if err != nil {
-		return err
-	}
-
-	// Calculate the azimuth offset to true north
-	err = depsContainer.Invoke(func(gnssDeps *gnss.GnssDependency, panTiltDeps *pan_tilt.PanTiltDependency) error {
+	// Calculate the azimuth offset to true north, then set the Pan-Tilt to the calculated true north
+	err := depsContainer.Invoke(func(gnssDeps *gnss.GnssDependency, panTiltDeps *pan_tilt.PanTiltDependency) error {
 		logger.GetLogger(t.GetTaskName()).Info("start calculating Pan-Tilt offset to true north")
-		panTiltDeps.IsBusy = true
 
+		var prevGnssTime gnss.GnssTime
 		for {
-			var azimuthBuffer []float64
-			var isNotAvailable bool
-
+			var (
+				azimuthBuffer  []float64
+				isNotAvailable bool
+			)
 			for i := 0; i <= AZI_COLLECT_COUNT; {
-				err := gnssDriver.GetState(gnssDeps)
-				if err != nil {
-					return err
+				if prevGnssTime.RefTime.UnixMilli() != gnssDeps.State.Time.RefTime.UnixMilli() {
+					prevGnssTime = gnssDeps.State.Time
+
+					// Always use RTK fix result
+					if gnssDeps.State.DataQuality != 4 {
+						logger.GetLogger(t.GetTaskName()).Warn("GNSS azimuth data is not the RTK Fix result, skip")
+						continue
+					}
+
+					logger.GetLogger(t.GetTaskName()).Infof("collecting azimuth data %.1f%%, current azimuth is %.2f", float64(i)/AZI_COLLECT_COUNT*100, gnssDeps.State.TrueAzimuth)
+					azimuthBuffer = append(azimuthBuffer, gnssDeps.State.TrueAzimuth)
+
+					// Check if the results is whtin the error threshold
+					if i > 0 && (slices.Max(azimuthBuffer)-slices.Min(azimuthBuffer) > AZI_ERROR_THRESHOLD) {
+						logger.GetLogger(t.GetTaskName()).Warnf("azimuth is not within the error threshold %.2f degrees, try again", AZI_ERROR_THRESHOLD)
+						isNotAvailable = true
+						break
+					}
+
+					i++
 				}
 
-				// Always use RTK fix result
-				if gnssDeps.State.DataQuality != 4 {
-					logger.GetLogger(t.GetTaskName()).Warn("GNSS azimuth data is not the RTK Fix result, skip")
-					continue
-				}
-
-				logger.GetLogger(t.GetTaskName()).Infof("collecting azimuth data %.1f%%, current azimuth is %.2f", float64(i)/AZI_COLLECT_COUNT*100, gnssDeps.State.TrueAzimuth)
-				azimuthBuffer = append(azimuthBuffer, gnssDeps.State.TrueAzimuth)
-
-				// Check if the results is whtin the error threshold
-				if i > 0 && (slices.Max(azimuthBuffer)-slices.Min(azimuthBuffer) > AZI_ERROR_THRESHOLD) {
-					logger.GetLogger(t.GetTaskName()).Warnf("azimuth is not within the error threshold %.2f degrees, try again", AZI_ERROR_THRESHOLD)
-					isNotAvailable = true
-					break
-				}
-
-				i++
-				time.Sleep(time.Millisecond * 10)
+				time.Sleep(time.Millisecond * 100)
 			}
 
 			if !isNotAvailable {
@@ -71,35 +55,8 @@ func (t *AlignmentStartupTask) Execute(depsContainer *dig.Container, options *st
 
 		// Set azimuth as pan-tilt true north offset
 		panTiltDeps.NorthOffset = gnssDeps.State.TrueAzimuth
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	// Set Pan-Tilt to the calculated true north
-	err = depsContainer.Invoke(func(deps *pan_tilt.PanTiltDependency) error {
-		logger.GetLogger(t.GetTaskName()).Infof("setting Pan-Tilt to true north with offset %.2f", deps.NorthOffset)
-		deps.IsBusy = false
-
-		done := make(chan bool, 1)
-		err := panTiltDriver.SetPan(deps, 0, done)
-		if err != nil {
-			return err
-		}
-		<-done
-
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	// Change display screen to ready screen
-	err = depsContainer.Invoke(func(deps *monitor.MonitorDependency) error {
-		deps.State.Busy = false
-		deps.State.Error = false
-		return monitorDriver.Display(deps, "System Ready :-)", 0, 0)
+		logger.GetLogger(t.GetTaskName()).Infof("setting Pan-Tilt to true north with offset %.2f", panTiltDeps.NorthOffset)
+		return pan_tilt.PanTiltDriver(&pan_tilt.PanTiltDriverImpl{}).SetPan(panTiltDeps, 0, true)
 	})
 	if err != nil {
 		return err

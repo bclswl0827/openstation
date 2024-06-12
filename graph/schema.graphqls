@@ -56,7 +56,7 @@ type Query {
     getStation: station!
     getPanTilt: panTilt!
     getSystem: system!
-    getGnss(acquire: Boolean!): gnss!
+    getGnss: gnss!
     # Satellite TLEs
     getTLEById(id: Int64!): tleData
     getTLEIdsByKeyword(keyword: String!): [Int64]!
@@ -64,7 +64,7 @@ type Query {
 
 type Mutation {
     # Pan-Tilt control
-    setPanTilt(newPan: Float!, newTilt: Float!, sync: Boolean!): Boolean!
+    setPanTilt(newPan: Float!, newTilt: Float!): Boolean!
     setPanTiltOffset(newOffset: Float!): Boolean!
     setPanTiltToNorth: Boolean!
     # Satellite TLEs

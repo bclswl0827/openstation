@@ -55,14 +55,14 @@ type ComplexityRoot struct {
 		PurgeTaskQueue       func(childComplexity int) int
 		RebootSystem         func(childComplexity int) int
 		SetAllTLEs           func(childComplexity int, tleData string, overwrite bool) int
-		SetPanTilt           func(childComplexity int, newPan float64, newTilt float64, sync bool) int
+		SetPanTilt           func(childComplexity int, newPan float64, newTilt float64) int
 		SetPanTiltOffset     func(childComplexity int, newOffset float64) int
 		SetPanTiltToNorth    func(childComplexity int) int
 		UpdateTLEByID        func(childComplexity int, id int64, tleData string) int
 	}
 
 	Query struct {
-		GetGnss            func(childComplexity int, acquire bool) int
+		GetGnss            func(childComplexity int) int
 		GetPanTilt         func(childComplexity int) int
 		GetStation         func(childComplexity int) int
 		GetSystem          func(childComplexity int) int
@@ -123,7 +123,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	SetPanTilt(ctx context.Context, newPan float64, newTilt float64, sync bool) (bool, error)
+	SetPanTilt(ctx context.Context, newPan float64, newTilt float64) (bool, error)
 	SetPanTiltOffset(ctx context.Context, newOffset float64) (bool, error)
 	SetPanTiltToNorth(ctx context.Context) (bool, error)
 	SetAllTLEs(ctx context.Context, tleData string, overwrite bool) (int, error)
@@ -139,7 +139,7 @@ type QueryResolver interface {
 	GetStation(ctx context.Context) (*model.Station, error)
 	GetPanTilt(ctx context.Context) (*model.PanTilt, error)
 	GetSystem(ctx context.Context) (*model.System, error)
-	GetGnss(ctx context.Context, acquire bool) (*model.Gnss, error)
+	GetGnss(ctx context.Context) (*model.Gnss, error)
 	GetTLEByID(ctx context.Context, id int64) (*model.TleData, error)
 	GetTLEIdsByKeyword(ctx context.Context, keyword string) ([]*int64, error)
 }
@@ -237,7 +237,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SetPanTilt(childComplexity, args["newPan"].(float64), args["newTilt"].(float64), args["sync"].(bool)), true
+		return e.complexity.Mutation.SetPanTilt(childComplexity, args["newPan"].(float64), args["newTilt"].(float64)), true
 
 	case "Mutation.setPanTiltOffset":
 		if e.complexity.Mutation.SetPanTiltOffset == nil {
@@ -275,12 +275,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_getGnss_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetGnss(childComplexity, args["acquire"].(bool)), true
+		return e.complexity.Query.GetGnss(childComplexity), true
 
 	case "Query.getPanTilt":
 		if e.complexity.Query.GetPanTilt == nil {
@@ -792,15 +787,6 @@ func (ec *executionContext) field_Mutation_setPanTilt_args(ctx context.Context, 
 		}
 	}
 	args["newTilt"] = arg1
-	var arg2 bool
-	if tmp, ok := rawArgs["sync"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sync"))
-		arg2, err = ec.unmarshalNBoolean2bool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["sync"] = arg2
 	return args, nil
 }
 
@@ -840,21 +826,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_getGnss_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 bool
-	if tmp, ok := rawArgs["acquire"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("acquire"))
-		arg0, err = ec.unmarshalNBoolean2bool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["acquire"] = arg0
 	return args, nil
 }
 
@@ -940,7 +911,7 @@ func (ec *executionContext) _Mutation_setPanTilt(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SetPanTilt(rctx, fc.Args["newPan"].(float64), fc.Args["newTilt"].(float64), fc.Args["sync"].(bool))
+		return ec.resolvers.Mutation().SetPanTilt(rctx, fc.Args["newPan"].(float64), fc.Args["newTilt"].(float64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1670,7 +1641,7 @@ func (ec *executionContext) _Query_getGnss(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetGnss(rctx, fc.Args["acquire"].(bool))
+		return ec.resolvers.Query().GetGnss(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1687,7 +1658,7 @@ func (ec *executionContext) _Query_getGnss(ctx context.Context, field graphql.Co
 	return ec.marshalNgnss2ᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐGnss(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_getGnss(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getGnss(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1712,17 +1683,6 @@ func (ec *executionContext) fieldContext_Query_getGnss(ctx context.Context, fiel
 			}
 			return nil, fmt.Errorf("no field named %q was found under type gnss", field.Name)
 		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getGnss_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
 	}
 	return fc, nil
 }

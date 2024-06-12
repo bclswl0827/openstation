@@ -28,7 +28,9 @@ type GnssDependency struct {
 }
 
 type GnssDriver interface {
+	readerDaemon(deps *GnssDependency)
+	IsAvailable(deps *GnssDependency) bool
+	Init(deps *GnssDependency) error
 	SetBaseline(deps *GnssDependency, baseline float64) error
 	GetBaseline(deps *GnssDependency) (float64, error)
-	GetState(deps *GnssDependency) error
 }
