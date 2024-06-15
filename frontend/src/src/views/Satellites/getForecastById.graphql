@@ -1,0 +1,12 @@
+query getForecastById($tleId: Int64!, $elevationThreshold: Float!) {
+	getForecastById(tleId: $tleId, elevationThreshold: $elevationThreshold) {
+		duration
+		startTime
+		endTime
+		entryAzimuth
+		exitAzimuth
+		maxElevation
+		latitude
+		longitude
+	}
+}

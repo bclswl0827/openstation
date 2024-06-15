@@ -22,12 +22,13 @@ export type Scalars = {
 export type Mutation = {
   __typename?: 'Mutation';
   addNewTLE: Scalars['Boolean']['output'];
+  addNewTask: Scalars['Boolean']['output'];
   deleteTLEById: Scalars['Boolean']['output'];
-  purgeForecastRecords: Scalars['Boolean']['output'];
+  deleteTaskById: Scalars['Boolean']['output'];
+  importTLEs: Scalars['Int']['output'];
   purgeTLERecords: Scalars['Boolean']['output'];
   purgeTaskQueue: Scalars['Boolean']['output'];
   rebootSystem: Scalars['Boolean']['output'];
-  setAllTLEs: Scalars['Int']['output'];
   setPanTilt: Scalars['Boolean']['output'];
   setPanTiltOffset: Scalars['Boolean']['output'];
   setPanTiltToNorth: Scalars['Boolean']['output'];
@@ -40,13 +41,25 @@ export type MutationAddNewTleArgs = {
 };
 
 
-export type MutationDeleteTleByIdArgs = {
-  id: Scalars['Int64']['input'];
+export type MutationAddNewTaskArgs = {
+  endTime: Scalars['Int64']['input'];
+  startTime: Scalars['Int64']['input'];
+  tleId: Scalars['Int64']['input'];
+  webhook: Scalars['String']['input'];
 };
 
 
-export type MutationSetAllTlEsArgs = {
-  overwrite: Scalars['Boolean']['input'];
+export type MutationDeleteTleByIdArgs = {
+  tleId: Scalars['Int64']['input'];
+};
+
+
+export type MutationDeleteTaskByIdArgs = {
+  taskId: Scalars['Int64']['input'];
+};
+
+
+export type MutationImportTlEsArgs = {
   tleData: Scalars['String']['input'];
 };
 
@@ -63,28 +76,67 @@ export type MutationSetPanTiltOffsetArgs = {
 
 
 export type MutationUpdateTleByIdArgs = {
-  id: Scalars['Int64']['input'];
   tleData: Scalars['String']['input'];
+  tleId: Scalars['Int64']['input'];
 };
 
 export type Query = {
   __typename?: 'Query';
+  getForecastById: Array<Maybe<Forecast>>;
   getGnss: Gnss;
+  getObservationById: Observation;
   getPanTilt: PanTilt;
   getStation: Station;
   getSystem: System;
   getTLEById?: Maybe<TleData>;
-  getTLEIdsByKeyword: Array<Maybe<Scalars['Int64']['output']>>;
+  getTLEsByKeyword: Array<Maybe<TleData>>;
+  getTaskById: Task;
+  getTasksByDuration: Array<Maybe<Task>>;
+};
+
+
+export type QueryGetForecastByIdArgs = {
+  elevationThreshold: Scalars['Float']['input'];
+  tleId: Scalars['Int64']['input'];
+};
+
+
+export type QueryGetObservationByIdArgs = {
+  elevationThreshold: Scalars['Float']['input'];
+  tleId: Scalars['Int64']['input'];
 };
 
 
 export type QueryGetTleByIdArgs = {
-  id: Scalars['Int64']['input'];
+  tleId: Scalars['Int64']['input'];
 };
 
 
-export type QueryGetTleIdsByKeywordArgs = {
+export type QueryGetTlEsByKeywordArgs = {
   keyword: Scalars['String']['input'];
+};
+
+
+export type QueryGetTaskByIdArgs = {
+  taskId: Scalars['Int64']['input'];
+};
+
+
+export type QueryGetTasksByDurationArgs = {
+  endTime: Scalars['Int64']['input'];
+  startTime: Scalars['Int64']['input'];
+};
+
+export type Forecast = {
+  __typename?: 'forecast';
+  duration: Scalars['Float']['output'];
+  endTime: Scalars['Int64']['output'];
+  entryAzimuth: Scalars['Float']['output'];
+  exitAzimuth: Scalars['Float']['output'];
+  latitude: Scalars['Float']['output'];
+  longitude: Scalars['Float']['output'];
+  maxElevation: Scalars['Float']['output'];
+  startTime: Scalars['Int64']['output'];
 };
 
 export type Gnss = {
@@ -96,6 +148,13 @@ export type Gnss = {
   satellites: Scalars['Int']['output'];
   timestamp: Scalars['Int64']['output'];
   trueAzimuth: Scalars['Float']['output'];
+};
+
+export type Observation = {
+  __typename?: 'observation';
+  azimuth: Scalars['Float']['output'];
+  elevation: Scalars['Float']['output'];
+  observable: Scalars['Boolean']['output'];
 };
 
 export type PanTilt = {
@@ -114,7 +173,6 @@ export type Station = {
   pendingTasks: Scalars['Int64']['output'];
   remarks: Array<Scalars['String']['output']>;
   satellites: Scalars['Int64']['output'];
-  totalForecast: Scalars['Int64']['output'];
   totalTasks: Scalars['Int64']['output'];
 };
 
@@ -131,6 +189,18 @@ export type System = {
   uptime: Scalars['Int64']['output'];
 };
 
+export type Task = {
+  __typename?: 'task';
+  createdAt: Scalars['Int64']['output'];
+  endTime: Scalars['Int64']['output'];
+  hasDone: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  startTime: Scalars['Int64']['output'];
+  taskId: Scalars['Int64']['output'];
+  tleId: Scalars['Int64']['output'];
+  webhook: Scalars['String']['output'];
+};
+
 export type TleData = {
   __typename?: 'tleData';
   createdAt: Scalars['Int64']['output'];
@@ -143,29 +213,30 @@ export type TleData = {
   updatedAt: Scalars['Int64']['output'];
 };
 
-export type GetControlDataQueryVariables = Exact<{ [key: string]: never; }>;
+export type GetData4ControlQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetControlDataQuery = { __typename?: 'Query', getGnss: { __typename?: 'gnss', trueAzimuth: number }, getPanTilt: { __typename?: 'panTilt', currentPan: number, currentTilt: number, northOffset: number, isBusy: boolean } };
+export type GetData4ControlQuery = { __typename?: 'Query', getGnss: { __typename?: 'gnss', trueAzimuth: number }, getPanTilt: { __typename?: 'panTilt', currentPan: number, currentTilt: number, northOffset: number, isBusy: boolean } };
 
 export type SetPanTiltMutationVariables = Exact<{
   newPan: Scalars['Float']['input'];
   newTilt: Scalars['Float']['input'];
+}>;
+
+
+export type SetPanTiltMutation = { __typename?: 'Mutation', setPanTilt: boolean };
+
+export type SetPanTiltOffsetMutationVariables = Exact<{
   newOffset: Scalars['Float']['input'];
 }>;
 
 
-export type SetPanTiltMutation = { __typename?: 'Mutation', setPanTiltOffset: boolean, setPanTilt: boolean };
+export type SetPanTiltOffsetMutation = { __typename?: 'Mutation', setPanTiltOffset: boolean };
 
-export type GetDebugDataQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetDebugDataQuery = { __typename?: 'Query', getGnss: { __typename?: 'gnss', timestamp: number, latitude: number, longitude: number, elevation: number, trueAzimuth: number, dataQuality: number, satellites: number }, getPanTilt: { __typename?: 'panTilt', currentPan: number, currentTilt: number, northOffset: number, isBusy: boolean }, getSystem: { __typename?: 'system', timestamp: number, uptime: number, cpuUsage: number, memUsage: number, diskUsage: number, release: string, arch: string, hostname: string, ip: Array<string> } };
-
-export type PurgeForecastRecordsMutationVariables = Exact<{ [key: string]: never; }>;
+export type GetData4DebugQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type PurgeForecastRecordsMutation = { __typename?: 'Mutation', purgeForecastRecords: boolean };
+export type GetData4DebugQuery = { __typename?: 'Query', getGnss: { __typename?: 'gnss', timestamp: number, latitude: number, longitude: number, elevation: number, trueAzimuth: number, dataQuality: number, satellites: number }, getPanTilt: { __typename?: 'panTilt', currentPan: number, currentTilt: number, northOffset: number, isBusy: boolean }, getSystem: { __typename?: 'system', timestamp: number, uptime: number, cpuUsage: number, memUsage: number, diskUsage: number, release: string, arch: string, hostname: string, ip: Array<string> } };
 
 export type PurgeTleRecordsMutationVariables = Exact<{ [key: string]: never; }>;
 
@@ -187,14 +258,71 @@ export type SetPanTiltToNorthMutationVariables = Exact<{ [key: string]: never; }
 
 export type SetPanTiltToNorthMutation = { __typename?: 'Mutation', setPanTiltToNorth: boolean };
 
-export type GetHomeDataQueryVariables = Exact<{ [key: string]: never; }>;
+export type GetData4HomeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetHomeDataQuery = { __typename?: 'Query', getStation: { __typename?: 'station', name: string, location: string, remarks: Array<string>, satellites: number, pendingTasks: number, totalTasks: number, totalForecast: number, clockOffset: number }, getGnss: { __typename?: 'gnss', timestamp: number, latitude: number, longitude: number, elevation: number, trueAzimuth: number, dataQuality: number, satellites: number }, getSystem: { __typename?: 'system', cpuUsage: number, memUsage: number } };
+export type GetData4HomeQuery = { __typename?: 'Query', getStation: { __typename?: 'station', name: string, location: string, remarks: Array<string>, satellites: number, pendingTasks: number, totalTasks: number, clockOffset: number }, getGnss: { __typename?: 'gnss', timestamp: number, latitude: number, longitude: number, elevation: number, trueAzimuth: number, satellites: number }, getSystem: { __typename?: 'system', cpuUsage: number, memUsage: number } };
+
+export type AddNewTleMutationVariables = Exact<{
+  tleData: Scalars['String']['input'];
+}>;
 
 
-export const GetControlDataDocument = gql`
-    query getControlData {
+export type AddNewTleMutation = { __typename?: 'Mutation', addNewTLE: boolean };
+
+export type DeleteTleByIdMutationVariables = Exact<{
+  tleId: Scalars['Int64']['input'];
+}>;
+
+
+export type DeleteTleByIdMutation = { __typename?: 'Mutation', deleteTLEById: boolean };
+
+export type GetData4SatellitesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetData4SatellitesQuery = { __typename?: 'Query', getGnss: { __typename?: 'gnss', timestamp: number, latitude: number, longitude: number } };
+
+export type GetForecastByIdQueryVariables = Exact<{
+  tleId: Scalars['Int64']['input'];
+  elevationThreshold: Scalars['Float']['input'];
+}>;
+
+
+export type GetForecastByIdQuery = { __typename?: 'Query', getForecastById: Array<{ __typename?: 'forecast', duration: number, startTime: number, endTime: number, entryAzimuth: number, exitAzimuth: number, maxElevation: number, latitude: number, longitude: number } | null> };
+
+export type GetObservationByIdQueryVariables = Exact<{
+  tleId: Scalars['Int64']['input'];
+  elevationThreshold: Scalars['Float']['input'];
+}>;
+
+
+export type GetObservationByIdQuery = { __typename?: 'Query', getObservationById: { __typename?: 'observation', elevation: number, azimuth: number, observable: boolean } };
+
+export type GetTlEsByKeywordQueryVariables = Exact<{
+  keyword: Scalars['String']['input'];
+}>;
+
+
+export type GetTlEsByKeywordQuery = { __typename?: 'Query', getTLEsByKeyword: Array<{ __typename?: 'tleData', id: number, name: string, line_1: string, line_2: string, epochTime: number, createdAt: number, updatedAt: number, geostationary: boolean } | null> };
+
+export type ImportTlEsMutationVariables = Exact<{
+  tleData: Scalars['String']['input'];
+}>;
+
+
+export type ImportTlEsMutation = { __typename?: 'Mutation', importTLEs: number };
+
+export type UpdateTleByIdMutationVariables = Exact<{
+  tleId: Scalars['Int64']['input'];
+  tleData: Scalars['String']['input'];
+}>;
+
+
+export type UpdateTleByIdMutation = { __typename?: 'Mutation', updateTLEById: boolean };
+
+
+export const GetData4ControlDocument = gql`
+    query getData4Control {
   getGnss {
     trueAzimuth
   }
@@ -208,39 +336,38 @@ export const GetControlDataDocument = gql`
     `;
 
 /**
- * __useGetControlDataQuery__
+ * __useGetData4ControlQuery__
  *
- * To run a query within a React component, call `useGetControlDataQuery` and pass it any options that fit your needs.
- * When your component renders, `useGetControlDataQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useGetData4ControlQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetData4ControlQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useGetControlDataQuery({
+ * const { data, loading, error } = useGetData4ControlQuery({
  *   variables: {
  *   },
  * });
  */
-export function useGetControlDataQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetControlDataQuery, GetControlDataQueryVariables>) {
+export function useGetData4ControlQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetData4ControlQuery, GetData4ControlQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<GetControlDataQuery, GetControlDataQueryVariables>(GetControlDataDocument, options);
+        return ApolloReactHooks.useQuery<GetData4ControlQuery, GetData4ControlQueryVariables>(GetData4ControlDocument, options);
       }
-export function useGetControlDataLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetControlDataQuery, GetControlDataQueryVariables>) {
+export function useGetData4ControlLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetData4ControlQuery, GetData4ControlQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<GetControlDataQuery, GetControlDataQueryVariables>(GetControlDataDocument, options);
+          return ApolloReactHooks.useLazyQuery<GetData4ControlQuery, GetData4ControlQueryVariables>(GetData4ControlDocument, options);
         }
-export function useGetControlDataSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetControlDataQuery, GetControlDataQueryVariables>) {
+export function useGetData4ControlSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetData4ControlQuery, GetData4ControlQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<GetControlDataQuery, GetControlDataQueryVariables>(GetControlDataDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<GetData4ControlQuery, GetData4ControlQueryVariables>(GetData4ControlDocument, options);
         }
-export type GetControlDataQueryHookResult = ReturnType<typeof useGetControlDataQuery>;
-export type GetControlDataLazyQueryHookResult = ReturnType<typeof useGetControlDataLazyQuery>;
-export type GetControlDataSuspenseQueryHookResult = ReturnType<typeof useGetControlDataSuspenseQuery>;
-export type GetControlDataQueryResult = ApolloReactCommon.QueryResult<GetControlDataQuery, GetControlDataQueryVariables>;
+export type GetData4ControlQueryHookResult = ReturnType<typeof useGetData4ControlQuery>;
+export type GetData4ControlLazyQueryHookResult = ReturnType<typeof useGetData4ControlLazyQuery>;
+export type GetData4ControlSuspenseQueryHookResult = ReturnType<typeof useGetData4ControlSuspenseQuery>;
+export type GetData4ControlQueryResult = ApolloReactCommon.QueryResult<GetData4ControlQuery, GetData4ControlQueryVariables>;
 export const SetPanTiltDocument = gql`
-    mutation setPanTilt($newPan: Float!, $newTilt: Float!, $newOffset: Float!) {
-  setPanTiltOffset(newOffset: $newOffset)
+    mutation setPanTilt($newPan: Float!, $newTilt: Float!) {
   setPanTilt(newPan: $newPan, newTilt: $newTilt)
 }
     `;
@@ -261,7 +388,6 @@ export type SetPanTiltMutationFn = ApolloReactCommon.MutationFunction<SetPanTilt
  *   variables: {
  *      newPan: // value for 'newPan'
  *      newTilt: // value for 'newTilt'
- *      newOffset: // value for 'newOffset'
  *   },
  * });
  */
@@ -272,8 +398,39 @@ export function useSetPanTiltMutation(baseOptions?: ApolloReactHooks.MutationHoo
 export type SetPanTiltMutationHookResult = ReturnType<typeof useSetPanTiltMutation>;
 export type SetPanTiltMutationResult = ApolloReactCommon.MutationResult<SetPanTiltMutation>;
 export type SetPanTiltMutationOptions = ApolloReactCommon.BaseMutationOptions<SetPanTiltMutation, SetPanTiltMutationVariables>;
-export const GetDebugDataDocument = gql`
-    query getDebugData {
+export const SetPanTiltOffsetDocument = gql`
+    mutation setPanTiltOffset($newOffset: Float!) {
+  setPanTiltOffset(newOffset: $newOffset)
+}
+    `;
+export type SetPanTiltOffsetMutationFn = ApolloReactCommon.MutationFunction<SetPanTiltOffsetMutation, SetPanTiltOffsetMutationVariables>;
+
+/**
+ * __useSetPanTiltOffsetMutation__
+ *
+ * To run a mutation, you first call `useSetPanTiltOffsetMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSetPanTiltOffsetMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [setPanTiltOffsetMutation, { data, loading, error }] = useSetPanTiltOffsetMutation({
+ *   variables: {
+ *      newOffset: // value for 'newOffset'
+ *   },
+ * });
+ */
+export function useSetPanTiltOffsetMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<SetPanTiltOffsetMutation, SetPanTiltOffsetMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<SetPanTiltOffsetMutation, SetPanTiltOffsetMutationVariables>(SetPanTiltOffsetDocument, options);
+      }
+export type SetPanTiltOffsetMutationHookResult = ReturnType<typeof useSetPanTiltOffsetMutation>;
+export type SetPanTiltOffsetMutationResult = ApolloReactCommon.MutationResult<SetPanTiltOffsetMutation>;
+export type SetPanTiltOffsetMutationOptions = ApolloReactCommon.BaseMutationOptions<SetPanTiltOffsetMutation, SetPanTiltOffsetMutationVariables>;
+export const GetData4DebugDocument = gql`
+    query getData4Debug {
   getGnss {
     timestamp
     latitude
@@ -304,66 +461,36 @@ export const GetDebugDataDocument = gql`
     `;
 
 /**
- * __useGetDebugDataQuery__
+ * __useGetData4DebugQuery__
  *
- * To run a query within a React component, call `useGetDebugDataQuery` and pass it any options that fit your needs.
- * When your component renders, `useGetDebugDataQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useGetData4DebugQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetData4DebugQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useGetDebugDataQuery({
+ * const { data, loading, error } = useGetData4DebugQuery({
  *   variables: {
  *   },
  * });
  */
-export function useGetDebugDataQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetDebugDataQuery, GetDebugDataQueryVariables>) {
+export function useGetData4DebugQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetData4DebugQuery, GetData4DebugQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<GetDebugDataQuery, GetDebugDataQueryVariables>(GetDebugDataDocument, options);
+        return ApolloReactHooks.useQuery<GetData4DebugQuery, GetData4DebugQueryVariables>(GetData4DebugDocument, options);
       }
-export function useGetDebugDataLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetDebugDataQuery, GetDebugDataQueryVariables>) {
+export function useGetData4DebugLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetData4DebugQuery, GetData4DebugQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<GetDebugDataQuery, GetDebugDataQueryVariables>(GetDebugDataDocument, options);
+          return ApolloReactHooks.useLazyQuery<GetData4DebugQuery, GetData4DebugQueryVariables>(GetData4DebugDocument, options);
         }
-export function useGetDebugDataSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetDebugDataQuery, GetDebugDataQueryVariables>) {
+export function useGetData4DebugSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetData4DebugQuery, GetData4DebugQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<GetDebugDataQuery, GetDebugDataQueryVariables>(GetDebugDataDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<GetData4DebugQuery, GetData4DebugQueryVariables>(GetData4DebugDocument, options);
         }
-export type GetDebugDataQueryHookResult = ReturnType<typeof useGetDebugDataQuery>;
-export type GetDebugDataLazyQueryHookResult = ReturnType<typeof useGetDebugDataLazyQuery>;
-export type GetDebugDataSuspenseQueryHookResult = ReturnType<typeof useGetDebugDataSuspenseQuery>;
-export type GetDebugDataQueryResult = ApolloReactCommon.QueryResult<GetDebugDataQuery, GetDebugDataQueryVariables>;
-export const PurgeForecastRecordsDocument = gql`
-    mutation purgeForecastRecords {
-  purgeForecastRecords
-}
-    `;
-export type PurgeForecastRecordsMutationFn = ApolloReactCommon.MutationFunction<PurgeForecastRecordsMutation, PurgeForecastRecordsMutationVariables>;
-
-/**
- * __usePurgeForecastRecordsMutation__
- *
- * To run a mutation, you first call `usePurgeForecastRecordsMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `usePurgeForecastRecordsMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [purgeForecastRecordsMutation, { data, loading, error }] = usePurgeForecastRecordsMutation({
- *   variables: {
- *   },
- * });
- */
-export function usePurgeForecastRecordsMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<PurgeForecastRecordsMutation, PurgeForecastRecordsMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<PurgeForecastRecordsMutation, PurgeForecastRecordsMutationVariables>(PurgeForecastRecordsDocument, options);
-      }
-export type PurgeForecastRecordsMutationHookResult = ReturnType<typeof usePurgeForecastRecordsMutation>;
-export type PurgeForecastRecordsMutationResult = ApolloReactCommon.MutationResult<PurgeForecastRecordsMutation>;
-export type PurgeForecastRecordsMutationOptions = ApolloReactCommon.BaseMutationOptions<PurgeForecastRecordsMutation, PurgeForecastRecordsMutationVariables>;
+export type GetData4DebugQueryHookResult = ReturnType<typeof useGetData4DebugQuery>;
+export type GetData4DebugLazyQueryHookResult = ReturnType<typeof useGetData4DebugLazyQuery>;
+export type GetData4DebugSuspenseQueryHookResult = ReturnType<typeof useGetData4DebugSuspenseQuery>;
+export type GetData4DebugQueryResult = ApolloReactCommon.QueryResult<GetData4DebugQuery, GetData4DebugQueryVariables>;
 export const PurgeTleRecordsDocument = gql`
     mutation purgeTLERecords {
   purgeTLERecords
@@ -484,8 +611,8 @@ export function useSetPanTiltToNorthMutation(baseOptions?: ApolloReactHooks.Muta
 export type SetPanTiltToNorthMutationHookResult = ReturnType<typeof useSetPanTiltToNorthMutation>;
 export type SetPanTiltToNorthMutationResult = ApolloReactCommon.MutationResult<SetPanTiltToNorthMutation>;
 export type SetPanTiltToNorthMutationOptions = ApolloReactCommon.BaseMutationOptions<SetPanTiltToNorthMutation, SetPanTiltToNorthMutationVariables>;
-export const GetHomeDataDocument = gql`
-    query getHomeData {
+export const GetData4HomeDocument = gql`
+    query getData4Home {
   getStation {
     name
     location
@@ -493,7 +620,6 @@ export const GetHomeDataDocument = gql`
     satellites
     pendingTasks
     totalTasks
-    totalForecast
     clockOffset
   }
   getGnss {
@@ -502,7 +628,6 @@ export const GetHomeDataDocument = gql`
     longitude
     elevation
     trueAzimuth
-    dataQuality
     satellites
   }
   getSystem {
@@ -513,33 +638,337 @@ export const GetHomeDataDocument = gql`
     `;
 
 /**
- * __useGetHomeDataQuery__
+ * __useGetData4HomeQuery__
  *
- * To run a query within a React component, call `useGetHomeDataQuery` and pass it any options that fit your needs.
- * When your component renders, `useGetHomeDataQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useGetData4HomeQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetData4HomeQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useGetHomeDataQuery({
+ * const { data, loading, error } = useGetData4HomeQuery({
  *   variables: {
  *   },
  * });
  */
-export function useGetHomeDataQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetHomeDataQuery, GetHomeDataQueryVariables>) {
+export function useGetData4HomeQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetData4HomeQuery, GetData4HomeQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<GetHomeDataQuery, GetHomeDataQueryVariables>(GetHomeDataDocument, options);
+        return ApolloReactHooks.useQuery<GetData4HomeQuery, GetData4HomeQueryVariables>(GetData4HomeDocument, options);
       }
-export function useGetHomeDataLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetHomeDataQuery, GetHomeDataQueryVariables>) {
+export function useGetData4HomeLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetData4HomeQuery, GetData4HomeQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<GetHomeDataQuery, GetHomeDataQueryVariables>(GetHomeDataDocument, options);
+          return ApolloReactHooks.useLazyQuery<GetData4HomeQuery, GetData4HomeQueryVariables>(GetData4HomeDocument, options);
         }
-export function useGetHomeDataSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetHomeDataQuery, GetHomeDataQueryVariables>) {
+export function useGetData4HomeSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetData4HomeQuery, GetData4HomeQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<GetHomeDataQuery, GetHomeDataQueryVariables>(GetHomeDataDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<GetData4HomeQuery, GetData4HomeQueryVariables>(GetData4HomeDocument, options);
         }
-export type GetHomeDataQueryHookResult = ReturnType<typeof useGetHomeDataQuery>;
-export type GetHomeDataLazyQueryHookResult = ReturnType<typeof useGetHomeDataLazyQuery>;
-export type GetHomeDataSuspenseQueryHookResult = ReturnType<typeof useGetHomeDataSuspenseQuery>;
-export type GetHomeDataQueryResult = ApolloReactCommon.QueryResult<GetHomeDataQuery, GetHomeDataQueryVariables>;
+export type GetData4HomeQueryHookResult = ReturnType<typeof useGetData4HomeQuery>;
+export type GetData4HomeLazyQueryHookResult = ReturnType<typeof useGetData4HomeLazyQuery>;
+export type GetData4HomeSuspenseQueryHookResult = ReturnType<typeof useGetData4HomeSuspenseQuery>;
+export type GetData4HomeQueryResult = ApolloReactCommon.QueryResult<GetData4HomeQuery, GetData4HomeQueryVariables>;
+export const AddNewTleDocument = gql`
+    mutation addNewTLE($tleData: String!) {
+  addNewTLE(tleData: $tleData)
+}
+    `;
+export type AddNewTleMutationFn = ApolloReactCommon.MutationFunction<AddNewTleMutation, AddNewTleMutationVariables>;
+
+/**
+ * __useAddNewTleMutation__
+ *
+ * To run a mutation, you first call `useAddNewTleMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAddNewTleMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [addNewTleMutation, { data, loading, error }] = useAddNewTleMutation({
+ *   variables: {
+ *      tleData: // value for 'tleData'
+ *   },
+ * });
+ */
+export function useAddNewTleMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<AddNewTleMutation, AddNewTleMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<AddNewTleMutation, AddNewTleMutationVariables>(AddNewTleDocument, options);
+      }
+export type AddNewTleMutationHookResult = ReturnType<typeof useAddNewTleMutation>;
+export type AddNewTleMutationResult = ApolloReactCommon.MutationResult<AddNewTleMutation>;
+export type AddNewTleMutationOptions = ApolloReactCommon.BaseMutationOptions<AddNewTleMutation, AddNewTleMutationVariables>;
+export const DeleteTleByIdDocument = gql`
+    mutation deleteTLEById($tleId: Int64!) {
+  deleteTLEById(tleId: $tleId)
+}
+    `;
+export type DeleteTleByIdMutationFn = ApolloReactCommon.MutationFunction<DeleteTleByIdMutation, DeleteTleByIdMutationVariables>;
+
+/**
+ * __useDeleteTleByIdMutation__
+ *
+ * To run a mutation, you first call `useDeleteTleByIdMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteTleByIdMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteTleByIdMutation, { data, loading, error }] = useDeleteTleByIdMutation({
+ *   variables: {
+ *      tleId: // value for 'tleId'
+ *   },
+ * });
+ */
+export function useDeleteTleByIdMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeleteTleByIdMutation, DeleteTleByIdMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<DeleteTleByIdMutation, DeleteTleByIdMutationVariables>(DeleteTleByIdDocument, options);
+      }
+export type DeleteTleByIdMutationHookResult = ReturnType<typeof useDeleteTleByIdMutation>;
+export type DeleteTleByIdMutationResult = ApolloReactCommon.MutationResult<DeleteTleByIdMutation>;
+export type DeleteTleByIdMutationOptions = ApolloReactCommon.BaseMutationOptions<DeleteTleByIdMutation, DeleteTleByIdMutationVariables>;
+export const GetData4SatellitesDocument = gql`
+    query getData4Satellites {
+  getGnss {
+    timestamp
+    latitude
+    longitude
+  }
+}
+    `;
+
+/**
+ * __useGetData4SatellitesQuery__
+ *
+ * To run a query within a React component, call `useGetData4SatellitesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetData4SatellitesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetData4SatellitesQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetData4SatellitesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetData4SatellitesQuery, GetData4SatellitesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetData4SatellitesQuery, GetData4SatellitesQueryVariables>(GetData4SatellitesDocument, options);
+      }
+export function useGetData4SatellitesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetData4SatellitesQuery, GetData4SatellitesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetData4SatellitesQuery, GetData4SatellitesQueryVariables>(GetData4SatellitesDocument, options);
+        }
+export function useGetData4SatellitesSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetData4SatellitesQuery, GetData4SatellitesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<GetData4SatellitesQuery, GetData4SatellitesQueryVariables>(GetData4SatellitesDocument, options);
+        }
+export type GetData4SatellitesQueryHookResult = ReturnType<typeof useGetData4SatellitesQuery>;
+export type GetData4SatellitesLazyQueryHookResult = ReturnType<typeof useGetData4SatellitesLazyQuery>;
+export type GetData4SatellitesSuspenseQueryHookResult = ReturnType<typeof useGetData4SatellitesSuspenseQuery>;
+export type GetData4SatellitesQueryResult = ApolloReactCommon.QueryResult<GetData4SatellitesQuery, GetData4SatellitesQueryVariables>;
+export const GetForecastByIdDocument = gql`
+    query getForecastById($tleId: Int64!, $elevationThreshold: Float!) {
+  getForecastById(tleId: $tleId, elevationThreshold: $elevationThreshold) {
+    duration
+    startTime
+    endTime
+    entryAzimuth
+    exitAzimuth
+    maxElevation
+    latitude
+    longitude
+  }
+}
+    `;
+
+/**
+ * __useGetForecastByIdQuery__
+ *
+ * To run a query within a React component, call `useGetForecastByIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetForecastByIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetForecastByIdQuery({
+ *   variables: {
+ *      tleId: // value for 'tleId'
+ *      elevationThreshold: // value for 'elevationThreshold'
+ *   },
+ * });
+ */
+export function useGetForecastByIdQuery(baseOptions: ApolloReactHooks.QueryHookOptions<GetForecastByIdQuery, GetForecastByIdQueryVariables> & ({ variables: GetForecastByIdQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetForecastByIdQuery, GetForecastByIdQueryVariables>(GetForecastByIdDocument, options);
+      }
+export function useGetForecastByIdLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetForecastByIdQuery, GetForecastByIdQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetForecastByIdQuery, GetForecastByIdQueryVariables>(GetForecastByIdDocument, options);
+        }
+export function useGetForecastByIdSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetForecastByIdQuery, GetForecastByIdQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<GetForecastByIdQuery, GetForecastByIdQueryVariables>(GetForecastByIdDocument, options);
+        }
+export type GetForecastByIdQueryHookResult = ReturnType<typeof useGetForecastByIdQuery>;
+export type GetForecastByIdLazyQueryHookResult = ReturnType<typeof useGetForecastByIdLazyQuery>;
+export type GetForecastByIdSuspenseQueryHookResult = ReturnType<typeof useGetForecastByIdSuspenseQuery>;
+export type GetForecastByIdQueryResult = ApolloReactCommon.QueryResult<GetForecastByIdQuery, GetForecastByIdQueryVariables>;
+export const GetObservationByIdDocument = gql`
+    query getObservationById($tleId: Int64!, $elevationThreshold: Float!) {
+  getObservationById(tleId: $tleId, elevationThreshold: $elevationThreshold) {
+    elevation
+    azimuth
+    observable
+  }
+}
+    `;
+
+/**
+ * __useGetObservationByIdQuery__
+ *
+ * To run a query within a React component, call `useGetObservationByIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetObservationByIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetObservationByIdQuery({
+ *   variables: {
+ *      tleId: // value for 'tleId'
+ *      elevationThreshold: // value for 'elevationThreshold'
+ *   },
+ * });
+ */
+export function useGetObservationByIdQuery(baseOptions: ApolloReactHooks.QueryHookOptions<GetObservationByIdQuery, GetObservationByIdQueryVariables> & ({ variables: GetObservationByIdQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetObservationByIdQuery, GetObservationByIdQueryVariables>(GetObservationByIdDocument, options);
+      }
+export function useGetObservationByIdLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetObservationByIdQuery, GetObservationByIdQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetObservationByIdQuery, GetObservationByIdQueryVariables>(GetObservationByIdDocument, options);
+        }
+export function useGetObservationByIdSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetObservationByIdQuery, GetObservationByIdQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<GetObservationByIdQuery, GetObservationByIdQueryVariables>(GetObservationByIdDocument, options);
+        }
+export type GetObservationByIdQueryHookResult = ReturnType<typeof useGetObservationByIdQuery>;
+export type GetObservationByIdLazyQueryHookResult = ReturnType<typeof useGetObservationByIdLazyQuery>;
+export type GetObservationByIdSuspenseQueryHookResult = ReturnType<typeof useGetObservationByIdSuspenseQuery>;
+export type GetObservationByIdQueryResult = ApolloReactCommon.QueryResult<GetObservationByIdQuery, GetObservationByIdQueryVariables>;
+export const GetTlEsByKeywordDocument = gql`
+    query getTLEsByKeyword($keyword: String!) {
+  getTLEsByKeyword(keyword: $keyword) {
+    id
+    name
+    line_1
+    line_2
+    epochTime
+    createdAt
+    updatedAt
+    geostationary
+  }
+}
+    `;
+
+/**
+ * __useGetTlEsByKeywordQuery__
+ *
+ * To run a query within a React component, call `useGetTlEsByKeywordQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetTlEsByKeywordQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetTlEsByKeywordQuery({
+ *   variables: {
+ *      keyword: // value for 'keyword'
+ *   },
+ * });
+ */
+export function useGetTlEsByKeywordQuery(baseOptions: ApolloReactHooks.QueryHookOptions<GetTlEsByKeywordQuery, GetTlEsByKeywordQueryVariables> & ({ variables: GetTlEsByKeywordQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetTlEsByKeywordQuery, GetTlEsByKeywordQueryVariables>(GetTlEsByKeywordDocument, options);
+      }
+export function useGetTlEsByKeywordLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetTlEsByKeywordQuery, GetTlEsByKeywordQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetTlEsByKeywordQuery, GetTlEsByKeywordQueryVariables>(GetTlEsByKeywordDocument, options);
+        }
+export function useGetTlEsByKeywordSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetTlEsByKeywordQuery, GetTlEsByKeywordQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<GetTlEsByKeywordQuery, GetTlEsByKeywordQueryVariables>(GetTlEsByKeywordDocument, options);
+        }
+export type GetTlEsByKeywordQueryHookResult = ReturnType<typeof useGetTlEsByKeywordQuery>;
+export type GetTlEsByKeywordLazyQueryHookResult = ReturnType<typeof useGetTlEsByKeywordLazyQuery>;
+export type GetTlEsByKeywordSuspenseQueryHookResult = ReturnType<typeof useGetTlEsByKeywordSuspenseQuery>;
+export type GetTlEsByKeywordQueryResult = ApolloReactCommon.QueryResult<GetTlEsByKeywordQuery, GetTlEsByKeywordQueryVariables>;
+export const ImportTlEsDocument = gql`
+    mutation importTLEs($tleData: String!) {
+  importTLEs(tleData: $tleData)
+}
+    `;
+export type ImportTlEsMutationFn = ApolloReactCommon.MutationFunction<ImportTlEsMutation, ImportTlEsMutationVariables>;
+
+/**
+ * __useImportTlEsMutation__
+ *
+ * To run a mutation, you first call `useImportTlEsMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useImportTlEsMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [importTlEsMutation, { data, loading, error }] = useImportTlEsMutation({
+ *   variables: {
+ *      tleData: // value for 'tleData'
+ *   },
+ * });
+ */
+export function useImportTlEsMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ImportTlEsMutation, ImportTlEsMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ImportTlEsMutation, ImportTlEsMutationVariables>(ImportTlEsDocument, options);
+      }
+export type ImportTlEsMutationHookResult = ReturnType<typeof useImportTlEsMutation>;
+export type ImportTlEsMutationResult = ApolloReactCommon.MutationResult<ImportTlEsMutation>;
+export type ImportTlEsMutationOptions = ApolloReactCommon.BaseMutationOptions<ImportTlEsMutation, ImportTlEsMutationVariables>;
+export const UpdateTleByIdDocument = gql`
+    mutation updateTLEById($tleId: Int64!, $tleData: String!) {
+  updateTLEById(tleId: $tleId, tleData: $tleData)
+}
+    `;
+export type UpdateTleByIdMutationFn = ApolloReactCommon.MutationFunction<UpdateTleByIdMutation, UpdateTleByIdMutationVariables>;
+
+/**
+ * __useUpdateTleByIdMutation__
+ *
+ * To run a mutation, you first call `useUpdateTleByIdMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateTleByIdMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateTleByIdMutation, { data, loading, error }] = useUpdateTleByIdMutation({
+ *   variables: {
+ *      tleId: // value for 'tleId'
+ *      tleData: // value for 'tleData'
+ *   },
+ * });
+ */
+export function useUpdateTleByIdMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateTleByIdMutation, UpdateTleByIdMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdateTleByIdMutation, UpdateTleByIdMutationVariables>(UpdateTleByIdDocument, options);
+      }
+export type UpdateTleByIdMutationHookResult = ReturnType<typeof useUpdateTleByIdMutation>;
+export type UpdateTleByIdMutationResult = ApolloReactCommon.MutationResult<UpdateTleByIdMutation>;
+export type UpdateTleByIdMutationOptions = ApolloReactCommon.BaseMutationOptions<UpdateTleByIdMutation, UpdateTleByIdMutationVariables>;

@@ -1,4 +1,4 @@
-.PHONY: build windows gen clean version run
+.PHONY: build windows gen clean version run mock
 
 BINARY=openstation
 VERSION=$(shell cat ./VERSION)
@@ -9,7 +9,8 @@ SRC_DIR=./cmd
 DIST_DIR=./build/dist
 ASSETS_DIR=./build/assets
 
-BUILD_ARCH=arm arm64 386 amd64 ppc64le riscv64 s390x
+BUILD_ARCH=arm arm64 386 amd64 ppc64le riscv64 \
+		loong64 s390x
 BUILD_FLAGS=-s -w -X main.version=$(VERSION) \
 	-X main.release=$(COMMIT)-$(RELEASE)
 BUILD_ARGS=-trimpath
@@ -46,6 +47,9 @@ version:
 
 run:
 	@go run $(SRC_DIR)/*.go --config $(ASSETS_DIR)/config.json
+
+mock:
+	@go run $(SRC_DIR)/*.go --config $(ASSETS_DIR)/config.json --mock
 
 clean:
 	@rm -rf $(DIST_DIR)/*

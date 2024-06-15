@@ -10,7 +10,7 @@ interface PanelProps<T = ReactNode> {
 export const Panel = ({ embedded, className, heading, children }: PanelProps) => (
 	<div className="w-full">
 		<div className="flex flex-col shadow-lg rounded-lg">
-			<div className="p-4 font-bold">
+			<div className="mx-6 p-4 font-bold">
 				<h2
 					className={`text-gray-800 dark:text-gray-300 ${embedded ? "text-md" : "text-lg"}`}
 				>

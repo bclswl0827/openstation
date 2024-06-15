@@ -1,4 +1,3 @@
-mutation setPanTilt($newPan: Float!, $newTilt: Float!, $newOffset: Float!) {
-	setPanTiltOffset(newOffset: $newOffset)
+mutation setPanTilt($newPan: Float!, $newTilt: Float!) {
 	setPanTilt(newPan: $newPan, newTilt: $newTilt)
 }

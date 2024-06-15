@@ -16,7 +16,7 @@ const Tasks = () => {
 	};
 
 	return (
-		<div className="p-8 min-h-screen">
+		<div className="animate-fade p-8 min-h-screen">
 			<div className="flex justify-center border-b dark:border-gray-600">
 				<Tabs
 					className="dark:text-gray-200"

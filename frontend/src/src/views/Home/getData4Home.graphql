@@ -1,6 +1,6 @@
 scalar Int64
 
-query getHomeData {
+query getData4Home {
 	getStation {
 		name
 		location
@@ -8,7 +8,6 @@ query getHomeData {
 		satellites
 		pendingTasks
 		totalTasks
-		totalForecast
 		clockOffset
 	}
 	getGnss {
@@ -17,7 +16,6 @@ query getHomeData {
 		longitude
 		elevation
 		trueAzimuth
-		dataQuality
 		satellites
 	}
 	getSystem {

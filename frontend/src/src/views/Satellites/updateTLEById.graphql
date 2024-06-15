@@ -1,0 +1,3 @@
+mutation updateTLEById($tleId: Int64!, $tleData: String!) {
+	updateTLEById(tleId: $tleId, tleData: $tleData)
+}

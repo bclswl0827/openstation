@@ -1,0 +1,3 @@
+mutation setPanTiltOffset($newOffset: Float!) {
+	setPanTiltOffset(newOffset: $newOffset)
+}

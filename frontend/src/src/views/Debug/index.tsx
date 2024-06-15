@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { Error } from "../../components/Error";
 import { Panel } from "../../components/Panel";
 import {
-	useGetDebugDataQuery,
-	usePurgeForecastRecordsMutation,
+	useGetData4DebugQuery,
 	usePurgeTaskQueueMutation,
 	usePurgeTleRecordsMutation,
 	useRebootSystemMutation,
@@ -39,50 +38,28 @@ const Diagnose = () => {
 		});
 	};
 
-	const [rebootSystemMutation, { error: rebootSystemMutationError }] = useRebootSystemMutation();
-
+	const [rebootSystemMutation] = useRebootSystemMutation();
 	const handleRebootSystem = async () => {
-		await rebootSystemMutation();
-		sendUserAlert(
-			rebootSystemMutationError ? "执行失败" : "执行成功",
-			!!rebootSystemMutationError
-		);
+		const { errors } = await rebootSystemMutation();
+		sendUserAlert(errors ? "执行失败" : "执行成功", !!errors);
 	};
 
-	const [setPanTiltToNorth, { error: setPanTiltToNorthError }] = useSetPanTiltToNorthMutation();
-
+	const [setPanTiltToNorth] = useSetPanTiltToNorthMutation();
 	const handleSetPanTiltToNorth = async () => {
-		await setPanTiltToNorth();
-		sendUserAlert(setPanTiltToNorthError ? "执行失败" : "执行成功", !!setPanTiltToNorthError);
+		const { errors } = await setPanTiltToNorth();
+		sendUserAlert(errors ? "执行失败" : "执行成功", !!errors);
 	};
 
-	const [purgeTaskQueue, { error: purgeTaskQueueError }] = usePurgeTaskQueueMutation();
-
+	const [purgeTaskQueue] = usePurgeTaskQueueMutation();
 	const handlePurgeTaskQueue = async () => {
-		await purgeTaskQueue();
-		sendUserAlert(purgeTaskQueueError ? "执行失败" : "执行成功", !!purgeTaskQueueError);
+		const { errors } = await purgeTaskQueue();
+		sendUserAlert(errors ? "执行失败" : "执行成功", !!errors);
 	};
 
-	const [purgeTleRecordsMutation, { error: purgeTleRecordsMutationError }] =
-		usePurgeTleRecordsMutation();
-
+	const [purgeTleRecordsMutation] = usePurgeTleRecordsMutation();
 	const handlePurgeTLERecords = async () => {
-		await purgeTleRecordsMutation();
-		sendUserAlert(
-			purgeTleRecordsMutationError ? "执行失败" : "执行成功",
-			!!purgeTleRecordsMutationError
-		);
-	};
-
-	const [purgeForecastRecords, { error: purgeForecastRecordsError }] =
-		usePurgeForecastRecordsMutation();
-
-	const handlePurgeForecastRecords = async () => {
-		await purgeForecastRecords();
-		sendUserAlert(
-			purgeForecastRecordsError ? "执行失败" : "执行成功",
-			!!purgeForecastRecordsError
-		);
+		const { errors } = await purgeTleRecordsMutation();
+		sendUserAlert(errors ? "执行失败" : "执行成功", !!errors);
 	};
 
 	// Actions for all components
@@ -124,95 +101,111 @@ const Diagnose = () => {
 				title: "这是一个危险操作",
 				message: "此操作将清空所有卫星 TLE 数据，是否确认执行此操作？"
 			}
-		},
-		{
-			button: "清理所有过境预报",
-			onClick: handlePurgeForecastRecords,
-			description: "此操作将清理所有卫星过境预报数据，请谨慎操作",
-			confirm: {
-				title: "这是一个危险操作",
-				message: "此操作将清理所有卫星过境预报数据，是否确认执行此操作？"
-			}
 		}
 	]);
 
 	// States for all components
 	const [diagnoseRows, setDiagnoseRows] = useState({
-		gnssDataQuality: { name: "RTK 解算方式", value: "" },
-		gnssLatitude: { name: "当前纬度", value: "" },
-		gnssLongitude: { name: "当前经度", value: "" },
-		gnssElevation: { name: "当前高程", value: "" },
-		gnssSatellites: { name: "GNSS 解算卫星", value: "" },
-		gnssTimestamp: { name: "GNSS 时间戳", value: "" },
-		gnssTrueAzimuth: { name: "真北方位角", value: "" },
-		panTiltCurrentPan: { name: "转台方位", value: "" },
-		panTiltCurrentTilt: { name: "转台俯仰", value: "" },
-		panTiltNorthOffset: { name: "转台真北偏角", value: "" },
-		panTiltIsBusy: { name: "转台状态", value: "" },
-		systemArch: { name: "系统架构", value: "" },
-		systemCPUUsage: { name: "CPU 占用", value: "" },
-		systemMemUsage: { name: "内存占用", value: "" },
-		systemDiskUsage: { name: "磁盘占用", value: "" },
-		systemHostname: { name: "系统主机名", value: "" },
-		systemIP: { name: "IP 地址", value: "" },
-		systemTimestamp: { name: "系统时间戳", value: "" },
-		systemRelease: { name: "系统版本", value: "" },
-		systemUptime: { name: "在线时长", value: "" }
+		// GNSS related data
+		gnssTimestamp: { name: "GNSS 当前时间", value: "" },
+		gnssLongitude: { name: "GNSS 当前经度", value: "" },
+		gnssLatitude: { name: "GNSS 当前纬度", value: "" },
+		gnssElevation: { name: "GNSS 当前高程", value: "" },
+		gnssTrueAzimuth: { name: "GNSS 真北方位", value: "" },
+		gnssSatellites: { name: "GNSS 卫星数量", value: "" },
+		gnssDataQuality: { name: "GNSS 解算方法", value: "" },
+		// Pan-Tilt related data
+		panTiltIsBusy: { name: "转台当前状态", value: "" },
+		panTiltCurrentPan: { name: "转台方位角", value: "" },
+		panTiltCurrentTilt: { name: "转台俯仰角", value: "" },
+		panTiltNorthOffset: { name: "转台北偏角", value: "" },
+		// System resource usage
+		systemCPUUsage: { name: "CPU 占用百分比", value: "" },
+		systemMemUsage: { name: "RAM 占用百分比", value: "" },
+		systemDiskUsage: { name: "磁盘占用百分比", value: "" },
+		systemTimestamp: { name: "系统 RTC 时间", value: "" },
+		systemUptime: { name: "站控系统运行时长", value: "" },
+		// System information
+		systemIP: { name: "设备 IP 地址", value: "" },
+		systemHostname: { name: "设备主机名称", value: "" },
+		systemRelease: { name: "设备内核版本号", value: "" },
+		systemArch: { name: "设备 CPU 架构", value: "" }
 	});
 
 	// Polling debug data
-	const { data, error, loading } = useGetDebugDataQuery({ pollInterval: 3000 });
-
+	const { data, error, loading } = useGetData4DebugQuery({ pollInterval: 3000 });
 	useEffect(() => {
 		if (!error && !loading) {
 			const { getGnss, getPanTilt, getSystem } = data!;
-			// console.log(data);
 			setDiagnoseRows((prev) => ({
 				...prev,
-				gnssDataQuality: {
-					name: "RTK 解算方式",
-					value: getGnss.dataQuality === 4 ? "RTK Fixed" : "RTK Float"
-				},
-				gnssLatitude: { ...prev.gnssLatitude, value: String(getGnss.latitude) },
-				gnssLongitude: { ...prev.gnssLongitude, value: String(getGnss.longitude) },
-				gnssElevation: { ...prev.gnssElevation, value: String(getGnss.elevation) },
-				gnssSatellites: { ...prev.gnssSatellites, value: String(getGnss.satellites) },
 				gnssTimestamp: { ...prev.gnssTimestamp, value: getTimeString(getGnss.timestamp) },
-				gnssTrueAzimuth: { ...prev.gnssTrueAzimuth, value: String(getGnss.trueAzimuth) },
-				panTiltCurrentPan: {
-					...prev.panTiltCurrentPan,
-					value: String(getPanTilt.currentPan)
+				gnssLongitude: {
+					...prev.gnssLongitude,
+					value: `${getGnss.longitude.toFixed(5)} °`
 				},
-				panTiltCurrentTilt: {
-					...prev.panTiltCurrentTilt,
-					value: String(getPanTilt.currentTilt)
+				gnssLatitude: { ...prev.gnssLatitude, value: `${getGnss.latitude.toFixed(5)} °` },
+				gnssElevation: {
+					...prev.gnssElevation,
+					value: `${getGnss.elevation.toFixed(5)} °`
 				},
-				panTiltNorthOffset: {
-					...prev.panTiltNorthOffset,
-					value: String(getPanTilt.northOffset)
+				gnssTrueAzimuth: {
+					...prev.gnssTrueAzimuth,
+					value: `${getGnss.trueAzimuth.toFixed(2)} °`
+				},
+				gnssSatellites: { ...prev.gnssSatellites, value: String(getGnss.satellites) },
+				gnssDataQuality: {
+					...prev.gnssDataQuality,
+					value:
+						getGnss.dataQuality !== 0
+							? getGnss.dataQuality === 4
+								? "RTK Fix"
+								: "RTK Float"
+							: "Invalid"
 				},
 				panTiltIsBusy: {
 					...prev.panTiltIsBusy,
-					value: getPanTilt.isBusy ? "正忙" : "空闲"
+					value: getPanTilt.isBusy ? "繁忙" : "就绪"
 				},
-				systemArch: { ...prev.systemArch, value: getSystem.arch },
-				systemCPUUsage: { ...prev.systemCPUUsage, value: String(getSystem.cpuUsage) },
-				systemMemUsage: { ...prev.systemMemUsage, value: String(getSystem.memUsage) },
-				systemDiskUsage: { ...prev.systemDiskUsage, value: String(getSystem.diskUsage) },
-				systemHostname: { ...prev.systemHostname, value: getSystem.hostname },
-				systemIP: { ...prev.systemIP, value: getSystem.ip.join(", ") },
+				panTiltCurrentPan: {
+					...prev.panTiltCurrentPan,
+					value: `${getPanTilt.currentPan.toFixed(2)} °`
+				},
+				panTiltCurrentTilt: {
+					...prev.panTiltCurrentTilt,
+					value: `${getPanTilt.currentTilt.toFixed(2)} °`
+				},
+				panTiltNorthOffset: {
+					...prev.panTiltNorthOffset,
+					value: `${getPanTilt.northOffset.toFixed(2)} °`
+				},
+				systemCPUUsage: {
+					...prev.systemCPUUsage,
+					value: `${getSystem.cpuUsage.toFixed(2)} %`
+				},
+				systemMemUsage: {
+					...prev.systemMemUsage,
+					value: `${getSystem.memUsage.toFixed(2)} %`
+				},
+				systemDiskUsage: {
+					...prev.systemDiskUsage,
+					value: `${getSystem.diskUsage.toFixed(2)} %`
+				},
 				systemTimestamp: {
 					...prev.systemTimestamp,
 					value: getTimeString(getSystem.timestamp)
 				},
-				systemRelease: { ...prev.systemRelease, value: getSystem.release },
-				systemUptime: { ...prev.systemUptime, value: String(getSystem.uptime) }
+				systemUptime: { ...prev.systemUptime, value: `${getSystem.uptime} s` },
+				systemIP: { ...prev.systemIP, value: getSystem.ip.join(", ") },
+				systemHostname: { ...prev.systemHostname, value: getSystem.hostname },
+				systemArch: { ...prev.systemArch, value: getSystem.arch },
+				systemRelease: { ...prev.systemRelease, value: getSystem.release }
 			}));
 		}
 	}, [data, error, loading]);
 
 	return !error ? (
-		<div className="p-8 space-y-4 min-h-screen">
+		<div className="animate-fade p-8 space-y-4 min-h-screen">
 			<Panel heading="系统资讯">
 				<TableContainer>
 					<Table>
@@ -239,7 +232,7 @@ const Diagnose = () => {
 							<button
 								className={`px-4 py-2 rounded-lg font-medium text-white transition-all ${getButtonColor(index, false)}`}
 								onClick={() => {
-									void handleControl(confirm.title, confirm.message, onClick);
+									handleControl(confirm.title, confirm.message, onClick);
 								}}
 							>
 								{button}
@@ -260,7 +253,7 @@ const Diagnose = () => {
 							<button
 								className={`px-4 py-2 rounded-lg font-medium text-white transition-all ${getButtonColor(index, true)}`}
 								onClick={() => {
-									void handleControl(confirm.title, confirm.message, onClick);
+									handleControl(confirm.title, confirm.message, onClick);
 								}}
 							>
 								{button}

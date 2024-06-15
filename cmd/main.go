@@ -15,9 +15,9 @@ import (
 	"github.com/bclswl0827/openstation/graph"
 	"github.com/bclswl0827/openstation/server"
 	"github.com/bclswl0827/openstation/services"
-	service_forecast "github.com/bclswl0827/openstation/services/forecast"
-	service_tracking "github.com/bclswl0827/openstation/services/tracking"
 	"github.com/bclswl0827/openstation/startups"
+
+	service_tracking "github.com/bclswl0827/openstation/services/tracking"
 
 	startup_alignment "github.com/bclswl0827/openstation/startups/alignment"
 	startup_peripherals "github.com/bclswl0827/openstation/startups/peripherals"
@@ -29,6 +29,7 @@ import (
 func parseCommandLine() (args arguments) {
 	flag.StringVar(&args.Path, "config", "./config.json", "Path to config file")
 	flag.BoolVar(&args.Version, "version", false, "Print version information")
+	flag.BoolVar(&args.Mock, "mock", false, "Enable mock mode (without hardware access)")
 	flag.Parse()
 
 	if args.Version {
@@ -117,6 +118,7 @@ func main() {
 	}
 	cleanerOptions := &cleaners.Options{
 		Config:     &conf,
+		MockMode:   args.Mock,
 		Database:   databaseConn,
 		Dependency: depsContainer,
 	}
@@ -136,6 +138,7 @@ func main() {
 	}
 	startupOptions := &startups.Options{
 		Config:   &conf,
+		MockMode: args.Mock,
 		Database: databaseConn,
 	}
 	for _, t := range startupTasks {
@@ -156,12 +159,11 @@ func main() {
 
 	// Setup background services
 	regServices := []services.Service{
-		&service_forecast.ForecastService{},
 		&service_tracking.TrackingService{},
-		// &service_monitor.MonitorService{},
 	}
 	serviceOptions := &services.Options{
 		Config:     &conf,
+		MockMode:   args.Mock,
 		Database:   databaseConn,
 		Dependency: depsContainer,
 		OsSignal:   make(chan os.Signal, 1),
@@ -174,10 +176,11 @@ func main() {
 	// Start HTTP web server
 	graphResolver := &graph.Resolver{
 		Config:     &conf,
+		MockMode:   args.Mock,
 		Database:   databaseConn,
 		Dependency: depsContainer,
 	}
-	go server.Start(
+	go server.Serve(
 		conf.Server.Host,
 		conf.Server.Port,
 		&server.Options{

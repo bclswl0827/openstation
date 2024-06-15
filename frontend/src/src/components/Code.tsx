@@ -39,7 +39,7 @@ export const Code = (props: CodeProps) => {
 				<div
 					className="opacity-60 hover:opacity-100 transition-all cursor-pointer"
 					onClick={() => {
-						void handleCopy(children);
+						handleCopy(children);
 					}}
 				>
 					<Icon
@@ -48,7 +48,7 @@ export const Code = (props: CodeProps) => {
 						size={1}
 					/>
 				</div>
-				{!!fileName?.length && (
+				{fileName?.length && (
 					<div
 						className="opacity-60 hover:opacity-100 transition-all cursor-pointer"
 						onClick={() => {

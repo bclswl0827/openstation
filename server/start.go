@@ -15,20 +15,19 @@ import (
 	"github.com/bclswl0827/openstation/utils/logger"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 )
 
 func init() {
 	gin.SetMode(gin.ReleaseMode)
 }
 
-func Start(host string, port int, options *Options) error {
+func Serve(host string, port int, options *Options) error {
 	r := gin.New()
 
 	// Setup Gzip & logger
 	r.Use(
 		gzip.Gzip(options.Gzip, gzip.WithExcludedPaths([]string{options.ApiEndpoint})),
-		loggerware.WriteLog(logger.GetLogger(Start)),
+		loggerware.WriteLog(logger.GetLogger(Serve)),
 	)
 
 	// Setup Cross-Origin Resource Sharing (CORS)
@@ -71,7 +70,7 @@ func Start(host string, port int, options *Options) error {
 	// Start server
 	err := r.Run(fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
-		logrus.Fatalf("server: %v\n", err)
+		logger.GetLogger(Serve).Fatalf("server: %v\n", err)
 	}
 
 	return err

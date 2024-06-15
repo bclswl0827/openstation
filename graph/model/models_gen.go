@@ -8,6 +8,17 @@ type Mutation struct {
 type Query struct {
 }
 
+type Forecast struct {
+	Duration     float64 `json:"duration"`
+	Latitude     float64 `json:"latitude"`
+	Longitude    float64 `json:"longitude"`
+	MaxElevation float64 `json:"maxElevation"`
+	EntryAzimuth float64 `json:"entryAzimuth"`
+	ExitAzimuth  float64 `json:"exitAzimuth"`
+	StartTime    int64   `json:"startTime"`
+	EndTime      int64   `json:"endTime"`
+}
+
 type Gnss struct {
 	Timestamp   int64   `json:"timestamp"`
 	Latitude    float64 `json:"latitude"`
@@ -18,6 +29,12 @@ type Gnss struct {
 	Satellites  int     `json:"satellites"`
 }
 
+type Observation struct {
+	Elevation  float64 `json:"elevation"`
+	Azimuth    float64 `json:"azimuth"`
+	Observable bool    `json:"observable"`
+}
+
 type PanTilt struct {
 	CurrentPan  float64 `json:"currentPan"`
 	CurrentTilt float64 `json:"currentTilt"`
@@ -26,14 +43,13 @@ type PanTilt struct {
 }
 
 type Station struct {
-	Name          string   `json:"name"`
-	Remarks       []string `json:"remarks"`
-	Location      string   `json:"location"`
-	Satellites    int64    `json:"satellites"`
-	PendingTasks  int64    `json:"pendingTasks"`
-	TotalForecast int64    `json:"totalForecast"`
-	TotalTasks    int64    `json:"totalTasks"`
-	ClockOffset   int      `json:"clockOffset"`
+	Name         string   `json:"name"`
+	Remarks      []string `json:"remarks"`
+	Location     string   `json:"location"`
+	Satellites   int64    `json:"satellites"`
+	PendingTasks int64    `json:"pendingTasks"`
+	TotalTasks   int64    `json:"totalTasks"`
+	ClockOffset  int      `json:"clockOffset"`
 }
 
 type System struct {
@@ -46,6 +62,17 @@ type System struct {
 	Arch      string   `json:"arch"`
 	Hostname  string   `json:"hostname"`
 	IP        []string `json:"ip"`
+}
+
+type Task struct {
+	TaskID    int64  `json:"taskId"`
+	TleID     int64  `json:"tleId"`
+	Name      string `json:"name"`
+	StartTime int64  `json:"startTime"`
+	EndTime   int64  `json:"endTime"`
+	HasDone   bool   `json:"hasDone"`
+	Webhook   string `json:"webhook"`
+	CreatedAt int64  `json:"createdAt"`
 }
 
 type TleData struct {

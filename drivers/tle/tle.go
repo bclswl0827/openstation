@@ -2,9 +2,26 @@ package tle
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
+
+func (t *TLE) isTLEData(lines []string) bool {
+	if len(lines) != 3 {
+		return false
+	}
+
+	if len(lines[1]) != 69 || len(lines[2]) != 69 {
+		return false
+	}
+
+	if lines[1][0] != '1' && lines[2][0] != '2' {
+		return false
+	}
+
+	return true
+}
 
 func (t *TLE) isValid() bool {
 	line_1, line_2 := t.Line_1, t.Line_2
@@ -38,14 +55,14 @@ func (t *TLE) isValid() bool {
 }
 
 func (t *TLE) Load(tleData string) error {
-	lines := strings.Split(tleData, "\n")
+	lines := strings.Split(strings.Trim(tleData, "\n"), "\n")
 
 	for i := range lines {
 		lines[i] = strings.TrimSpace(lines[i])
 	}
 
-	if len(lines) != 3 {
-		return errors.New("TLE data must have 3 lines, including satellite name, line 1, and line 2")
+	if !t.isTLEData(lines) {
+		return errors.New("input TLE data has invalid format")
 	}
 
 	t.Name = lines[0]
@@ -53,7 +70,7 @@ func (t *TLE) Load(tleData string) error {
 	t.Line_2 = lines[2]
 
 	if !t.isValid() {
-		return errors.New("invalid TLE data, checksums do not match")
+		return fmt.Errorf("invalid TLE data for satellite %s, checksums do not match", t.Name)
 	}
 
 	satelliteID, err := strconv.ParseInt(lines[1][2:7], 10, 64)

@@ -11,13 +11,17 @@ import (
 )
 
 func (t *PeripheralsStartupTask) Execute(depsContainer *dig.Container, options *startups.Options) error {
-	var (
-		panTiltDriver = pan_tilt.PanTiltDriver(&pan_tilt.PanTiltDriverImpl{})
-		gnssDriver    = gnss.GnssDriver(&gnss.GnssDriverImpl{})
-	)
+	// Return directly if the system is in mock mode
+	if options.MockMode {
+		logger.GetLogger(t.GetTaskName()).Info("system is in mock mode, skip initializing peripherals")
+		return nil
+	}
 
 	// Initialize GNSS device
 	err := depsContainer.Invoke(func(deps *gnss.GnssDependency) error {
+		var gnssDriver = gnss.GnssDriver(&gnss.GnssDriverImpl{})
+
+		logger.GetLogger(t.GetTaskName()).Infoln("start checking GNSS availability")
 		for !gnssDriver.IsAvailable(deps) {
 			logger.GetLogger(t.GetTaskName()).Infoln("waiting for GNSS to be available")
 			time.Sleep(time.Second)
@@ -65,29 +69,21 @@ func (t *PeripheralsStartupTask) Execute(depsContainer *dig.Container, options *
 		return err
 	}
 
-	// Setup PanTilt device, set both pan and tilt to zero position
-	err = depsContainer.Invoke(func(deps *pan_tilt.PanTiltDependency) error {
-		logger.GetLogger(t.GetTaskName()).Infoln("initializing Pan-Tilt device")
+	// Check if Pan-Tilt device is available, start reader daemon
+	return depsContainer.Invoke(func(deps *pan_tilt.PanTiltDependency) error {
+		var panTiltDriver = pan_tilt.PanTiltDriver(&pan_tilt.PanTiltDriverImpl{})
+
 		for !panTiltDriver.IsAvailable(deps) {
 			logger.GetLogger(t.GetTaskName()).Infoln("waiting for Pan-Tilt to be available")
 			time.Sleep(time.Second)
 		}
 
-		// logger.GetLogger(t.GetTaskName()).Infoln("resetting Pan-Tilt device, this may take a while")
-		// sig := make(chan bool)
-		// err := panTiltDriver.Reset(deps, sig)
-		// if err != nil {
-		// 	return err
-		// }
-		// <-sig
-		// logger.GetLogger(t.GetTaskName()).Infoln("Pan-Tilt device reset action has completed")
+		logger.GetLogger(t.GetTaskName()).Infoln("starting Pan-Tilt reading deamon")
+		err = panTiltDriver.Init(deps)
+		if err != nil {
+			return err
+		}
 
-		logger.GetLogger(t.GetTaskName()).Infoln("applying zero position to Pan-Tilt device")
-		return panTiltDriver.Init(deps, true)
+		return nil
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

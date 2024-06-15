@@ -1,0 +1,3 @@
+mutation addNewTLE($tleData: String!) {
+    addNewTLE(tleData: $tleData)
+}

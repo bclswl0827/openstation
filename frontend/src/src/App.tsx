@@ -39,10 +39,11 @@ const App = () => {
 			document.documentElement.classList.add("dark");
 			setMuiTheme((prev) => ({ ...prev, current: prev.dark }));
 		} else {
-			document.documentElement.classList.remove("dark");
-			document.documentElement.classList.remove("light");
 			// Get the system theme and apply it
 			const systemTheme = prefersDarkMode ? "dark" : "light";
+			document.documentElement.classList.remove("dark");
+			document.documentElement.classList.remove("light");
+			document.documentElement.classList.add(systemTheme);
 			setMuiTheme((prev) => ({ ...prev, current: prev[systemTheme] }));
 		}
 	}, [theme, prefersDarkMode]);
@@ -52,32 +53,32 @@ const App = () => {
 	const { name, logo, version, release, footer, repository } = globalConfig;
 
 	return (
-		<div className="flex animate-fade animate-duration-500 animate-delay-300">
-			<AsideMenu
-				logo={logo}
-				title={name}
-				menu={menuConfig}
-				open={asideMenuState}
-				version={version}
-				release={`Build ${release}`}
-			/>
-			<div className="flex flex-col w-full h-screen justify-between">
-				<Header
-					repository={repository}
-					locales={localeConfig.resources}
-					routes={routes}
-					asideMenu={asideMenuState}
+		<ThemeProvider theme={muiTheme.current}>
+			<div className="flex animate-fade animate-duration-500 animate-delay-300">
+				<AsideMenu
+					logo={logo}
+					title={name}
+					menu={menuConfig}
+					open={asideMenuState}
+					version={version}
+					release={`Build ${release}`}
 				/>
-				<div className="mb-auto overflow-y-scroll dark:bg-gray-800">
-					<ThemeProvider theme={muiTheme.current}>
+				<div className="flex flex-col w-full h-screen justify-between">
+					<Header
+						repository={repository}
+						locales={localeConfig.resources}
+						routes={routes}
+						asideMenu={asideMenuState}
+					/>
+					<div className="mb-auto overflow-y-scroll dark:bg-gray-800">
 						<RouterView appName={name} routes={routes} suspense={<Skeleton />} />
-					</ThemeProvider>
+					</div>
+					<Footer content={footer} />
 				</div>
-				<Footer content={footer} />
-			</div>
 
-			<Toaster />
-		</div>
+				<Toaster />
+			</div>
+		</ThemeProvider>
 	);
 };
 

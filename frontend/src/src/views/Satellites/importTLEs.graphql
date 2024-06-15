@@ -1,0 +1,3 @@
+mutation importTLEs($tleData: String!) {
+	importTLEs(tleData: $tleData)
+}

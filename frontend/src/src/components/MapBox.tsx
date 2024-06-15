@@ -2,7 +2,7 @@ import "leaflet/dist/leaflet.css";
 
 import { mdiMapMarker } from "@mdi/js";
 import L from "leaflet";
-import { useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
 
 export interface MapBoxProps {
@@ -15,14 +15,12 @@ export interface MapBoxProps {
 	readonly marker?: [number, number];
 	readonly scrollWheelZoom?: boolean;
 	readonly zoomControl?: boolean;
-	readonly flyTo?: boolean;
 	readonly dragging?: boolean;
 }
 
 export const MapBox = ({
 	className,
 	minZoom,
-	flyTo,
 	maxZoom,
 	zoom,
 	tile,
@@ -40,18 +38,21 @@ export const MapBox = ({
 		className: "leaflet-data-marker"
 	});
 
-	const mapRef = useRef<L.Map>(null);
-
-	useEffect(() => {
-		const map = mapRef.current;
-		if (map) {
-			map.flyTo(center, zoom);
-		}
-	}, [center, zoom, flyTo]);
+	const mapRef = useRef<L.Map | null>();
+	const setMapRef = useCallback(
+		(ref: L.Map | null) => {
+			const map = ref;
+			if (map) {
+				mapRef.current = ref;
+				map.flyTo(center, zoom);
+			}
+		},
+		[center, zoom]
+	);
 
 	return (
 		<MapContainer
-			ref={mapRef}
+			ref={setMapRef}
 			className={`z-0 w-full ${className ?? ""}`}
 			scrollWheelZoom={scrollWheelZoom}
 			zoomControl={zoomControl}

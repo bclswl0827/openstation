@@ -7,6 +7,5 @@ type arguments struct {
 	tilt            float64
 	reset           bool
 	zero            bool
-	wait            bool
 	offset          float64
 }

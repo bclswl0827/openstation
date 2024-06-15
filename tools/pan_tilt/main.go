@@ -16,7 +16,6 @@ func parseCommandLine(args *arguments) {
 	flag.Float64Var(&args.offset, "offset", 0, "Offset to true north")
 	flag.BoolVar(&args.reset, "reset", false, "Reset pan-tilt device")
 	flag.BoolVar(&args.zero, "zero", false, "Set pan-tilt to both 0")
-	flag.BoolVar(&args.wait, "wait", false, "Wait for pan-tilt device")
 	flag.Parse()
 }
 
@@ -48,21 +47,33 @@ func main() {
 	}
 
 	log.Println("pan-tilt device is being initialized")
-	err = panTiltDriver.Init(panTiltDependency, args.zero)
+	err = panTiltDriver.Init(panTiltDependency)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	log.Println("pan-tilt device has been initialized")
 
+	if args.zero {
+		log.Println("applying zero position to Pan-Tilt device")
+		err := panTiltDriver.SetTilt(panTiltDependency, 0)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		err = panTiltDriver.SetPan(panTiltDependency, 0)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+
 	log.Println("pan-tilt device is moving to specified position")
-	err = panTiltDriver.SetPan(panTiltDependency, args.pan, args.wait)
+	err = panTiltDriver.SetPan(panTiltDependency, args.pan)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	log.Printf("current pan value: %f", args.pan)
 
-	err = panTiltDriver.SetTilt(panTiltDependency, args.tilt, args.wait)
+	err = panTiltDriver.SetTilt(panTiltDependency, args.tilt)
 	if err != nil {
 		log.Fatalln(err)
 	}

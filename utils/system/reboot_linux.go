@@ -1,9 +1,7 @@
 package system
 
-import (
-	"syscall"
-)
+import "os/exec"
 
 func Reboot() error {
-	return syscall.Reboot(syscall.LINUX_REBOOT_CMD_POWER_OFF)
+	return exec.Command("/bin/sh", "-c", "sudo reboot").Run()
 }

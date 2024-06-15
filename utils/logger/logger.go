@@ -15,12 +15,21 @@ func GetLogger(x any) *logrus.Entry {
 		})
 	}
 
-	moduleNames := strings.Split((runtime.FuncForPC(reflect.ValueOf(x).Pointer()).Name()), ".")
-	module := strings.Split(moduleNames[len(moduleNames)-2], "/")
-	if len(module) > 0 {
-		return logrus.WithFields(logrus.Fields{
-			"module": strings.ToLower(module[len(module)-1]),
-		})
+	val := reflect.ValueOf(x)
+	if val.Kind() == reflect.Func {
+		runtimeFunc := runtime.FuncForPC(val.Pointer())
+		if runtimeFunc != nil {
+			moduleNames := strings.Split(runtimeFunc.Name(), ".")
+			if len(moduleNames) > 1 {
+				lastPart := moduleNames[len(moduleNames)-1]
+				moduleName := strings.Split(lastPart, "/")
+				if len(moduleName) > 0 {
+					return logrus.WithFields(logrus.Fields{
+						"module": strings.ToLower(moduleName[len(moduleName)-1]),
+					})
+				}
+			}
+		}
 	}
 
 	return logrus.WithFields(logrus.Fields{

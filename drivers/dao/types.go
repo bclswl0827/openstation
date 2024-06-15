@@ -15,7 +15,8 @@ type engine interface {
 
 type BaseModel struct {
 	// This field is the primary key of the table
-	PrimaryKey uint64 `gorm:"primarykey"`
+	PrimaryKey uint64 `gorm:"primary_key"`
+	CreatedAt  int64  `gorm:"column:created_at;autoUpdateTime:milli;<-:create"`
 }
 
 type ITable[T any] interface {

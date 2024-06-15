@@ -1,6 +1,6 @@
 scalar Int64
 
-query getDebugData {
+query getData4Debug {
 	getGnss {
 		timestamp
 		latitude

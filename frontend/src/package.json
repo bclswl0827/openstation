@@ -34,6 +34,7 @@
         "react-router-dom": "^6.16.0",
         "react-syntax-highlighter": "^15.5.0",
         "resium": "^1.17.4",
+        "satellite.js": "^5.0.0",
         "zustand": "^4.5.2"
     },
     "scripts": {
@@ -56,7 +57,7 @@
     "devDependencies": {
         "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
         "@craco/craco": "^7.1.0",
-        "@graphql-codegen/cli": "5.0.2",
+        "@graphql-codegen/cli": "^5.0.2",
         "@graphql-codegen/typescript": "^4.0.6",
         "@graphql-codegen/typescript-operations": "^4.2.0",
         "@graphql-codegen/typescript-react-apollo": "^4.3.0",

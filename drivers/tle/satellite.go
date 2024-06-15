@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joshuaferrara/go-satellite"
@@ -34,7 +35,21 @@ func (s *Satellite) getEpoch(tle *TLE) (time.Time, error) {
 	return finalTime, nil
 }
 
-func (s *Satellite) Parse(tle *TLE, observer *Observer, observeTime time.Time) error {
+func (s *Satellite) isGeostationary(tle *TLE) bool {
+	meanMotion, err := strconv.ParseFloat(strings.TrimSpace(tle.Line_2[52:63]), 64)
+	if err != nil {
+		return false
+	}
+
+	// Geostationary satellites have a mean motion of 0.99 to 1.01
+	return meanMotion >= 0.99 && meanMotion <= 1.01
+}
+
+func (s *Satellite) Parse(tle *TLE, observer *Observer, observeTime time.Time, elevationThreshold float64) error {
+	if elevationThreshold < 0 || elevationThreshold > 90 {
+		return errors.New("invalid elevation threshold")
+	}
+
 	var (
 		yr, mo, da   = observeTime.Date()
 		hr, min, sec = observeTime.Clock()
@@ -84,9 +99,9 @@ func (s *Satellite) Parse(tle *TLE, observer *Observer, observeTime time.Time) e
 	s.Elevation = lookAngles.El * 180 / math.Pi
 	s.Range = lookAngles.Rg
 	s.Poloarization = polarization
-	s.Geostationary = lookAngles.Rg > 42164
+	s.Geostationary = s.isGeostationary(tle)
 
-	if s.Elevation*180/math.Pi > 3 {
+	if s.Elevation > elevationThreshold {
 		s.Observable = true
 	} else {
 		s.Observable = false
@@ -96,14 +111,18 @@ func (s *Satellite) Parse(tle *TLE, observer *Observer, observeTime time.Time) e
 }
 
 // Predict calculates the transits of a satellite over an observer between startTime and endTime.
-func (s *Satellite) Predict(tle *TLE, observer *Observer, startTime, endTime time.Time, step time.Duration) ([]Transit, error) {
+func (s *Satellite) Predict(tle *TLE, observer *Observer, startTime, endTime time.Time, step time.Duration, elevationThreshold float64) ([]Transit, error) {
+	if elevationThreshold < 0 || elevationThreshold > 90 {
+		return nil, errors.New("invalid elevation threshold")
+	}
+
 	var (
 		transits       []Transit
 		currentTransit *Transit
 	)
 	for t := startTime; t.Before(endTime); t = t.Add(step) {
 		var sat Satellite
-		err := sat.Parse(tle, observer, t)
+		err := sat.Parse(tle, observer, t, elevationThreshold)
 		if err != nil {
 			return nil, err
 		}
@@ -126,6 +145,7 @@ func (s *Satellite) Predict(tle *TLE, observer *Observer, startTime, endTime tim
 		} else if currentTransit != nil {
 			// End of current transit
 			currentTransit.EndTime = t
+			currentTransit.ExitAzimuth = sat.Azimuth
 			transits = append(transits, *currentTransit)
 			currentTransit = nil
 		}
