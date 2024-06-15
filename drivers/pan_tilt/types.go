@@ -23,7 +23,7 @@ type PanTiltDriver interface {
 	readerDaemon(deps *PanTiltDependency)
 	IsAvailable(deps *PanTiltDependency) bool
 	Reset(deps *PanTiltDependency, sig chan<- bool) error
-	Init(deps *PanTiltDependency, zeroPosition bool) error
-	SetPan(deps *PanTiltDependency, newPan float64, wait bool) error
-	SetTilt(deps *PanTiltDependency, newTilt float64, wait bool) error
+	Init(deps *PanTiltDependency) error
+	SetPan(deps *PanTiltDependency, newPan float64) error
+	SetTilt(deps *PanTiltDependency, newTilt float64) error
 }

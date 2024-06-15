@@ -8,5 +8,6 @@ const (
 
 type arguments struct {
 	Path    string
+	Mock    bool
 	Version bool
 }

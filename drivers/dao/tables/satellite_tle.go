@@ -1,4 +1,4 @@
-package table
+package tables
 
 import "github.com/bclswl0827/openstation/drivers/dao"
 
@@ -9,9 +9,8 @@ type SatelliteTLE struct {
 	Line_1        string `gorm:"column:line_1;not null"`
 	Line_2        string `gorm:"column:line_2;not null"`
 	EpochTime     int64  `gorm:"column:epoch_time;not null;index"`
-	CreatedAt     int64  `gorm:"column:created_at;not null;index"`
-	UpdatedAt     int64  `gorm:"column:updated_at;not null;index"`
 	Geostationary bool   `gorm:"column:geostationary;not null;index"`
+	UpdatedAt     int64  `gorm:"column:updated_at;autoUpdateTime:milli"`
 }
 
 func (t SatelliteTLE) GetModel() SatelliteTLE {

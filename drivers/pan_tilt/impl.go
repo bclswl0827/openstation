@@ -31,7 +31,7 @@ func (*PanTiltDriverImpl) getChecksum(data []byte) byte {
 
 func (d *PanTiltDriverImpl) getPan(deps *PanTiltDependency) (float64, error) {
 	if deps == nil {
-		return 0, errors.New("dependency is not provided")
+		return DUMMY_VALUE, errors.New("dependency is not provided")
 	}
 
 	d.mutex.Lock()
@@ -41,24 +41,24 @@ func (d *PanTiltDriverImpl) getPan(deps *PanTiltDependency) (float64, error) {
 	queryCmd := []byte{SYNC_WORD, SLAVE_ADDR, 0x00, 0x51, 0x00, 0x00, 0x52}
 	_, err := serial.Write(deps.Port, queryCmd, false)
 	if err != nil {
-		return 0, err
+		return DUMMY_VALUE, err
 	}
 
 	// Read pan angle response
 	response := make([]byte, 7)
 	_, err = serial.Read(deps.Port, response, time.Millisecond*100, true)
 	if err != nil {
-		return 0, err
+		return DUMMY_VALUE, err
 	}
 
 	// Check if first byte is SYNC_WORD
 	if response[0] != SYNC_WORD {
-		return 0, fmt.Errorf("invalid response, expected SYNC_WORD %d, got %d", SYNC_WORD, response[0])
+		return DUMMY_VALUE, fmt.Errorf("invalid response, expected SYNC_WORD %d, got %d", SYNC_WORD, response[0])
 	}
 
 	// Check response checksum
 	if d.getChecksum(response[1:6]) != response[6] {
-		return 0, fmt.Errorf("checksum mismatch, expected %d, got %d", d.getChecksum(response[:5]), response[5])
+		return DUMMY_VALUE, fmt.Errorf("checksum mismatch, expected %d, got %d", d.getChecksum(response[:5]), response[5])
 	}
 
 	// Calculate pan angle
@@ -79,7 +79,7 @@ func (d *PanTiltDriverImpl) getPan(deps *PanTiltDependency) (float64, error) {
 
 func (d *PanTiltDriverImpl) getTilt(deps *PanTiltDependency) (float64, error) {
 	if deps == nil {
-		return 0, errors.New("dependency is not provided")
+		return DUMMY_VALUE, errors.New("dependency is not provided")
 	}
 
 	d.mutex.Lock()
@@ -89,24 +89,24 @@ func (d *PanTiltDriverImpl) getTilt(deps *PanTiltDependency) (float64, error) {
 	queryCmd := []byte{SYNC_WORD, SLAVE_ADDR, 0x00, 0x53, 0x00, 0x00, 0x54}
 	_, err := serial.Write(deps.Port, queryCmd, false)
 	if err != nil {
-		return 0, err
+		return DUMMY_VALUE, err
 	}
 
 	// Read tilt angle response
 	response := make([]byte, 7)
 	_, err = serial.Read(deps.Port, response, time.Millisecond*100, true)
 	if err != nil {
-		return 0, err
+		return DUMMY_VALUE, err
 	}
 
 	// Check if first byte is SYNC_WORD
 	if response[0] != SYNC_WORD {
-		return 0, fmt.Errorf("invalid response, expected SYNC_WORD %d, got %d", SYNC_WORD, response[0])
+		return DUMMY_VALUE, fmt.Errorf("invalid response, expected SYNC_WORD %d, got %d", SYNC_WORD, response[0])
 	}
 
 	// Check response checksum
 	if d.getChecksum(response[1:6]) != response[6] {
-		return 0, fmt.Errorf("checksum mismatch, expected %d, got %d", d.getChecksum(response[:5]), response[5])
+		return DUMMY_VALUE, fmt.Errorf("checksum mismatch, expected %d, got %d", d.getChecksum(response[:5]), response[5])
 	}
 
 	// Calculate tilt angle
@@ -210,7 +210,7 @@ func (d *PanTiltDriverImpl) Reset(deps *PanTiltDependency, sig chan<- bool) erro
 	return nil
 }
 
-func (d *PanTiltDriverImpl) Init(deps *PanTiltDependency, zeroPosition bool) error {
+func (d *PanTiltDriverImpl) Init(deps *PanTiltDependency) error {
 	if deps == nil {
 		return errors.New("dependency is not provided")
 	}
@@ -220,23 +220,10 @@ func (d *PanTiltDriverImpl) Init(deps *PanTiltDependency, zeroPosition bool) err
 	deps.CurrentTilt = DUMMY_VALUE
 	go d.readerDaemon(deps)
 
-	// Set pan tilt to zero position if zeroPosition is true
-	if zeroPosition {
-		err := d.SetTilt(deps, 0, true)
-		if err != nil {
-			return err
-		}
-
-		err = d.SetPan(deps, 0, true)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
-func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, wait bool) error {
+func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64) error {
 	if deps == nil {
 		return errors.New("dependency is not provided")
 	}
@@ -283,22 +270,10 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64, wait
 		return err
 	}
 
-	// Wait until the pan angle is within ERROR_THRESHOLD
-	if wait {
-		for i := 0; i <= math.MaxUint8; i++ {
-			if math.Abs(deps.CurrentPan-newPan) <= ERROR_THRESHOLD ||
-				math.Abs(deps.CurrentPan-360-newPan) <= ERROR_THRESHOLD {
-				return nil
-			}
-
-			time.Sleep(time.Millisecond * 100)
-		}
-	}
-
 	return nil
 }
 
-func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, wait bool) error {
+func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64) error {
 	if deps == nil {
 		return errors.New("dependency is not provided")
 	}
@@ -330,17 +305,6 @@ func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64, wa
 	d.mutex.Unlock()
 	if err != nil {
 		return err
-	}
-
-	// Wait until the tilt angle is within ERROR_THRESHOLD
-	if wait {
-		for i := 0; i <= math.MaxUint8; i++ {
-			if math.Abs(deps.CurrentTilt-newTilt) <= ERROR_THRESHOLD {
-				return nil
-			}
-
-			time.Sleep(time.Millisecond * 100)
-		}
 	}
 
 	return nil

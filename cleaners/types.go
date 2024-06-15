@@ -7,6 +7,7 @@ import (
 )
 
 type Options struct {
+	MockMode   bool
 	Config     *config.Config
 	Database   *gorm.DB
 	Dependency *dig.Container

@@ -20,6 +20,7 @@ type Transit struct {
 	EndTime      time.Time
 	MaxElevation float64
 	EntryAzimuth float64
+	ExitAzimuth  float64
 }
 
 type Satellite struct {

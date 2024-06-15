@@ -43,9 +43,10 @@ func main() {
 
 	baseline, err := gnssDriver.GetBaseline(gnssDependency)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+	} else {
+		log.Printf("GNSS antenna baseline: %.2f\n", baseline)
 	}
-	log.Printf("GNSS antenna baseline: %.2f\n", baseline)
 
 	err = gnssDriver.Init(gnssDependency)
 	if err != nil {

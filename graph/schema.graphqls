@@ -6,7 +6,6 @@ type station {
     location: String!
     satellites: Int64!
     pendingTasks: Int64!
-    totalForecast: Int64!
     totalTasks: Int64!
     clockOffset: Int!
 }
@@ -51,6 +50,34 @@ type tleData {
     geostationary: Boolean!
 }
 
+type forecast {
+    duration: Float!
+    latitude: Float!
+    longitude: Float!
+    maxElevation: Float!
+    entryAzimuth: Float!
+    exitAzimuth: Float!
+    startTime: Int64!
+    endTime: Int64!
+}
+
+type observation {
+    elevation: Float!
+    azimuth: Float!
+    observable: Boolean!
+}
+
+type task {
+    taskId: Int64!
+    tleId: Int64!
+    name: String!
+    startTime: Int64!
+    endTime: Int64!
+    hasDone: Boolean!
+    webhook: String!
+    createdAt: Int64!
+}
+
 type Query {
     # Station information
     getStation: station!
@@ -58,8 +85,14 @@ type Query {
     getSystem: system!
     getGnss: gnss!
     # Satellite TLEs
-    getTLEById(id: Int64!): tleData
-    getTLEIdsByKeyword(keyword: String!): [Int64]!
+    getTLEById(tleId: Int64!): tleData
+    getTLEsByKeyword(keyword: String!): [tleData]!
+    getForecastById(tleId: Int64!, elevationThreshold: Float!): [forecast]!
+    getObservationById(tleId: Int64!, elevationThreshold: Float!): observation!
+    # Task queue
+    getTaskById(taskId: Int64!): task!
+    # getTasksBySatellite(tleId: Int64!): [task]!
+    getTasksByDuration(startTime: Int64!, endTime: Int64!): [task]!
 }
 
 type Mutation {
@@ -68,13 +101,20 @@ type Mutation {
     setPanTiltOffset(newOffset: Float!): Boolean!
     setPanTiltToNorth: Boolean!
     # Satellite TLEs
-    setAllTLEs(tleData: String!, overwrite: Boolean!): Int!
+    importTLEs(tleData: String!): Int!
     addNewTLE(tleData: String!): Boolean!
-    deleteTLEById(id: Int64!): Boolean!
-    updateTLEById(id: Int64!, tleData: String!): Boolean!
+    deleteTLEById(tleId: Int64!): Boolean!
+    updateTLEById(tleId: Int64!, tleData: String!): Boolean!
+    # Task queue
+    addNewTask(
+        tleId: Int64!
+        startTime: Int64!
+        endTime: Int64!
+        webhook: String!
+    ): Boolean!
+    deleteTaskById(taskId: Int64!): Boolean!
     # Dangerous operations
     rebootSystem: Boolean!
     purgeTaskQueue: Boolean!
     purgeTLERecords: Boolean!
-    purgeForecastRecords: Boolean!
 }

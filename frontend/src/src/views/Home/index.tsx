@@ -1,8 +1,8 @@
 import {
 	mdiArchive,
-	mdiCalculator,
 	mdiClockFast,
 	mdiCompass,
+	mdiCrosshairsGps,
 	mdiReceiptClock,
 	mdiSatelliteUplink,
 	mdiSatelliteVariant
@@ -15,7 +15,7 @@ import { Chart, ChartProps } from "../../components/Chart";
 import { Error } from "../../components/Error";
 import { Holder } from "../../components/Holder";
 import { MapBox, MapBoxProps } from "../../components/MapBox";
-import { useGetHomeDataQuery } from "../../graphql";
+import { useGetData4HomeQuery } from "../../graphql";
 
 const RETENTION_THRESHOLD_MS = 1000 * 60 * 5;
 
@@ -63,13 +63,13 @@ const Home = () => {
 			icon: mdiSatelliteVariant,
 			unit: ""
 		},
-		pendingTasks: { value: 0, title: "Pending Tasks", icon: mdiReceiptClock, unit: "" },
-		totalTasks: { value: 0, title: "Total Tasks", icon: mdiArchive, unit: "" },
-		totalForecast: { value: 0, title: "Total Forecast", icon: mdiCalculator, unit: "" },
+		gnssSatellites: { value: 0, title: "GNSS Satellites", icon: mdiCrosshairsGps, unit: "" },
+		trueAzimuth: { value: 0, title: "Current Azimuth", icon: mdiCompass, unit: "°" },
 		clockOffset: { value: 0, title: "Clock Offset", icon: mdiClockFast, unit: "s" },
-		gnssSatellites: { value: 0, title: "GNSS Satellites", icon: mdiCompass, unit: "" }
+		totalTasks: { value: 0, title: "Total Tasks", icon: mdiArchive, unit: "" },
+		pendingTasks: { value: 0, title: "Pending Tasks", icon: mdiReceiptClock, unit: "" }
 	});
-	const [charts, setCharts] = useState<
+	const [chartsState, setChartsState] = useState<
 		Record<
 			string,
 			{
@@ -83,7 +83,7 @@ const Home = () => {
 	>({
 		cpuUsage: {
 			title: "CPU Usage",
-			content: "Current 0 %",
+			content: "当前 0 %",
 			chart: {
 				height: 250,
 				lineWidth: 5,
@@ -94,7 +94,7 @@ const Home = () => {
 		},
 		memUsage: {
 			title: "Memory Usage",
-			content: "Current 0 %",
+			content: "当前 0 %",
 			chart: {
 				height: 250,
 				lineWidth: 5,
@@ -104,17 +104,16 @@ const Home = () => {
 			}
 		}
 	});
-	const [map, setMap] = useState<MapBoxProps>({
+	const [mapState, setMapState] = useState<MapBoxProps>({
 		zoom: 7,
-		minZoom: 3,
+		minZoom: 0,
 		maxZoom: 7,
 		center: [0, 0],
 		tile: "/tiles/{z}/{x}/{y}.webp"
 	});
 
 	// Polling home data
-	const { data, error, loading } = useGetHomeDataQuery({ pollInterval: 1000 });
-
+	const { data, error, loading } = useGetData4HomeQuery({ pollInterval: 1000 });
 	useEffect(() => {
 		if (!error && !loading) {
 			const { getStation, getGnss, getSystem } = data!;
@@ -128,13 +127,13 @@ const Home = () => {
 			setCards((prev) => ({
 				...prev,
 				satellites: { ...prev.satellites, value: getStation.satellites },
-				pendingTasks: { ...prev.pendingTasks, value: getStation.pendingTasks },
-				totalTasks: { ...prev.totalTasks, value: getStation.totalTasks },
-				totalForecast: { ...prev.totalForecast, value: getStation.totalForecast },
+				gnssSatellites: { ...prev.gnssSatellites, value: getGnss.satellites },
+				trueAzimuth: { ...prev.trueAzimuth, value: getGnss.trueAzimuth },
 				clockOffset: { ...prev.clockOffset, value: getStation.clockOffset },
-				gnssSatellites: { ...prev.gnssSatellites, value: getGnss.satellites }
+				totalTasks: { ...prev.totalTasks, value: getStation.totalTasks },
+				pendingTasks: { ...prev.pendingTasks, value: getStation.pendingTasks }
 			}));
-			setCharts((prev) => {
+			setChartsState((prev) => {
 				const { timestamp } = getGnss;
 				const { cpuUsage, memUsage } = getSystem;
 				const { chart: cpuUsageChart } = prev["cpuUsage"];
@@ -161,11 +160,11 @@ const Home = () => {
 				}
 				return {
 					...prev,
-					cpuUsage: { ...prev.cpuUsage, content: `Currently ${cpuUsage.toFixed(2)} %` },
-					memUsage: { ...prev.memUsage, content: `Currently ${memUsage.toFixed(2)} %` }
+					cpuUsage: { ...prev.cpuUsage, content: `当前 ${cpuUsage.toFixed(2)} %` },
+					memUsage: { ...prev.memUsage, content: `当前 ${memUsage.toFixed(2)} %` }
 				};
 			});
-			setMap((prev) => ({
+			setMapState((prev) => ({
 				...prev,
 				center: [getGnss.latitude, getGnss.longitude],
 				marker: [getGnss.latitude, getGnss.longitude]
@@ -174,7 +173,7 @@ const Home = () => {
 	}, [data, error, loading]);
 
 	return !error ? (
-		<div className="p-8 min-h-screen">
+		<div className="animate-fade p-8 min-h-screen">
 			<div className="p-4">
 				<div className="flex space-x-4 text-gray-800 dark:text-gray-300">
 					<Icon path={mdiSatelliteUplink} size={1} />
@@ -214,7 +213,7 @@ const Home = () => {
 			</div>
 
 			<div className="p-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-				{Object.values(charts).map(({ title, chart, content }, index) => (
+				{Object.values(chartsState).map(({ title, chart, content }, index) => (
 					<Holder label={title} content={content} key={index}>
 						<Chart {...chart} />
 					</Holder>
@@ -226,7 +225,7 @@ const Home = () => {
 					label={`${stationInfo?.location}`}
 					content={`Latitude: ${stationInfo?.coordinates[0].toFixed(5)}\nLongitude: ${stationInfo?.coordinates[1].toFixed(5)}\nElevation: ${stationInfo?.elevation.toFixed(2)} m`}
 				>
-					<MapBox className="h-[300px] md:h-[400px]" {...map} />
+					<MapBox className="h-[300px] md:h-[400px]" {...mapState} />
 				</Holder>
 			</div>
 		</div>

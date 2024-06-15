@@ -48,7 +48,7 @@ export const Error = ({ code, heading, content, action, debug }: ErrorProps) => 
 				<button
 					className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:scale-110 transition-all"
 					onClick={() => {
-						void setIsDebug(!isDebug);
+						setIsDebug(!isDebug);
 					}}
 				>
 					<Icon

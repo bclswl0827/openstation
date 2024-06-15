@@ -1,0 +1,7 @@
+query getObservationById($tleId: Int64!, $elevationThreshold: Float!) {
+	getObservationById(tleId: $tleId, elevationThreshold: $elevationThreshold) {
+		elevation
+		azimuth
+		observable
+	}
+}

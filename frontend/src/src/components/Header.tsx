@@ -1,27 +1,13 @@
 import {
-	mdiBrightnessAuto,
 	mdiDotsVertical,
 	mdiGithub,
+	mdiLaptop,
 	mdiMenu,
 	mdiMoonWaningCrescent,
 	mdiTranslate,
 	mdiWhiteBalanceSunny
 } from "@mdi/js";
 import Icon from "@mdi/react";
-import {
-	Button,
-	createTheme,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogTitle,
-	FormControl,
-	MenuItem,
-	Select,
-	SelectChangeEvent,
-	ThemeProvider,
-	useMediaQuery
-} from "@mui/material";
 import { ResourceLanguage } from "i18next";
 import { PrimitiveAtom, useAtom } from "jotai";
 import { useEffect, useState } from "react";
@@ -31,6 +17,7 @@ import { Link, useLocation } from "react-router-dom";
 import { RouterConfigRoutes } from "../config/router";
 import { useLocaleStore } from "../stores/locale";
 import { useThemeStore } from "../stores/theme";
+import { DialogForm } from "./DialogForm";
 
 interface Props {
 	readonly repository: string;
@@ -47,7 +34,6 @@ export const Header = ({ repository, routes, asideMenu, locales }: Props) => {
 	const { pathname } = useLocation();
 	const [title, setTitle] = useState<string>("");
 	const { locale, setLocale } = useLocaleStore();
-
 	useEffect(() => {
 		const headerTitle = Object.values(routes).find(({ uri }) => pathname === uri)?.title?.[
 			locale
@@ -56,25 +42,21 @@ export const Header = ({ repository, routes, asideMenu, locales }: Props) => {
 	}, [locale, routes, pathname]);
 
 	const [dialogOpen, setDialogOpen] = useState(false);
-
 	const handleDialogOpen = () => {
 		setDialogOpen(true);
 	};
-
 	const handleDialogClose = () => {
 		setDialogOpen(false);
 	};
-
-	const handleLocaleChange = ({ target }: SelectChangeEvent<string>) => {
-		setLocale(target.value);
+	const handleLocaleChange = (value: string) => {
+		setLocale(value);
+		setDialogOpen(false);
 	};
 
 	const { theme, setTheme } = useThemeStore();
-
 	const handleThemeChange = () => {
 		setTheme(theme === "light" ? "dark" : theme === "dark" ? "system" : "light");
 	};
-
 	const getThemeIcon = () => {
 		switch (theme) {
 			case "light":
@@ -82,20 +64,7 @@ export const Header = ({ repository, routes, asideMenu, locales }: Props) => {
 			case "dark":
 				return mdiMoonWaningCrescent;
 			default:
-				return mdiBrightnessAuto;
-		}
-	};
-
-	const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-
-	const getMuiTheme = () => {
-		switch (theme) {
-			case "light":
-				return createTheme({ palette: { mode: "light" } });
-			case "dark":
-				return createTheme({ palette: { mode: "dark" } });
-			default:
-				return createTheme({ palette: { mode: prefersDarkMode ? "dark" : "light" } });
+				return mdiLaptop;
 		}
 	};
 
@@ -167,25 +136,20 @@ export const Header = ({ repository, routes, asideMenu, locales }: Props) => {
 				)}
 			</div>
 
-			<ThemeProvider theme={getMuiTheme()}>
-				<Dialog open={dialogOpen} onClose={handleDialogClose}>
-					<DialogTitle>Choose your language</DialogTitle>
-					<DialogContent>
-						<FormControl sx={{ width: "100%" }}>
-							<Select value={locale} onChange={handleLocaleChange}>
-								{Object.entries(locales).map(([key, { label }]) => (
-									<MenuItem key={key} value={key}>
-										{label}
-									</MenuItem>
-								))}
-							</Select>
-						</FormControl>
-					</DialogContent>
-					<DialogActions>
-						<Button onClick={handleDialogClose}>{t("common.close")}</Button>
-					</DialogActions>
-				</Dialog>
-			</ThemeProvider>
+			<DialogForm
+				inputType="select"
+				title="Choose your language"
+				content="选择语言 / Choose your language"
+				open={dialogOpen}
+				onClose={handleDialogClose}
+				onSubmit={handleLocaleChange}
+				selectOptions={Object.entries(locales).map(([key, { label }]) => ({
+					value: key,
+					label
+				}))}
+				cancelText={t("common.close")}
+				submitText={t("common.submit")}
+			/>
 		</div>
 	);
 };
