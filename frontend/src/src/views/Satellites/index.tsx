@@ -21,6 +21,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CesiumComponentRef, Viewer } from "resium";
 
 import { DialogForm, DialogFormProps } from "../../components/DialogForm";
+import { Error } from "../../components/Error";
 import { FileInputButton } from "../../components/FileInputButton";
 import { ListForm, ListFormProps } from "../../components/ListForm";
 import { Panel } from "../../components/Panel";
@@ -29,9 +30,10 @@ import {
 	GetData4SatellitesQuery,
 	GetForecastByIdQuery,
 	GetTlEsByKeywordQuery,
+	useAddNewTaskMutation,
 	useAddNewTleMutation,
 	useDeleteTleByIdMutation,
-	useGetData4SatellitesLazyQuery,
+	useGetData4SatellitesQuery,
 	useGetForecastByIdLazyQuery,
 	useGetObservationByIdLazyQuery,
 	useGetTlEsByKeywordLazyQuery,
@@ -42,6 +44,7 @@ import {
 import { sendPromiseAlert } from "../../helpers/interact/sendPromiseAlert";
 import { sendUserAlert } from "../../helpers/interact/sendUserAlert";
 import { sendUserConfirm } from "../../helpers/interact/sendUserConfirm";
+import { getCurrentTime } from "../../helpers/utils/getCurrentTime";
 import { getTimeString } from "../../helpers/utils/getTimeString";
 import { setClipboardText } from "../../helpers/utils/setClipboardText";
 import { useLocaleStore } from "../../stores/locale";
@@ -102,35 +105,43 @@ const Satellites = () => {
 		// Remove default event listener for left click
 		viewer.screenSpaceEventHandler.removeInputAction(ScreenSpaceEventType.LEFT_CLICK);
 	};
+	const cesiumTimeSetup = (viewer: CesiumViewer, baseTime: number, refTime: number) => {
+		const currentTime = getCurrentTime(baseTime, refTime);
+		const startTime = JulianDate.fromIso8601(new Date(currentTime).toISOString());
+		const stopTime = JulianDate.addSeconds(startTime, 86400, new JulianDate());
+		viewer.clock.startTime = startTime.clone();
+		viewer.clock.stopTime = stopTime.clone();
+		viewer.clock.currentTime = startTime.clone();
+		viewer.clock.multiplier = 500;
+		viewer.clock.shouldAnimate = true;
+		viewer.clock.clockRange = ClockRange.LOOP_STOP;
+		viewer.timeline.zoomTo(startTime, stopTime);
+	};
 
 	// Set Cesium to use current GNSS data
-	const [getData4Satellites] = useGetData4SatellitesLazyQuery();
-	const [gnssData4Satellites, setGnssData4Satellites] =
-		useState<GetData4SatellitesQuery["getGnss"]>();
+	const { data, error, loading } = useGetData4SatellitesQuery();
+	const [data4Satellites, setData4Satellites] = useState<
+		GetData4SatellitesQuery["getGnss"] & { baseTime: number }
+	>();
 	useEffect(() => {
-		(async () => setGnssData4Satellites((await getData4Satellites())?.data?.getGnss))();
-	}, [getData4Satellites]);
+		if (data && !loading) {
+			setData4Satellites({ ...data.getGnss, baseTime: Date.now() });
+		}
+	}, [data, loading]);
 	useEffect(() => {
-		if (gnssData4Satellites && isCesiumViewerReady) {
+		if (data4Satellites && isCesiumViewerReady) {
+			// Initialize Cesium viewer
 			const { cesiumElement: viewer } = cesiumViewerRef.current!;
 			cesiumViewerSetup(viewer!);
+			// Set Cesium Timeline
+			const { baseTime, timestamp, latitude, longitude } = data4Satellites;
+			cesiumTimeSetup(viewer!, baseTime, timestamp);
 			// Setup Cesium camera
-			const { timestamp, latitude, longitude } = gnssData4Satellites;
-			viewer?.camera.setView({
+			viewer!.camera.setView({
 				destination: Cartesian3.fromDegrees(longitude, latitude, 3e7)
 			});
-			// Set Cesium time duration to 24 hours
-			const startTime = JulianDate.fromIso8601(new Date(timestamp).toISOString());
-			const stopTime = JulianDate.addSeconds(startTime, 86400, new JulianDate());
-			viewer!.clock.startTime = startTime.clone();
-			viewer!.clock.stopTime = stopTime.clone();
-			viewer!.clock.currentTime = startTime.clone();
-			viewer!.clock.multiplier = 500;
-			viewer!.clock.shouldAnimate = true;
-			viewer!.clock.clockRange = ClockRange.LOOP_STOP;
-			viewer!.timeline.zoomTo(startTime, stopTime);
 		}
-	}, [gnssData4Satellites, isCesiumViewerReady]);
+	}, [data4Satellites, isCesiumViewerReady]);
 
 	// States for dialog form
 	const handleDialogFormClose = () => {
@@ -231,8 +242,11 @@ const Satellites = () => {
 		}
 		const { cesiumElement: viewer } = cesiumViewerRef.current!;
 		viewer!.container.scrollIntoView({ behavior: "smooth" });
-		// Clear existing entities before adding new ones
+		// Clear existing entities before adding new ones and reset Cesium clock
 		viewer!.entities.removeAll();
+		cesiumTimeSetup(viewer!, data4Satellites!.baseTime, data4Satellites!.timestamp);
+		// Add satellite entities to Cesium viewer
+		const currentTime = getCurrentTime(data4Satellites!.baseTime, data4Satellites!.timestamp);
 		selectedSatellites.forEach((satellite) => {
 			const { name, line_1, line_2 } = satellite!;
 			const satelliteEntityObj = new SatelliteEntity(
@@ -240,7 +254,7 @@ const Satellites = () => {
 				86400,
 				100
 			);
-			const cesiumEntity = satelliteEntityObj.createSatelliteEntity();
+			const cesiumEntity = satelliteEntityObj.createSatelliteEntity(currentTime);
 			viewer!.entities.add(cesiumEntity);
 		});
 		viewer!.clock.shouldAnimate = true;
@@ -274,23 +288,38 @@ const Satellites = () => {
 
 	// Handler for getting forecast data
 	const [getForecastById] = useGetForecastByIdLazyQuery();
+	const [addNewTaskMutation] = useAddNewTaskMutation();
 	const handleGetForecast = (tleId: number, name: string) => {
-		const handleSelect = (value: string) => {
+		const handleTransitSelect = async (value: string) => {
 			handleListFormClose();
-			const selectedEvent = JSON.parse(
+			const valueObj = (JSON.parse(
 				value
-			) as GetForecastByIdQuery["getForecastById"][number];
-			console.log(selectedEvent);
+			) as GetForecastByIdQuery["getForecastById"][number])!;
+			await sendPromiseAlert(
+				addNewTaskMutation({ variables: { tleId, ...valueObj } }),
+				"正在添加任务",
+				"任务添加成功",
+				"任务添加失败",
+				true
+			);
 		};
-		const handleSubmit = async (elevationThreshold: number) => {
+		const handleElevationSubmit = async (elevationThreshold: number) => {
 			handleDialogFormClose();
 			if (elevationThreshold < 5 || elevationThreshold > 90) {
-				sendUserAlert("仰角阈值应在 5 到 90 度之间", true);
+				sendUserAlert("仰角门限应在 5 到 90 度之间", true);
 				return;
 			}
 			const results = (
 				await sendPromiseAlert(
-					getForecastById({ variables: { tleId, elevationThreshold } }),
+					getForecastById({
+						variables: {
+							tleId,
+							elevationThreshold,
+							gnssLatitude: data!.getGnss.latitude,
+							gnssLongitude: data!.getGnss.longitude,
+							gnssElevation: data!.getGnss.elevation
+						}
+					}),
 					"正在生成卫星过境预测数据",
 					"预测完成",
 					"预测出错",
@@ -303,12 +332,12 @@ const Satellites = () => {
 				setListFormState({
 					...listFormState,
 					open: true,
-					onSelect: handleSelect,
+					onSelect: handleTransitSelect,
 					title: `${name} 未来 24 小时过境事件`,
 					options: results.map((item) => [
 						`${getTimeString(item!.startTime)} 过境事件`,
 						JSON.stringify(item),
-						`入境时间 ${getTimeString(item!.startTime)}\n出境时间 ${getTimeString(item!.endTime)}\n入境方位 ${item!.entryAzimuth.toFixed(2)}\n出境方位 ${item!.exitAzimuth.toFixed(2)}\n最大仰角 ${item!.maxElevation.toFixed(2)}\n观测坐标 ${item!.latitude.toFixed(5)}, ${item!.longitude.toFixed(5)}`
+						`入境时间 ${getTimeString(item!.startTime)}\n出境时间 ${getTimeString(item!.endTime)}\n入境方位 ${item!.entryAzimuth.toFixed(2)}\n出境方位 ${item!.exitAzimuth.toFixed(2)}\n最大仰角 ${item!.maxElevation.toFixed(2)}\n观测坐标 ${item!.gnssLatitude.toFixed(5)}, ${item!.gnssLongitude.toFixed(5)}\n观测高程 ${item!.gnssElevation.toFixed(2)}\n仰角门限 ${elevationThreshold}°`
 					])
 				});
 			} else {
@@ -321,9 +350,10 @@ const Satellites = () => {
 			title: `${name} 过境预测`,
 			inputType: "number",
 			defaultValue: "5",
-			placeholder: "输入入境仰角阈值",
-			content: "输入入境仰角阈值，单位为度",
-			onSubmit: (elevationThreshold: string) => handleSubmit(Number(elevationThreshold))
+			placeholder: "输入入境仰角门限",
+			content: "输入入境仰角门限，单位为度",
+			onSubmit: (elevationThreshold: string) =>
+				handleElevationSubmit(Number(elevationThreshold))
 		});
 	};
 
@@ -333,7 +363,15 @@ const Satellites = () => {
 	const handleSetPanTilt = async (tleId: number, name: string) => {
 		const result = (
 			await sendPromiseAlert(
-				getObservationById({ variables: { tleId, elevationThreshold: 5 } }),
+				getObservationById({
+					variables: {
+						tleId,
+						elevationThreshold: 5,
+						gnssLatitude: data!.getGnss.latitude,
+						gnssLongitude: data!.getGnss.longitude,
+						gnssElevation: data!.getGnss.elevation
+					}
+				}),
 				"正在取得观测数据",
 				"观测数据取得完成",
 				"观测数据取得失败",
@@ -428,7 +466,7 @@ const Satellites = () => {
 		});
 	};
 
-	return (
+	return !error ? (
 		<div className="animate-fade p-8 min-h-screen space-y-8">
 			<div className="flex flex-col sm:flex-row justify-between gap-6">
 				<div className="flex flex-row space-x-4 sm:whitespace-nowrap">
@@ -642,6 +680,8 @@ const Satellites = () => {
 			<DialogForm {...dialogFormState} />
 			<ListForm {...listFormState} />
 		</div>
+	) : (
+		<Error heading={error.name} content={error.toString()} debug={error.stack} />
 	);
 };
 

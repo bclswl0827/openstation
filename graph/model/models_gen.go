@@ -9,14 +9,15 @@ type Query struct {
 }
 
 type Forecast struct {
-	Duration     float64 `json:"duration"`
-	Latitude     float64 `json:"latitude"`
-	Longitude    float64 `json:"longitude"`
-	MaxElevation float64 `json:"maxElevation"`
-	EntryAzimuth float64 `json:"entryAzimuth"`
-	ExitAzimuth  float64 `json:"exitAzimuth"`
-	StartTime    int64   `json:"startTime"`
-	EndTime      int64   `json:"endTime"`
+	Duration      float64 `json:"duration"`
+	GnssLatitude  float64 `json:"gnssLatitude"`
+	GnssLongitude float64 `json:"gnssLongitude"`
+	GnssElevation float64 `json:"gnssElevation"`
+	MaxElevation  float64 `json:"maxElevation"`
+	EntryAzimuth  float64 `json:"entryAzimuth"`
+	ExitAzimuth   float64 `json:"exitAzimuth"`
+	StartTime     int64   `json:"startTime"`
+	EndTime       int64   `json:"endTime"`
 }
 
 type Gnss struct {
@@ -65,13 +66,11 @@ type System struct {
 }
 
 type Task struct {
-	TaskID    int64  `json:"taskId"`
-	TleID     int64  `json:"tleId"`
+	ID        int64  `json:"id"`
 	Name      string `json:"name"`
 	StartTime int64  `json:"startTime"`
 	EndTime   int64  `json:"endTime"`
 	HasDone   bool   `json:"hasDone"`
-	Webhook   string `json:"webhook"`
 	CreatedAt int64  `json:"createdAt"`
 }
 

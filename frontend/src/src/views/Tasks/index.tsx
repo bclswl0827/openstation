@@ -4,25 +4,34 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import { SyntheticEvent, useState } from "react";
 
+import { Error } from "../../components/Error";
+import { useGetData4TasksQuery } from "../../graphql";
 import { useLocaleStore } from "../../stores/locale";
 
 const Tasks = () => {
 	const { locale } = useLocaleStore();
 
+	// Handler for switching tabs
 	const [value, setValue] = useState("calendar");
-
-	const handleChange = (_: SyntheticEvent, newValue: string) => {
+	const handleTabChange = (_: SyntheticEvent, newValue: string) => {
 		setValue(newValue);
 	};
 
-	return (
+	//
+	const [currentTasks, setTasks] = useState({
+		total: {},
+		pending: {}
+	});
+	const { data, loading, error } = useGetData4TasksQuery({ pollInterval: 10000 });
+
+	return !error ? (
 		<div className="animate-fade p-8 min-h-screen">
 			<div className="flex justify-center border-b dark:border-gray-600">
 				<Tabs
 					className="dark:text-gray-200"
 					variant="scrollable"
 					value={value}
-					onChange={handleChange}
+					onChange={handleTabChange}
 					allowScrollButtonsMobile
 					scrollButtons
 				>
@@ -58,6 +67,8 @@ const Tasks = () => {
 				<div hidden={value !== "taskAdmin"}>任务管理</div>
 			</div>
 		</div>
+	) : (
+		<Error heading={error.name} content={error.toString()} debug={error.stack} />
 	);
 };
 

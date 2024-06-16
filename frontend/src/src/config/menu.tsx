@@ -1,6 +1,7 @@
 import {
 	mdiCalendarCheck,
 	mdiCameraControl,
+	mdiCreation,
 	mdiDebugStepOver,
 	mdiHomeAccount,
 	mdiSatelliteVariant
@@ -52,6 +53,15 @@ export const menuConfig: MenuItem[] = [
 			"zh-CN": "转台控制"
 		},
 		icon: mdiCameraControl
+	},
+	{
+		url: "/tools",
+		label: {
+			"en-US": "Tools",
+			"zh-TW": "雲圖工具",
+			"zh-CN": "云图工具"
+		},
+		icon: mdiCreation
 	},
 	{
 		url: "/debug",

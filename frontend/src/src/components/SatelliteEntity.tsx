@@ -50,11 +50,10 @@ class SatelliteEntity {
 
 	getPositionEci = (time: Date) => propagate(this.satelliteRecord, time).position;
 
-	_getPositionProperty = () => {
-		const start = JulianDate.fromIso8601(new Date().toISOString());
+	_getPositionProperty = (currentTime: number) => {
+		const start = JulianDate.fromIso8601(new Date(currentTime).toISOString());
 		const positionProperty = new SampledPositionProperty(ReferenceFrame.INERTIAL);
 
-		const currentTime = Date.now();
 		for (let i = 0; i < this.durationSeconds / this.stepSeconds; i++) {
 			const sateTime = new Date(currentTime + i * this.stepSeconds * 1000);
 			const sateCoord = this.getPositionEci(sateTime) as EciVec3<number>;
@@ -70,7 +69,7 @@ class SatelliteEntity {
 		return positionProperty;
 	};
 
-	createSatelliteEntity = (): Entity.ConstructorOptions => {
+	createSatelliteEntity = (currentTime: number): Entity.ConstructorOptions => {
 		const startTime = JulianDate.fromIso8601(new Date().toISOString());
 		const endTime = JulianDate.addSeconds(startTime, this.durationSeconds, new JulianDate());
 		const color4Satellite = Color.fromRandom({ alpha: 1.0 });
@@ -79,7 +78,7 @@ class SatelliteEntity {
 			availability: new TimeIntervalCollection([
 				new TimeInterval({ start: startTime, stop: endTime })
 			]),
-			position: this._getPositionProperty(),
+			position: this._getPositionProperty(currentTime),
 			point: {
 				pixelSize: 10,
 				color: color4Satellite,

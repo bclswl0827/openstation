@@ -52,8 +52,9 @@ type tleData {
 
 type forecast {
     duration: Float!
-    latitude: Float!
-    longitude: Float!
+    gnssLatitude: Float!
+    gnssLongitude: Float!
+    gnssElevation: Float!
     maxElevation: Float!
     entryAzimuth: Float!
     exitAzimuth: Float!
@@ -68,13 +69,11 @@ type observation {
 }
 
 type task {
-    taskId: Int64!
-    tleId: Int64!
+    id: Int64!
     name: String!
     startTime: Int64!
     endTime: Int64!
     hasDone: Boolean!
-    webhook: String!
     createdAt: Int64!
 }
 
@@ -87,12 +86,23 @@ type Query {
     # Satellite TLEs
     getTLEById(tleId: Int64!): tleData
     getTLEsByKeyword(keyword: String!): [tleData]!
-    getForecastById(tleId: Int64!, elevationThreshold: Float!): [forecast]!
-    getObservationById(tleId: Int64!, elevationThreshold: Float!): observation!
+    getForecastById(
+        tleId: Int64!
+        elevationThreshold: Float!
+        gnssLatitude: Float!
+        gnssLongitude: Float!
+        gnssElevation: Float!
+    ): [forecast]!
+    getObservationById(
+        tleId: Int64!
+        elevationThreshold: Float!
+        gnssLatitude: Float!
+        gnssLongitude: Float!
+        gnssElevation: Float!
+    ): observation!
     # Task queue
-    getTaskById(taskId: Int64!): task!
-    # getTasksBySatellite(tleId: Int64!): [task]!
-    getTasksByDuration(startTime: Int64!, endTime: Int64!): [task]!
+    getTotalTasks: [task]!
+    getPendingTasks: [task]!
 }
 
 type Mutation {
@@ -108,9 +118,11 @@ type Mutation {
     # Task queue
     addNewTask(
         tleId: Int64!
+        gnssLatitude: Float!
+        gnssLongitude: Float!
+        gnssElevation: Float!
         startTime: Int64!
         endTime: Int64!
-        webhook: String!
     ): Boolean!
     deleteTaskById(taskId: Int64!): Boolean!
     # Dangerous operations

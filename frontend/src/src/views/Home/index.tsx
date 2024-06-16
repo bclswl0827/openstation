@@ -65,9 +65,9 @@ const Home = () => {
 		},
 		gnssSatellites: { value: 0, title: "GNSS Satellites", icon: mdiCrosshairsGps, unit: "" },
 		trueAzimuth: { value: 0, title: "Current Azimuth", icon: mdiCompass, unit: "°" },
-		clockOffset: { value: 0, title: "Clock Offset", icon: mdiClockFast, unit: "s" },
+		pendingTasks: { value: 0, title: "Pending Tasks", icon: mdiReceiptClock, unit: "" },
 		totalTasks: { value: 0, title: "Total Tasks", icon: mdiArchive, unit: "" },
-		pendingTasks: { value: 0, title: "Pending Tasks", icon: mdiReceiptClock, unit: "" }
+		clockOffset: { value: 0, title: "Clock Offset", icon: mdiClockFast, unit: "s" }
 	});
 	const [chartsState, setChartsState] = useState<
 		Record<

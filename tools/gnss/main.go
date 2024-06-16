@@ -53,12 +53,15 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	ticker := time.NewTicker(time.Millisecond * 100)
+	defer ticker.Stop()
+
 	var prevTime gnss.GnssTime
 	for {
+		<-ticker.C
 		if prevTime.RefTime.UnixMilli() != gnssDependency.State.Time.RefTime.UnixMilli() {
 			spew.Dump(gnssDependency.State)
-			prevTime = gnssDependency.State.Time
+			prevTime = *gnssDependency.State.Time
 		}
-		time.Sleep(time.Millisecond * 10)
 	}
 }

@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -21,6 +22,7 @@ import (
 	"github.com/bclswl0827/openstation/startups/alignment"
 	"github.com/bclswl0827/openstation/utils/logger"
 	"github.com/bclswl0827/openstation/utils/system"
+	"github.com/reusee/mmh3"
 	"gorm.io/gorm"
 )
 
@@ -238,12 +240,9 @@ func (r *mutationResolver) DeleteTLEByID(ctx context.Context, tleID int64) (bool
 // UpdateTLEByID is the resolver for the UpdateTLEById field.
 func (r *mutationResolver) UpdateTLEByID(ctx context.Context, tleID int64, tleData string) (bool, error) {
 	// Check TLE record existence
-	var (
-		tleModel  tables.SatelliteTLE
-		tleRecord tables.SatelliteTLE
-	)
+	var tleRecord tables.SatelliteTLE
 	err := r.Database.
-		Table(tleModel.GetName()).
+		Table(tleRecord.GetName()).
 		Where("id = ?", tleID).
 		First(&tleRecord).
 		Error
@@ -299,7 +298,7 @@ func (r *mutationResolver) UpdateTLEByID(ctx context.Context, tleID int64, tleDa
 	tleRecord.EpochTime = inputSatellite.EpochTime.UnixMilli()
 	tleRecord.Geostationary = inputSatellite.Geostationary
 	err = r.Database.
-		Table(tleModel.GetName()).
+		Table(tleRecord.GetName()).
 		Where("id = ?", tleID).
 		Updates(tleRecord).
 		Error
@@ -312,13 +311,116 @@ func (r *mutationResolver) UpdateTLEByID(ctx context.Context, tleID int64, tleDa
 }
 
 // AddNewTask is the resolver for the addNewTask field.
-func (r *mutationResolver) AddNewTask(ctx context.Context, tleID int64, startTime int64, endTime int64, webhook string) (bool, error) {
-	panic(fmt.Errorf("not implemented: AddNewTask - addNewTask"))
+func (r *mutationResolver) AddNewTask(ctx context.Context, tleID int64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64, startTime int64, endTime int64) (bool, error) {
+	// Generate task ID
+	h := mmh3.New32()
+	h.Write([]byte(fmt.Sprintf("%d@%d@%d", tleID, int(startTime/1000), int(endTime/1000))))
+	taskId := h.Sum32()
+
+	// Check if task ID already exists
+	var taskRecord tables.TaskQueue
+	err := r.Database.
+		Table(taskRecord.GetName()).
+		Where("id = ?", taskId).
+		Find(&taskRecord).
+		Error
+	if err != nil {
+		logger.GetLogger(r.AddNewTask).Warn(err)
+		return false, err
+	}
+	if taskRecord.ID == int64(taskId) {
+		err = errors.New("task ID already exists")
+		logger.GetLogger(r.AddNewTask).Warn(err)
+		return false, err
+	}
+
+	// Check if the new task time conflicts with existing tasks
+	err = r.Database.
+		Table(taskRecord.GetName()).
+		Where("((start_time BETWEEN ? AND ?) OR (end_time BETWEEN ? AND ?))", startTime, endTime, startTime, endTime).
+		Find(&taskRecord).
+		Error
+	if err != nil {
+		logger.GetLogger(r.AddNewTask).Warn(err)
+		return false, err
+	}
+	if taskRecord.ID != 0 {
+		err = fmt.Errorf("new task time conflicts with existing tasks: %s, task id: %d", taskRecord.Name, taskRecord.ID)
+		logger.GetLogger(r.AddNewTask).Warn(err)
+		return false, err
+	}
+
+	// Get TLE data by TLE ID
+	var tleRecord tables.SatelliteTLE
+	err = r.Database.
+		Table(tleRecord.GetName()).
+		Where("id = ?", tleID).
+		First(&tleRecord).
+		Error
+	if err != nil {
+		logger.GetLogger(r.AddNewTask).Warn(err)
+		return false, err
+	}
+
+	// Generate bootstrap data
+	var (
+		tleObj       tle.TLE
+		satelliteObj tle.Satellite
+	)
+	err = tleObj.Load(fmt.Sprintf("%s\n%s\n%s", tleRecord.Name, tleRecord.Line_1, tleRecord.Line_2))
+	if err != nil {
+		logger.GetLogger(r.AddNewTask).Warn(err)
+		return false, err
+	}
+	bootstrap, err := satelliteObj.Bootstrap(&tleObj, &tle.Observer{
+		Latitude:  gnssLatitude,
+		Longitude: gnssLongitude,
+		Elevation: gnssElevation,
+	}, time.UnixMilli(startTime).UTC(), time.UnixMilli(endTime).UTC(), time.Millisecond*500, 5)
+	if err != nil {
+		logger.GetLogger(r.AddNewTask).Warn(err)
+		return false, err
+	}
+	bootstrapJson, err := json.Marshal(bootstrap)
+	if err != nil {
+		logger.GetLogger(r.AddNewTask).Warn(err)
+		return false, err
+	}
+
+	// Insert task record to database
+	taskRecord = tables.TaskQueue{
+		ID:        int64(taskId),
+		Name:      tleRecord.Name,
+		StartTime: startTime,
+		EndTime:   endTime,
+		Bootstrap: string(bootstrapJson),
+	}
+	err = r.Database.
+		Table(taskRecord.GetName()).
+		Create(&taskRecord).
+		Error
+	if err != nil {
+		logger.GetLogger(r.AddNewTask).Warn(err)
+		return false, err
+	}
+
+	return true, nil
 }
 
 // DeleteTaskByID is the resolver for the deleteTaskById field.
 func (r *mutationResolver) DeleteTaskByID(ctx context.Context, taskID int64) (bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteTaskByID - deleteTaskById"))
+	var taskModel tables.TaskQueue
+	err := r.Database.
+		Table(taskModel.GetName()).
+		Where("id = ?", taskID).
+		Delete(taskModel).
+		Error
+	if err != nil {
+		logger.GetLogger(r.DeleteTaskByID).Warn(err)
+		return false, err
+	}
+
+	return true, nil
 }
 
 // RebootSystem is the resolver for the RebootSystem field.
@@ -551,7 +653,7 @@ func (r *queryResolver) GetTLEsByKeyword(ctx context.Context, keyword string) ([
 
 	// Get all TLE records that match the keyword
 	var (
-		tleRecords []*tables.SatelliteTLE
+		tleRecords []tables.SatelliteTLE
 		tleModel   tables.SatelliteTLE
 	)
 	err := r.Database.
@@ -583,18 +685,14 @@ func (r *queryResolver) GetTLEsByKeyword(ctx context.Context, keyword string) ([
 }
 
 // GetForecastByID is the resolver for the getForecastById field.
-func (r *queryResolver) GetForecastByID(ctx context.Context, tleID int64, elevationThreshold float64) ([]*model.Forecast, error) {
+func (r *queryResolver) GetForecastByID(ctx context.Context, tleID int64, elevationThreshold float64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64) ([]*model.Forecast, error) {
 	var (
-		latitude    float64
-		longitude   float64
-		altitude    float64
 		currentTime time.Time
 		tleRecord   tables.SatelliteTLE
 	)
 
 	// Get current time from GNSS
 	err := r.Dependency.Invoke(func(deps *gnss.GnssDependency) error {
-		latitude, longitude, altitude = deps.State.Latitude, deps.State.Longitude, deps.State.Elevation
 		t, err := deps.State.Time.GetTime()
 		if err != nil {
 			return err
@@ -639,9 +737,9 @@ func (r *queryResolver) GetForecastByID(ctx context.Context, tleID int64, elevat
 	}
 	var satelliteObj tle.Satellite
 	forecastArr, err := satelliteObj.Predict(&satelliteTle, &tle.Observer{
-		Latitude:  latitude,
-		Longitude: longitude,
-		Altitude:  altitude,
+		Latitude:  gnssLatitude,
+		Longitude: gnssLongitude,
+		Elevation: gnssElevation,
 	}, currentTime, currentTime.Add(time.Hour*24), time.Second, elevationThreshold)
 	if err != nil {
 		logger.GetLogger(r.GetForecastByID).Errorln(err)
@@ -650,14 +748,15 @@ func (r *queryResolver) GetForecastByID(ctx context.Context, tleID int64, elevat
 	var result []*model.Forecast
 	for _, d := range forecastArr {
 		result = append(result, &model.Forecast{
-			Duration:     d.EndTime.Sub(d.StartTime).Seconds(),
-			Latitude:     latitude,
-			Longitude:    longitude,
-			MaxElevation: d.MaxElevation,
-			EntryAzimuth: d.EntryAzimuth,
-			ExitAzimuth:  d.ExitAzimuth,
-			StartTime:    d.StartTime.UnixMilli(),
-			EndTime:      d.EndTime.UnixMilli(),
+			Duration:      d.EndTime.Sub(d.StartTime).Seconds(),
+			GnssLatitude:  gnssLatitude,
+			GnssLongitude: gnssLongitude,
+			GnssElevation: gnssElevation,
+			MaxElevation:  d.MaxElevation,
+			EntryAzimuth:  d.EntryAzimuth,
+			ExitAzimuth:   d.ExitAzimuth,
+			StartTime:     d.StartTime.UnixMilli(),
+			EndTime:       d.EndTime.UnixMilli(),
 		})
 	}
 
@@ -665,18 +764,10 @@ func (r *queryResolver) GetForecastByID(ctx context.Context, tleID int64, elevat
 }
 
 // GetObservationByID is the resolver for the getObservationById field.
-func (r *queryResolver) GetObservationByID(ctx context.Context, tleID int64, elevationThreshold float64) (*model.Observation, error) {
-	var (
-		latitude    float64
-		longitude   float64
-		altitude    float64
-		currentTime time.Time
-		tleRecord   tables.SatelliteTLE
-	)
-
+func (r *queryResolver) GetObservationByID(ctx context.Context, tleID int64, elevationThreshold float64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64) (*model.Observation, error) {
 	// Get current time from GNSS
+	var currentTime time.Time
 	err := r.Dependency.Invoke(func(deps *gnss.GnssDependency) error {
-		latitude, longitude, altitude = deps.State.Latitude, deps.State.Longitude, deps.State.Elevation
 		t, err := deps.State.Time.GetTime()
 		if err != nil {
 			return err
@@ -690,6 +781,7 @@ func (r *queryResolver) GetObservationByID(ctx context.Context, tleID int64, ele
 	}
 
 	// Get TLE record from database
+	var tleRecord tables.SatelliteTLE
 	err = r.Database.
 		Table(tleRecord.GetName()).
 		Where("id = ?", tleID).
@@ -714,9 +806,9 @@ func (r *queryResolver) GetObservationByID(ctx context.Context, tleID int64, ele
 	}
 	var satelliteObj tle.Satellite
 	err = satelliteObj.Parse(&satelliteTle, &tle.Observer{
-		Latitude:  latitude,
-		Longitude: longitude,
-		Altitude:  altitude,
+		Latitude:  gnssLatitude,
+		Longitude: gnssLongitude,
+		Elevation: gnssElevation,
 	}, currentTime, elevationThreshold)
 	if err != nil {
 		logger.GetLogger(r.GetObservationByID).Errorln(err)
@@ -730,14 +822,81 @@ func (r *queryResolver) GetObservationByID(ctx context.Context, tleID int64, ele
 	}, nil
 }
 
-// GetTaskByID is the resolver for the getTaskById field.
-func (r *queryResolver) GetTaskByID(ctx context.Context, taskID int64) (*model.Task, error) {
-	panic(fmt.Errorf("not implemented: GetTaskByID - getTaskById"))
+// GetTotalTasks is the resolver for the getTotalTasks field.
+func (r *queryResolver) GetTotalTasks(ctx context.Context) ([]*model.Task, error) {
+	var (
+		taskRecords []tables.TaskQueue
+		taskModel   tables.TaskQueue
+	)
+	err := r.Database.
+		Table(taskModel.GetName()).
+		Find(&taskRecords).
+		Error
+	if err != nil {
+		logger.GetLogger(r.GetTotalTasks).Warn(err)
+		return nil, err
+	}
+
+	var result []*model.Task
+	for _, record := range taskRecords {
+		result = append(result, &model.Task{
+			ID:        record.ID,
+			Name:      record.Name,
+			StartTime: record.StartTime,
+			EndTime:   record.EndTime,
+			HasDone:   record.HasDone,
+			CreatedAt: record.CreatedAt,
+		})
+	}
+
+	return result, nil
 }
 
-// GetTasksByDuration is the resolver for the getTasksByDuration field.
-func (r *queryResolver) GetTasksByDuration(ctx context.Context, startTime int64, endTime int64) ([]*model.Task, error) {
-	panic(fmt.Errorf("not implemented: GetTasksByDuration - getTasksByDuration"))
+// GetPendingTasks is the resolver for the getPendingTasks field.
+func (r *queryResolver) GetPendingTasks(ctx context.Context) ([]*model.Task, error) {
+	// Get current time from GNSS
+	var currentTime time.Time
+	err := r.Dependency.Invoke(func(deps *gnss.GnssDependency) error {
+		t, err := deps.State.Time.GetTime()
+		if err != nil {
+			return err
+		}
+		currentTime = t
+		return nil
+	})
+	if err != nil {
+		logger.GetLogger(r.GetPendingTasks).Warn(err)
+		return nil, err
+	}
+
+	// Filter out pending tasks by start time
+	var (
+		taskRecords []tables.TaskQueue
+		taskModel   tables.TaskQueue
+	)
+	err = r.Database.
+		Table(taskModel.GetName()).
+		Where("start_time > ?", currentTime.UnixMilli()).
+		Find(&taskRecords).
+		Error
+	if err != nil {
+		logger.GetLogger(r.GetPendingTasks).Warn(err)
+		return nil, err
+	}
+
+	var result []*model.Task
+	for _, record := range taskRecords {
+		result = append(result, &model.Task{
+			ID:        record.ID,
+			Name:      record.Name,
+			StartTime: record.StartTime,
+			EndTime:   record.EndTime,
+			HasDone:   record.HasDone,
+			CreatedAt: record.CreatedAt,
+		})
+	}
+
+	return result, nil
 }
 
 // Mutation returns MutationResolver implementation.

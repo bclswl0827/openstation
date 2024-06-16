@@ -33,8 +33,13 @@ type server struct {
 	Debug bool   `json:"debug"`
 }
 
+type ntp struct {
+	Enable bool `json:"enable"`
+	Port   int  `json:"port"`
+}
+
 type logger struct {
-	Level string `json:"level" validate:"required,oneof=info warn error fatal"`
+	Level string `json:"level"`
 	Path  string `json:"path"`
 }
 
@@ -44,5 +49,6 @@ type Config struct {
 	GNSS     gnss     `json:"gnss_settings"`
 	Database database `json:"database_settings"`
 	Server   server   `json:"server_settings"`
+	NTP      ntp      `json:"ntp_settings"`
 	Logger   logger   `json:"logger_settings"`
 }

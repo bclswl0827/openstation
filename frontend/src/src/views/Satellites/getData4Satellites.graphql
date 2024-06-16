@@ -3,5 +3,6 @@ query getData4Satellites {
         timestamp
 		latitude
 		longitude
+        elevation
 	}
 }

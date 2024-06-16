@@ -3,7 +3,8 @@
         "name": "北京 1.2 公尺 L/S 站",
         "remarks": [
             "测试站",
-            "临时站"
+            "临时站",
+            "嵌赛用"
         ],
         "location": "北京"
     },
@@ -29,6 +30,10 @@
         "port": 8073,
         "cors": true,
         "debug": true
+    },
+    "ntp_settings": {
+        "enable": true,
+        "port": 123
     },
     "logger_settings": {
         "level": "info",
