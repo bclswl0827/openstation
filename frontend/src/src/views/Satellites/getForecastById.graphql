@@ -1,12 +1,25 @@
-query getForecastById($tleId: Int64!, $elevationThreshold: Float!) {
-	getForecastById(tleId: $tleId, elevationThreshold: $elevationThreshold) {
+query getForecastById(
+	$tleId: Int64!
+	$elevationThreshold: Float!
+	$gnssLatitude: Float!
+	$gnssLongitude: Float!
+	$gnssElevation: Float!
+) {
+	getForecastById(
+		tleId: $tleId
+		elevationThreshold: $elevationThreshold
+		gnssLatitude: $gnssLatitude
+		gnssLongitude: $gnssLongitude
+		gnssElevation: $gnssElevation
+	) {
 		duration
 		startTime
 		endTime
 		entryAzimuth
 		exitAzimuth
 		maxElevation
-		latitude
-		longitude
+		gnssLatitude
+		gnssLongitude
+		gnssElevation
 	}
 }

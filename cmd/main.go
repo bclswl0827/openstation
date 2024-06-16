@@ -17,7 +17,8 @@ import (
 	"github.com/bclswl0827/openstation/services"
 	"github.com/bclswl0827/openstation/startups"
 
-	service_tracking "github.com/bclswl0827/openstation/services/tracking"
+	service_ntp_server "github.com/bclswl0827/openstation/services/ntp_server"
+	service_tracker "github.com/bclswl0827/openstation/services/tasker"
 
 	startup_alignment "github.com/bclswl0827/openstation/startups/alignment"
 	startup_peripherals "github.com/bclswl0827/openstation/startups/peripherals"
@@ -159,7 +160,8 @@ func main() {
 
 	// Setup background services
 	regServices := []services.Service{
-		&service_tracking.TrackingService{},
+		&service_ntp_server.NtpServerService{},
+		&service_tracker.TaskerService{},
 	}
 	serviceOptions := &services.Options{
 		Config:     &conf,
@@ -170,7 +172,6 @@ func main() {
 	}
 	for _, s := range regServices {
 		go s.Start(serviceOptions)
-		s.OnStart()
 	}
 
 	// Start HTTP web server
@@ -202,6 +203,5 @@ func main() {
 	logger.GetLogger(main).Info("services are shutting down, please wait")
 	for _, s := range regServices {
 		s.Stop(serviceOptions)
-		s.OnStop()
 	}
 }

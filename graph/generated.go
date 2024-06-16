@@ -48,7 +48,7 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		AddNewTask        func(childComplexity int, tleID int64, startTime int64, endTime int64, webhook string) int
+		AddNewTask        func(childComplexity int, tleID int64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64, startTime int64, endTime int64) int
 		AddNewTle         func(childComplexity int, tleData string) int
 		DeleteTLEByID     func(childComplexity int, tleID int64) int
 		DeleteTaskByID    func(childComplexity int, taskID int64) int
@@ -63,27 +63,28 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetForecastByID    func(childComplexity int, tleID int64, elevationThreshold float64) int
+		GetForecastByID    func(childComplexity int, tleID int64, elevationThreshold float64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64) int
 		GetGnss            func(childComplexity int) int
-		GetObservationByID func(childComplexity int, tleID int64, elevationThreshold float64) int
+		GetObservationByID func(childComplexity int, tleID int64, elevationThreshold float64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64) int
 		GetPanTilt         func(childComplexity int) int
+		GetPendingTasks    func(childComplexity int) int
 		GetStation         func(childComplexity int) int
 		GetSystem          func(childComplexity int) int
 		GetTLEByID         func(childComplexity int, tleID int64) int
 		GetTLEsByKeyword   func(childComplexity int, keyword string) int
-		GetTaskByID        func(childComplexity int, taskID int64) int
-		GetTasksByDuration func(childComplexity int, startTime int64, endTime int64) int
+		GetTotalTasks      func(childComplexity int) int
 	}
 
 	Forecast struct {
-		Duration     func(childComplexity int) int
-		EndTime      func(childComplexity int) int
-		EntryAzimuth func(childComplexity int) int
-		ExitAzimuth  func(childComplexity int) int
-		Latitude     func(childComplexity int) int
-		Longitude    func(childComplexity int) int
-		MaxElevation func(childComplexity int) int
-		StartTime    func(childComplexity int) int
+		Duration      func(childComplexity int) int
+		EndTime       func(childComplexity int) int
+		EntryAzimuth  func(childComplexity int) int
+		ExitAzimuth   func(childComplexity int) int
+		GnssElevation func(childComplexity int) int
+		GnssLatitude  func(childComplexity int) int
+		GnssLongitude func(childComplexity int) int
+		MaxElevation  func(childComplexity int) int
+		StartTime     func(childComplexity int) int
 	}
 
 	Gnss struct {
@@ -135,11 +136,9 @@ type ComplexityRoot struct {
 		CreatedAt func(childComplexity int) int
 		EndTime   func(childComplexity int) int
 		HasDone   func(childComplexity int) int
+		ID        func(childComplexity int) int
 		Name      func(childComplexity int) int
 		StartTime func(childComplexity int) int
-		TaskID    func(childComplexity int) int
-		TleID     func(childComplexity int) int
-		Webhook   func(childComplexity int) int
 	}
 
 	TleData struct {
@@ -162,7 +161,7 @@ type MutationResolver interface {
 	AddNewTle(ctx context.Context, tleData string) (bool, error)
 	DeleteTLEByID(ctx context.Context, tleID int64) (bool, error)
 	UpdateTLEByID(ctx context.Context, tleID int64, tleData string) (bool, error)
-	AddNewTask(ctx context.Context, tleID int64, startTime int64, endTime int64, webhook string) (bool, error)
+	AddNewTask(ctx context.Context, tleID int64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64, startTime int64, endTime int64) (bool, error)
 	DeleteTaskByID(ctx context.Context, taskID int64) (bool, error)
 	RebootSystem(ctx context.Context) (bool, error)
 	PurgeTaskQueue(ctx context.Context) (bool, error)
@@ -175,10 +174,10 @@ type QueryResolver interface {
 	GetGnss(ctx context.Context) (*model.Gnss, error)
 	GetTLEByID(ctx context.Context, tleID int64) (*model.TleData, error)
 	GetTLEsByKeyword(ctx context.Context, keyword string) ([]*model.TleData, error)
-	GetForecastByID(ctx context.Context, tleID int64, elevationThreshold float64) ([]*model.Forecast, error)
-	GetObservationByID(ctx context.Context, tleID int64, elevationThreshold float64) (*model.Observation, error)
-	GetTaskByID(ctx context.Context, taskID int64) (*model.Task, error)
-	GetTasksByDuration(ctx context.Context, startTime int64, endTime int64) ([]*model.Task, error)
+	GetForecastByID(ctx context.Context, tleID int64, elevationThreshold float64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64) ([]*model.Forecast, error)
+	GetObservationByID(ctx context.Context, tleID int64, elevationThreshold float64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64) (*model.Observation, error)
+	GetTotalTasks(ctx context.Context) ([]*model.Task, error)
+	GetPendingTasks(ctx context.Context) ([]*model.Task, error)
 }
 
 type executableSchema struct {
@@ -210,7 +209,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddNewTask(childComplexity, args["tleId"].(int64), args["startTime"].(int64), args["endTime"].(int64), args["webhook"].(string)), true
+		return e.complexity.Mutation.AddNewTask(childComplexity, args["tleId"].(int64), args["gnssLatitude"].(float64), args["gnssLongitude"].(float64), args["gnssElevation"].(float64), args["startTime"].(int64), args["endTime"].(int64)), true
 
 	case "Mutation.addNewTLE":
 		if e.complexity.Mutation.AddNewTle == nil {
@@ -334,7 +333,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GetForecastByID(childComplexity, args["tleId"].(int64), args["elevationThreshold"].(float64)), true
+		return e.complexity.Query.GetForecastByID(childComplexity, args["tleId"].(int64), args["elevationThreshold"].(float64), args["gnssLatitude"].(float64), args["gnssLongitude"].(float64), args["gnssElevation"].(float64)), true
 
 	case "Query.getGnss":
 		if e.complexity.Query.GetGnss == nil {
@@ -353,7 +352,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GetObservationByID(childComplexity, args["tleId"].(int64), args["elevationThreshold"].(float64)), true
+		return e.complexity.Query.GetObservationByID(childComplexity, args["tleId"].(int64), args["elevationThreshold"].(float64), args["gnssLatitude"].(float64), args["gnssLongitude"].(float64), args["gnssElevation"].(float64)), true
 
 	case "Query.getPanTilt":
 		if e.complexity.Query.GetPanTilt == nil {
@@ -361,6 +360,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetPanTilt(childComplexity), true
+
+	case "Query.getPendingTasks":
+		if e.complexity.Query.GetPendingTasks == nil {
+			break
+		}
+
+		return e.complexity.Query.GetPendingTasks(childComplexity), true
 
 	case "Query.getStation":
 		if e.complexity.Query.GetStation == nil {
@@ -400,29 +406,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetTLEsByKeyword(childComplexity, args["keyword"].(string)), true
 
-	case "Query.getTaskById":
-		if e.complexity.Query.GetTaskByID == nil {
+	case "Query.getTotalTasks":
+		if e.complexity.Query.GetTotalTasks == nil {
 			break
 		}
 
-		args, err := ec.field_Query_getTaskById_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetTaskByID(childComplexity, args["taskId"].(int64)), true
-
-	case "Query.getTasksByDuration":
-		if e.complexity.Query.GetTasksByDuration == nil {
-			break
-		}
-
-		args, err := ec.field_Query_getTasksByDuration_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetTasksByDuration(childComplexity, args["startTime"].(int64), args["endTime"].(int64)), true
+		return e.complexity.Query.GetTotalTasks(childComplexity), true
 
 	case "forecast.duration":
 		if e.complexity.Forecast.Duration == nil {
@@ -452,19 +441,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Forecast.ExitAzimuth(childComplexity), true
 
-	case "forecast.latitude":
-		if e.complexity.Forecast.Latitude == nil {
+	case "forecast.gnssElevation":
+		if e.complexity.Forecast.GnssElevation == nil {
 			break
 		}
 
-		return e.complexity.Forecast.Latitude(childComplexity), true
+		return e.complexity.Forecast.GnssElevation(childComplexity), true
 
-	case "forecast.longitude":
-		if e.complexity.Forecast.Longitude == nil {
+	case "forecast.gnssLatitude":
+		if e.complexity.Forecast.GnssLatitude == nil {
 			break
 		}
 
-		return e.complexity.Forecast.Longitude(childComplexity), true
+		return e.complexity.Forecast.GnssLatitude(childComplexity), true
+
+	case "forecast.gnssLongitude":
+		if e.complexity.Forecast.GnssLongitude == nil {
+			break
+		}
+
+		return e.complexity.Forecast.GnssLongitude(childComplexity), true
 
 	case "forecast.maxElevation":
 		if e.complexity.Forecast.MaxElevation == nil {
@@ -711,6 +707,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Task.HasDone(childComplexity), true
 
+	case "task.id":
+		if e.complexity.Task.ID == nil {
+			break
+		}
+
+		return e.complexity.Task.ID(childComplexity), true
+
 	case "task.name":
 		if e.complexity.Task.Name == nil {
 			break
@@ -724,27 +727,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Task.StartTime(childComplexity), true
-
-	case "task.taskId":
-		if e.complexity.Task.TaskID == nil {
-			break
-		}
-
-		return e.complexity.Task.TaskID(childComplexity), true
-
-	case "task.tleId":
-		if e.complexity.Task.TleID == nil {
-			break
-		}
-
-		return e.complexity.Task.TleID(childComplexity), true
-
-	case "task.webhook":
-		if e.complexity.Task.Webhook == nil {
-			break
-		}
-
-		return e.complexity.Task.Webhook(childComplexity), true
 
 	case "tleData.createdAt":
 		if e.complexity.TleData.CreatedAt == nil {
@@ -952,33 +934,51 @@ func (ec *executionContext) field_Mutation_addNewTask_args(ctx context.Context, 
 		}
 	}
 	args["tleId"] = arg0
-	var arg1 int64
+	var arg1 float64
+	if tmp, ok := rawArgs["gnssLatitude"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssLatitude"))
+		arg1, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["gnssLatitude"] = arg1
+	var arg2 float64
+	if tmp, ok := rawArgs["gnssLongitude"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssLongitude"))
+		arg2, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["gnssLongitude"] = arg2
+	var arg3 float64
+	if tmp, ok := rawArgs["gnssElevation"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssElevation"))
+		arg3, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["gnssElevation"] = arg3
+	var arg4 int64
 	if tmp, ok := rawArgs["startTime"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTime"))
-		arg1, err = ec.unmarshalNInt642int64(ctx, tmp)
+		arg4, err = ec.unmarshalNInt642int64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["startTime"] = arg1
-	var arg2 int64
+	args["startTime"] = arg4
+	var arg5 int64
 	if tmp, ok := rawArgs["endTime"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endTime"))
-		arg2, err = ec.unmarshalNInt642int64(ctx, tmp)
+		arg5, err = ec.unmarshalNInt642int64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["endTime"] = arg2
-	var arg3 string
-	if tmp, ok := rawArgs["webhook"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("webhook"))
-		arg3, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["webhook"] = arg3
+	args["endTime"] = arg5
 	return args, nil
 }
 
@@ -1126,6 +1126,33 @@ func (ec *executionContext) field_Query_getForecastById_args(ctx context.Context
 		}
 	}
 	args["elevationThreshold"] = arg1
+	var arg2 float64
+	if tmp, ok := rawArgs["gnssLatitude"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssLatitude"))
+		arg2, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["gnssLatitude"] = arg2
+	var arg3 float64
+	if tmp, ok := rawArgs["gnssLongitude"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssLongitude"))
+		arg3, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["gnssLongitude"] = arg3
+	var arg4 float64
+	if tmp, ok := rawArgs["gnssElevation"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssElevation"))
+		arg4, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["gnssElevation"] = arg4
 	return args, nil
 }
 
@@ -1150,6 +1177,33 @@ func (ec *executionContext) field_Query_getObservationById_args(ctx context.Cont
 		}
 	}
 	args["elevationThreshold"] = arg1
+	var arg2 float64
+	if tmp, ok := rawArgs["gnssLatitude"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssLatitude"))
+		arg2, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["gnssLatitude"] = arg2
+	var arg3 float64
+	if tmp, ok := rawArgs["gnssLongitude"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssLongitude"))
+		arg3, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["gnssLongitude"] = arg3
+	var arg4 float64
+	if tmp, ok := rawArgs["gnssElevation"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssElevation"))
+		arg4, err = ec.unmarshalNFloat2float64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["gnssElevation"] = arg4
 	return args, nil
 }
 
@@ -1180,45 +1234,6 @@ func (ec *executionContext) field_Query_getTLEsByKeyword_args(ctx context.Contex
 		}
 	}
 	args["keyword"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_getTaskById_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 int64
-	if tmp, ok := rawArgs["taskId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taskId"))
-		arg0, err = ec.unmarshalNInt642int64(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["taskId"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_getTasksByDuration_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 int64
-	if tmp, ok := rawArgs["startTime"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTime"))
-		arg0, err = ec.unmarshalNInt642int64(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["startTime"] = arg0
-	var arg1 int64
-	if tmp, ok := rawArgs["endTime"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endTime"))
-		arg1, err = ec.unmarshalNInt642int64(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["endTime"] = arg1
 	return args, nil
 }
 
@@ -1648,7 +1663,7 @@ func (ec *executionContext) _Mutation_addNewTask(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddNewTask(rctx, fc.Args["tleId"].(int64), fc.Args["startTime"].(int64), fc.Args["endTime"].(int64), fc.Args["webhook"].(string))
+		return ec.resolvers.Mutation().AddNewTask(rctx, fc.Args["tleId"].(int64), fc.Args["gnssLatitude"].(float64), fc.Args["gnssLongitude"].(float64), fc.Args["gnssElevation"].(float64), fc.Args["startTime"].(int64), fc.Args["endTime"].(int64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2271,7 +2286,7 @@ func (ec *executionContext) _Query_getForecastById(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetForecastByID(rctx, fc.Args["tleId"].(int64), fc.Args["elevationThreshold"].(float64))
+		return ec.resolvers.Query().GetForecastByID(rctx, fc.Args["tleId"].(int64), fc.Args["elevationThreshold"].(float64), fc.Args["gnssLatitude"].(float64), fc.Args["gnssLongitude"].(float64), fc.Args["gnssElevation"].(float64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2298,10 +2313,12 @@ func (ec *executionContext) fieldContext_Query_getForecastById(ctx context.Conte
 			switch field.Name {
 			case "duration":
 				return ec.fieldContext_forecast_duration(ctx, field)
-			case "latitude":
-				return ec.fieldContext_forecast_latitude(ctx, field)
-			case "longitude":
-				return ec.fieldContext_forecast_longitude(ctx, field)
+			case "gnssLatitude":
+				return ec.fieldContext_forecast_gnssLatitude(ctx, field)
+			case "gnssLongitude":
+				return ec.fieldContext_forecast_gnssLongitude(ctx, field)
+			case "gnssElevation":
+				return ec.fieldContext_forecast_gnssElevation(ctx, field)
 			case "maxElevation":
 				return ec.fieldContext_forecast_maxElevation(ctx, field)
 			case "entryAzimuth":
@@ -2344,7 +2361,7 @@ func (ec *executionContext) _Query_getObservationById(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetObservationByID(rctx, fc.Args["tleId"].(int64), fc.Args["elevationThreshold"].(float64))
+		return ec.resolvers.Query().GetObservationByID(rctx, fc.Args["tleId"].(int64), fc.Args["elevationThreshold"].(float64), fc.Args["gnssLatitude"].(float64), fc.Args["gnssLongitude"].(float64), fc.Args["gnssElevation"].(float64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2393,8 +2410,8 @@ func (ec *executionContext) fieldContext_Query_getObservationById(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_getTaskById(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_getTaskById(ctx, field)
+func (ec *executionContext) _Query_getTotalTasks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getTotalTasks(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2407,80 +2424,7 @@ func (ec *executionContext) _Query_getTaskById(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetTaskByID(rctx, fc.Args["taskId"].(int64))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Task)
-	fc.Result = res
-	return ec.marshalNtask2ᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐTask(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_getTaskById(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "taskId":
-				return ec.fieldContext_task_taskId(ctx, field)
-			case "tleId":
-				return ec.fieldContext_task_tleId(ctx, field)
-			case "name":
-				return ec.fieldContext_task_name(ctx, field)
-			case "startTime":
-				return ec.fieldContext_task_startTime(ctx, field)
-			case "endTime":
-				return ec.fieldContext_task_endTime(ctx, field)
-			case "hasDone":
-				return ec.fieldContext_task_hasDone(ctx, field)
-			case "webhook":
-				return ec.fieldContext_task_webhook(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_task_createdAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type task", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getTaskById_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_getTasksByDuration(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_getTasksByDuration(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetTasksByDuration(rctx, fc.Args["startTime"].(int64), fc.Args["endTime"].(int64))
+		return ec.resolvers.Query().GetTotalTasks(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2497,7 +2441,7 @@ func (ec *executionContext) _Query_getTasksByDuration(ctx context.Context, field
 	return ec.marshalNtask2ᚕᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐTask(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_getTasksByDuration(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getTotalTasks(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -2505,10 +2449,8 @@ func (ec *executionContext) fieldContext_Query_getTasksByDuration(ctx context.Co
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "taskId":
-				return ec.fieldContext_task_taskId(ctx, field)
-			case "tleId":
-				return ec.fieldContext_task_tleId(ctx, field)
+			case "id":
+				return ec.fieldContext_task_id(ctx, field)
 			case "name":
 				return ec.fieldContext_task_name(ctx, field)
 			case "startTime":
@@ -2517,24 +2459,69 @@ func (ec *executionContext) fieldContext_Query_getTasksByDuration(ctx context.Co
 				return ec.fieldContext_task_endTime(ctx, field)
 			case "hasDone":
 				return ec.fieldContext_task_hasDone(ctx, field)
-			case "webhook":
-				return ec.fieldContext_task_webhook(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_task_createdAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type task", field.Name)
 		},
 	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getPendingTasks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getPendingTasks(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
 	defer func() {
 		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
 		}
 	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getTasksByDuration_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetPendingTasks(rctx)
+	})
+	if err != nil {
 		ec.Error(ctx, err)
-		return fc, err
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Task)
+	fc.Result = res
+	return ec.marshalNtask2ᚕᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐTask(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getPendingTasks(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_task_id(ctx, field)
+			case "name":
+				return ec.fieldContext_task_name(ctx, field)
+			case "startTime":
+				return ec.fieldContext_task_startTime(ctx, field)
+			case "endTime":
+				return ec.fieldContext_task_endTime(ctx, field)
+			case "hasDone":
+				return ec.fieldContext_task_hasDone(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_task_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type task", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -4481,8 +4468,8 @@ func (ec *executionContext) fieldContext_forecast_duration(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _forecast_latitude(ctx context.Context, field graphql.CollectedField, obj *model.Forecast) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_forecast_latitude(ctx, field)
+func (ec *executionContext) _forecast_gnssLatitude(ctx context.Context, field graphql.CollectedField, obj *model.Forecast) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_forecast_gnssLatitude(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4495,7 +4482,7 @@ func (ec *executionContext) _forecast_latitude(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Latitude, nil
+		return obj.GnssLatitude, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4512,7 +4499,7 @@ func (ec *executionContext) _forecast_latitude(ctx context.Context, field graphq
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_forecast_latitude(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_forecast_gnssLatitude(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "forecast",
 		Field:      field,
@@ -4525,8 +4512,8 @@ func (ec *executionContext) fieldContext_forecast_latitude(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _forecast_longitude(ctx context.Context, field graphql.CollectedField, obj *model.Forecast) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_forecast_longitude(ctx, field)
+func (ec *executionContext) _forecast_gnssLongitude(ctx context.Context, field graphql.CollectedField, obj *model.Forecast) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_forecast_gnssLongitude(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4539,7 +4526,7 @@ func (ec *executionContext) _forecast_longitude(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Longitude, nil
+		return obj.GnssLongitude, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4556,7 +4543,51 @@ func (ec *executionContext) _forecast_longitude(ctx context.Context, field graph
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_forecast_longitude(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_forecast_gnssLongitude(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "forecast",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _forecast_gnssElevation(ctx context.Context, field graphql.CollectedField, obj *model.Forecast) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_forecast_gnssElevation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GnssElevation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_forecast_gnssElevation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "forecast",
 		Field:      field,
@@ -6109,8 +6140,8 @@ func (ec *executionContext) fieldContext_system_ip(_ context.Context, field grap
 	return fc, nil
 }
 
-func (ec *executionContext) _task_taskId(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_task_taskId(ctx, field)
+func (ec *executionContext) _task_id(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_task_id(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6123,7 +6154,7 @@ func (ec *executionContext) _task_taskId(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TaskID, nil
+		return obj.ID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6140,51 +6171,7 @@ func (ec *executionContext) _task_taskId(ctx context.Context, field graphql.Coll
 	return ec.marshalNInt642int64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_task_taskId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "task",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int64 does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _task_tleId(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_task_tleId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TleID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int64)
-	fc.Result = res
-	return ec.marshalNInt642int64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_task_tleId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_task_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "task",
 		Field:      field,
@@ -6368,50 +6355,6 @@ func (ec *executionContext) fieldContext_task_hasDone(_ context.Context, field g
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _task_webhook(ctx context.Context, field graphql.CollectedField, obj *model.Task) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_task_webhook(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Webhook, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_task_webhook(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "task",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7143,7 +7086,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "getTaskById":
+		case "getTotalTasks":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -7152,7 +7095,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_getTaskById(ctx, field)
+				res = ec._Query_getTotalTasks(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -7165,7 +7108,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "getTasksByDuration":
+		case "getPendingTasks":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -7174,7 +7117,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_getTasksByDuration(ctx, field)
+				res = ec._Query_getPendingTasks(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -7556,13 +7499,18 @@ func (ec *executionContext) _forecast(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "latitude":
-			out.Values[i] = ec._forecast_latitude(ctx, field, obj)
+		case "gnssLatitude":
+			out.Values[i] = ec._forecast_gnssLatitude(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "longitude":
-			out.Values[i] = ec._forecast_longitude(ctx, field, obj)
+		case "gnssLongitude":
+			out.Values[i] = ec._forecast_gnssLongitude(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "gnssElevation":
+			out.Values[i] = ec._forecast_gnssElevation(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -7945,13 +7893,8 @@ func (ec *executionContext) _task(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("task")
-		case "taskId":
-			out.Values[i] = ec._task_taskId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "tleId":
-			out.Values[i] = ec._task_tleId(ctx, field, obj)
+		case "id":
+			out.Values[i] = ec._task_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -7972,11 +7915,6 @@ func (ec *executionContext) _task(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "hasDone":
 			out.Values[i] = ec._task_hasDone(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "webhook":
-			out.Values[i] = ec._task_webhook(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -8554,10 +8492,6 @@ func (ec *executionContext) marshalNsystem2ᚖgithubᚗcomᚋbclswl0827ᚋopenst
 	return ec._system(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNtask2githubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐTask(ctx context.Context, sel ast.SelectionSet, v model.Task) graphql.Marshaler {
-	return ec._task(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNtask2ᚕᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐTask(ctx context.Context, sel ast.SelectionSet, v []*model.Task) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -8594,16 +8528,6 @@ func (ec *executionContext) marshalNtask2ᚕᚖgithubᚗcomᚋbclswl0827ᚋopens
 	wg.Wait()
 
 	return ret
-}
-
-func (ec *executionContext) marshalNtask2ᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐTask(ctx context.Context, sel ast.SelectionSet, v *model.Task) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._task(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNtleData2ᚕᚖgithubᚗcomᚋbclswl0827ᚋopenstationᚋgraphᚋmodelᚐTleData(ctx context.Context, sel ast.SelectionSet, v []*model.TleData) graphql.Marshaler {

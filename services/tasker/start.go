@@ -1,11 +1,12 @@
-package tracking
+package tasker
 
 import (
 	"github.com/bclswl0827/openstation/services"
 	"github.com/bclswl0827/openstation/utils/logger"
 )
 
-func (s *TrackingService) Start(options *services.Options) {
+func (s *TaskerService) Start(options *services.Options) {
+	logger.GetLogger(s.GetTaskName()).Infoln("tracking service has been started")
 	// var (
 	// 	gnssDependency *gnss.GnssDependency
 	// 	taskQueue      tables.TaskQueue
@@ -42,8 +43,4 @@ func (s *TrackingService) Start(options *services.Options) {
 	// 		logger.GetLogger(s.GetTaskName()).Infoln("start to execute task queue", taskQueue.ID)
 	// 	}
 	// }
-}
-
-func (s *TrackingService) OnStart() {
-	logger.GetLogger(s.GetTaskName()).Infoln("tracking service has been started")
 }

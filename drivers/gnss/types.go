@@ -19,7 +19,7 @@ type GnssState struct {
 	Longitude   float64
 	Elevation   float64
 	TrueAzimuth float64
-	Time        GnssTime
+	Time        *GnssTime
 }
 
 type GnssDependency struct {

@@ -1,0 +1,18 @@
+query getData4Tasks {
+	getTotalTasks {
+		id
+		name
+		startTime
+		endTime
+		hasDone
+		createdAt
+	}
+	getPendingTasks {
+		id
+		name
+		startTime
+		endTime
+		hasDone
+		createdAt
+	}
+}

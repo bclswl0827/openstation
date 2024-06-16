@@ -18,8 +18,6 @@ type Options struct {
 
 type Service interface {
 	Start(options *Options)
-	OnStart()
 	Stop(options *Options)
-	OnStop()
 	GetTaskName() string
 }

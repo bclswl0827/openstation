@@ -1,19 +1,17 @@
-query getObservationById(
+mutation addNewTask(
 	$tleId: Int64!
-	$elevationThreshold: Float!
 	$gnssLatitude: Float!
 	$gnssLongitude: Float!
 	$gnssElevation: Float!
+	$startTime: Int64!
+	$endTime: Int64!
 ) {
-	getObservationById(
+	addNewTask(
 		tleId: $tleId
-		elevationThreshold: $elevationThreshold
 		gnssLatitude: $gnssLatitude
 		gnssLongitude: $gnssLongitude
 		gnssElevation: $gnssElevation
-	) {
-		elevation
-		azimuth
-		observable
-	}
+		startTime: $startTime
+		endTime: $endTime
+	)
 }

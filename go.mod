@@ -15,6 +15,7 @@ require (
 	github.com/joshuaferrara/go-satellite v0.0.0-20220611180459-512638c64e5b
 	github.com/json-iterator/go v1.1.12
 	github.com/mackerelio/go-osstat v0.2.4
+	github.com/reusee/mmh3 v0.0.0-20140820141314-64b85163255b
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/sirupsen/logrus v1.9.3

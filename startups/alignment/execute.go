@@ -45,7 +45,7 @@ func (t *AlignmentStartupTask) Execute(depsContainer *dig.Container, options *st
 			)
 			for i := 0; i <= AZI_COLLECT_COUNT; {
 				if prevGnssTime.RefTime.UnixMilli() != gnssDeps.State.Time.RefTime.UnixMilli() {
-					prevGnssTime = gnssDeps.State.Time
+					prevGnssTime = *gnssDeps.State.Time
 
 					// Wait for RTK Fix / Float result
 					if gnssDeps.State.DataQuality == 0 {

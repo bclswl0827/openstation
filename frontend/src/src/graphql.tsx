@@ -43,9 +43,11 @@ export type MutationAddNewTleArgs = {
 
 export type MutationAddNewTaskArgs = {
   endTime: Scalars['Int64']['input'];
+  gnssElevation: Scalars['Float']['input'];
+  gnssLatitude: Scalars['Float']['input'];
+  gnssLongitude: Scalars['Float']['input'];
   startTime: Scalars['Int64']['input'];
   tleId: Scalars['Int64']['input'];
-  webhook: Scalars['String']['input'];
 };
 
 
@@ -86,23 +88,29 @@ export type Query = {
   getGnss: Gnss;
   getObservationById: Observation;
   getPanTilt: PanTilt;
+  getPendingTasks: Array<Maybe<Task>>;
   getStation: Station;
   getSystem: System;
   getTLEById?: Maybe<TleData>;
   getTLEsByKeyword: Array<Maybe<TleData>>;
-  getTaskById: Task;
-  getTasksByDuration: Array<Maybe<Task>>;
+  getTotalTasks: Array<Maybe<Task>>;
 };
 
 
 export type QueryGetForecastByIdArgs = {
   elevationThreshold: Scalars['Float']['input'];
+  gnssElevation: Scalars['Float']['input'];
+  gnssLatitude: Scalars['Float']['input'];
+  gnssLongitude: Scalars['Float']['input'];
   tleId: Scalars['Int64']['input'];
 };
 
 
 export type QueryGetObservationByIdArgs = {
   elevationThreshold: Scalars['Float']['input'];
+  gnssElevation: Scalars['Float']['input'];
+  gnssLatitude: Scalars['Float']['input'];
+  gnssLongitude: Scalars['Float']['input'];
   tleId: Scalars['Int64']['input'];
 };
 
@@ -116,25 +124,15 @@ export type QueryGetTlEsByKeywordArgs = {
   keyword: Scalars['String']['input'];
 };
 
-
-export type QueryGetTaskByIdArgs = {
-  taskId: Scalars['Int64']['input'];
-};
-
-
-export type QueryGetTasksByDurationArgs = {
-  endTime: Scalars['Int64']['input'];
-  startTime: Scalars['Int64']['input'];
-};
-
 export type Forecast = {
   __typename?: 'forecast';
   duration: Scalars['Float']['output'];
   endTime: Scalars['Int64']['output'];
   entryAzimuth: Scalars['Float']['output'];
   exitAzimuth: Scalars['Float']['output'];
-  latitude: Scalars['Float']['output'];
-  longitude: Scalars['Float']['output'];
+  gnssElevation: Scalars['Float']['output'];
+  gnssLatitude: Scalars['Float']['output'];
+  gnssLongitude: Scalars['Float']['output'];
   maxElevation: Scalars['Float']['output'];
   startTime: Scalars['Int64']['output'];
 };
@@ -194,11 +192,9 @@ export type Task = {
   createdAt: Scalars['Int64']['output'];
   endTime: Scalars['Int64']['output'];
   hasDone: Scalars['Boolean']['output'];
+  id: Scalars['Int64']['output'];
   name: Scalars['String']['output'];
   startTime: Scalars['Int64']['output'];
-  taskId: Scalars['Int64']['output'];
-  tleId: Scalars['Int64']['output'];
-  webhook: Scalars['String']['output'];
 };
 
 export type TleData = {
@@ -270,6 +266,18 @@ export type AddNewTleMutationVariables = Exact<{
 
 export type AddNewTleMutation = { __typename?: 'Mutation', addNewTLE: boolean };
 
+export type AddNewTaskMutationVariables = Exact<{
+  tleId: Scalars['Int64']['input'];
+  gnssLatitude: Scalars['Float']['input'];
+  gnssLongitude: Scalars['Float']['input'];
+  gnssElevation: Scalars['Float']['input'];
+  startTime: Scalars['Int64']['input'];
+  endTime: Scalars['Int64']['input'];
+}>;
+
+
+export type AddNewTaskMutation = { __typename?: 'Mutation', addNewTask: boolean };
+
 export type DeleteTleByIdMutationVariables = Exact<{
   tleId: Scalars['Int64']['input'];
 }>;
@@ -280,19 +288,25 @@ export type DeleteTleByIdMutation = { __typename?: 'Mutation', deleteTLEById: bo
 export type GetData4SatellitesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetData4SatellitesQuery = { __typename?: 'Query', getGnss: { __typename?: 'gnss', timestamp: number, latitude: number, longitude: number } };
+export type GetData4SatellitesQuery = { __typename?: 'Query', getGnss: { __typename?: 'gnss', timestamp: number, latitude: number, longitude: number, elevation: number } };
 
 export type GetForecastByIdQueryVariables = Exact<{
   tleId: Scalars['Int64']['input'];
   elevationThreshold: Scalars['Float']['input'];
+  gnssLatitude: Scalars['Float']['input'];
+  gnssLongitude: Scalars['Float']['input'];
+  gnssElevation: Scalars['Float']['input'];
 }>;
 
 
-export type GetForecastByIdQuery = { __typename?: 'Query', getForecastById: Array<{ __typename?: 'forecast', duration: number, startTime: number, endTime: number, entryAzimuth: number, exitAzimuth: number, maxElevation: number, latitude: number, longitude: number } | null> };
+export type GetForecastByIdQuery = { __typename?: 'Query', getForecastById: Array<{ __typename?: 'forecast', duration: number, startTime: number, endTime: number, entryAzimuth: number, exitAzimuth: number, maxElevation: number, gnssLatitude: number, gnssLongitude: number, gnssElevation: number } | null> };
 
 export type GetObservationByIdQueryVariables = Exact<{
   tleId: Scalars['Int64']['input'];
   elevationThreshold: Scalars['Float']['input'];
+  gnssLatitude: Scalars['Float']['input'];
+  gnssLongitude: Scalars['Float']['input'];
+  gnssElevation: Scalars['Float']['input'];
 }>;
 
 
@@ -319,6 +333,11 @@ export type UpdateTleByIdMutationVariables = Exact<{
 
 
 export type UpdateTleByIdMutation = { __typename?: 'Mutation', updateTLEById: boolean };
+
+export type GetData4TasksQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetData4TasksQuery = { __typename?: 'Query', getTotalTasks: Array<{ __typename?: 'task', id: number, name: string, startTime: number, endTime: number, hasDone: boolean, createdAt: number } | null>, getPendingTasks: Array<{ __typename?: 'task', id: number, name: string, startTime: number, endTime: number, hasDone: boolean, createdAt: number } | null> };
 
 
 export const GetData4ControlDocument = gql`
@@ -699,6 +718,49 @@ export function useAddNewTleMutation(baseOptions?: ApolloReactHooks.MutationHook
 export type AddNewTleMutationHookResult = ReturnType<typeof useAddNewTleMutation>;
 export type AddNewTleMutationResult = ApolloReactCommon.MutationResult<AddNewTleMutation>;
 export type AddNewTleMutationOptions = ApolloReactCommon.BaseMutationOptions<AddNewTleMutation, AddNewTleMutationVariables>;
+export const AddNewTaskDocument = gql`
+    mutation addNewTask($tleId: Int64!, $gnssLatitude: Float!, $gnssLongitude: Float!, $gnssElevation: Float!, $startTime: Int64!, $endTime: Int64!) {
+  addNewTask(
+    tleId: $tleId
+    gnssLatitude: $gnssLatitude
+    gnssLongitude: $gnssLongitude
+    gnssElevation: $gnssElevation
+    startTime: $startTime
+    endTime: $endTime
+  )
+}
+    `;
+export type AddNewTaskMutationFn = ApolloReactCommon.MutationFunction<AddNewTaskMutation, AddNewTaskMutationVariables>;
+
+/**
+ * __useAddNewTaskMutation__
+ *
+ * To run a mutation, you first call `useAddNewTaskMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAddNewTaskMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [addNewTaskMutation, { data, loading, error }] = useAddNewTaskMutation({
+ *   variables: {
+ *      tleId: // value for 'tleId'
+ *      gnssLatitude: // value for 'gnssLatitude'
+ *      gnssLongitude: // value for 'gnssLongitude'
+ *      gnssElevation: // value for 'gnssElevation'
+ *      startTime: // value for 'startTime'
+ *      endTime: // value for 'endTime'
+ *   },
+ * });
+ */
+export function useAddNewTaskMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<AddNewTaskMutation, AddNewTaskMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<AddNewTaskMutation, AddNewTaskMutationVariables>(AddNewTaskDocument, options);
+      }
+export type AddNewTaskMutationHookResult = ReturnType<typeof useAddNewTaskMutation>;
+export type AddNewTaskMutationResult = ApolloReactCommon.MutationResult<AddNewTaskMutation>;
+export type AddNewTaskMutationOptions = ApolloReactCommon.BaseMutationOptions<AddNewTaskMutation, AddNewTaskMutationVariables>;
 export const DeleteTleByIdDocument = gql`
     mutation deleteTLEById($tleId: Int64!) {
   deleteTLEById(tleId: $tleId)
@@ -736,6 +798,7 @@ export const GetData4SatellitesDocument = gql`
     timestamp
     latitude
     longitude
+    elevation
   }
 }
     `;
@@ -772,16 +835,23 @@ export type GetData4SatellitesLazyQueryHookResult = ReturnType<typeof useGetData
 export type GetData4SatellitesSuspenseQueryHookResult = ReturnType<typeof useGetData4SatellitesSuspenseQuery>;
 export type GetData4SatellitesQueryResult = ApolloReactCommon.QueryResult<GetData4SatellitesQuery, GetData4SatellitesQueryVariables>;
 export const GetForecastByIdDocument = gql`
-    query getForecastById($tleId: Int64!, $elevationThreshold: Float!) {
-  getForecastById(tleId: $tleId, elevationThreshold: $elevationThreshold) {
+    query getForecastById($tleId: Int64!, $elevationThreshold: Float!, $gnssLatitude: Float!, $gnssLongitude: Float!, $gnssElevation: Float!) {
+  getForecastById(
+    tleId: $tleId
+    elevationThreshold: $elevationThreshold
+    gnssLatitude: $gnssLatitude
+    gnssLongitude: $gnssLongitude
+    gnssElevation: $gnssElevation
+  ) {
     duration
     startTime
     endTime
     entryAzimuth
     exitAzimuth
     maxElevation
-    latitude
-    longitude
+    gnssLatitude
+    gnssLongitude
+    gnssElevation
   }
 }
     `;
@@ -800,6 +870,9 @@ export const GetForecastByIdDocument = gql`
  *   variables: {
  *      tleId: // value for 'tleId'
  *      elevationThreshold: // value for 'elevationThreshold'
+ *      gnssLatitude: // value for 'gnssLatitude'
+ *      gnssLongitude: // value for 'gnssLongitude'
+ *      gnssElevation: // value for 'gnssElevation'
  *   },
  * });
  */
@@ -820,8 +893,14 @@ export type GetForecastByIdLazyQueryHookResult = ReturnType<typeof useGetForecas
 export type GetForecastByIdSuspenseQueryHookResult = ReturnType<typeof useGetForecastByIdSuspenseQuery>;
 export type GetForecastByIdQueryResult = ApolloReactCommon.QueryResult<GetForecastByIdQuery, GetForecastByIdQueryVariables>;
 export const GetObservationByIdDocument = gql`
-    query getObservationById($tleId: Int64!, $elevationThreshold: Float!) {
-  getObservationById(tleId: $tleId, elevationThreshold: $elevationThreshold) {
+    query getObservationById($tleId: Int64!, $elevationThreshold: Float!, $gnssLatitude: Float!, $gnssLongitude: Float!, $gnssElevation: Float!) {
+  getObservationById(
+    tleId: $tleId
+    elevationThreshold: $elevationThreshold
+    gnssLatitude: $gnssLatitude
+    gnssLongitude: $gnssLongitude
+    gnssElevation: $gnssElevation
+  ) {
     elevation
     azimuth
     observable
@@ -843,6 +922,9 @@ export const GetObservationByIdDocument = gql`
  *   variables: {
  *      tleId: // value for 'tleId'
  *      elevationThreshold: // value for 'elevationThreshold'
+ *      gnssLatitude: // value for 'gnssLatitude'
+ *      gnssLongitude: // value for 'gnssLongitude'
+ *      gnssElevation: // value for 'gnssElevation'
  *   },
  * });
  */
@@ -972,3 +1054,55 @@ export function useUpdateTleByIdMutation(baseOptions?: ApolloReactHooks.Mutation
 export type UpdateTleByIdMutationHookResult = ReturnType<typeof useUpdateTleByIdMutation>;
 export type UpdateTleByIdMutationResult = ApolloReactCommon.MutationResult<UpdateTleByIdMutation>;
 export type UpdateTleByIdMutationOptions = ApolloReactCommon.BaseMutationOptions<UpdateTleByIdMutation, UpdateTleByIdMutationVariables>;
+export const GetData4TasksDocument = gql`
+    query getData4Tasks {
+  getTotalTasks {
+    id
+    name
+    startTime
+    endTime
+    hasDone
+    createdAt
+  }
+  getPendingTasks {
+    id
+    name
+    startTime
+    endTime
+    hasDone
+    createdAt
+  }
+}
+    `;
+
+/**
+ * __useGetData4TasksQuery__
+ *
+ * To run a query within a React component, call `useGetData4TasksQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetData4TasksQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetData4TasksQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetData4TasksQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetData4TasksQuery, GetData4TasksQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetData4TasksQuery, GetData4TasksQueryVariables>(GetData4TasksDocument, options);
+      }
+export function useGetData4TasksLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetData4TasksQuery, GetData4TasksQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetData4TasksQuery, GetData4TasksQueryVariables>(GetData4TasksDocument, options);
+        }
+export function useGetData4TasksSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetData4TasksQuery, GetData4TasksQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<GetData4TasksQuery, GetData4TasksQueryVariables>(GetData4TasksDocument, options);
+        }
+export type GetData4TasksQueryHookResult = ReturnType<typeof useGetData4TasksQuery>;
+export type GetData4TasksLazyQueryHookResult = ReturnType<typeof useGetData4TasksLazyQuery>;
+export type GetData4TasksSuspenseQueryHookResult = ReturnType<typeof useGetData4TasksSuspenseQuery>;
+export type GetData4TasksQueryResult = ApolloReactCommon.QueryResult<GetData4TasksQuery, GetData4TasksQueryVariables>;

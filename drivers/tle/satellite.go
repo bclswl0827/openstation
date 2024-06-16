@@ -69,7 +69,7 @@ func (s *Satellite) Parse(tle *TLE, observer *Observer, observeTime time.Time, e
 		Longitude: observer.Longitude * math.Pi / 180,
 	}
 	lookAngles := satellite.ECIToLookAngles(
-		position, location, observer.Altitude,
+		position, location, observer.Elevation,
 		satellite.JDay(yr, int(mo), da, hr, min, sec),
 	)
 	polarization := math.Tan(
@@ -158,4 +158,46 @@ func (s *Satellite) Predict(tle *TLE, observer *Observer, startTime, endTime tim
 	}
 
 	return transits, nil
+}
+
+// Bootstrap calculates the bootstrap data for a satellite over an observer between startTime and endTime.
+func (s *Satellite) Bootstrap(tle *TLE, observer *Observer, startTime time.Time, endTime time.Time, step time.Duration, elevationThreshold float64) ([]Bootstrap, error) {
+	if elevationThreshold < 0 || elevationThreshold > 90 {
+		return nil, errors.New("invalid elevation threshold")
+	}
+
+	var (
+		bootstrap []Bootstrap
+		// To track visibility state
+		wasVisible = false
+	)
+	for t := startTime; t.Before(endTime); t = t.Add(step) {
+		var sat Satellite
+		err := sat.Parse(tle, observer, t, elevationThreshold)
+		if err != nil {
+			return nil, err
+		}
+
+		if sat.Elevation >= elevationThreshold {
+			// Update visibility status
+			if !wasVisible {
+				wasVisible = true
+			}
+			bootstrap = append(bootstrap, Bootstrap{
+				Timestamp: t.UTC().UnixMilli(),
+				Azimuth:   sat.Azimuth,
+				Elevation: sat.Elevation,
+			})
+		} else {
+			if wasVisible {
+				break
+			}
+		}
+	}
+
+	if len(bootstrap) == 0 {
+		return nil, errors.New("the satellite is not visible during the specified time range")
+	}
+
+	return bootstrap, nil
 }
