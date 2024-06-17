@@ -294,6 +294,7 @@ func (r *GnssDriverImpl) Init(deps *GnssDependency) error {
 		return errors.New("dependency is not provided")
 	}
 
+	deps.State.Time = &GnssTime{}
 	go r.readerDaemon(deps)
 	return nil
 }

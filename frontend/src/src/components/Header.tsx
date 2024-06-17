@@ -147,6 +147,7 @@ export const Header = ({ repository, routes, asideMenu, locales }: Props) => {
 					value: key,
 					label
 				}))}
+                defaultValue={locale}
 				cancelText={t("common.close")}
 				submitText={t("common.submit")}
 			/>

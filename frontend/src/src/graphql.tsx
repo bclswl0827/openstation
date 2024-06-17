@@ -334,10 +334,17 @@ export type UpdateTleByIdMutationVariables = Exact<{
 
 export type UpdateTleByIdMutation = { __typename?: 'Mutation', updateTLEById: boolean };
 
+export type DeleteTaskByIdMutationVariables = Exact<{
+  taskId: Scalars['Int64']['input'];
+}>;
+
+
+export type DeleteTaskByIdMutation = { __typename?: 'Mutation', deleteTaskById: boolean };
+
 export type GetData4TasksQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetData4TasksQuery = { __typename?: 'Query', getTotalTasks: Array<{ __typename?: 'task', id: number, name: string, startTime: number, endTime: number, hasDone: boolean, createdAt: number } | null>, getPendingTasks: Array<{ __typename?: 'task', id: number, name: string, startTime: number, endTime: number, hasDone: boolean, createdAt: number } | null> };
+export type GetData4TasksQuery = { __typename?: 'Query', getTotalTasks: Array<{ __typename?: 'task', id: number, name: string, startTime: number, endTime: number, hasDone: boolean, createdAt: number } | null>, getPendingTasks: Array<{ __typename?: 'task', id: number, name: string, startTime: number, endTime: number, hasDone: boolean, createdAt: number } | null>, getGnss: { __typename?: 'gnss', timestamp: number } };
 
 
 export const GetData4ControlDocument = gql`
@@ -1054,6 +1061,37 @@ export function useUpdateTleByIdMutation(baseOptions?: ApolloReactHooks.Mutation
 export type UpdateTleByIdMutationHookResult = ReturnType<typeof useUpdateTleByIdMutation>;
 export type UpdateTleByIdMutationResult = ApolloReactCommon.MutationResult<UpdateTleByIdMutation>;
 export type UpdateTleByIdMutationOptions = ApolloReactCommon.BaseMutationOptions<UpdateTleByIdMutation, UpdateTleByIdMutationVariables>;
+export const DeleteTaskByIdDocument = gql`
+    mutation deleteTaskById($taskId: Int64!) {
+  deleteTaskById(taskId: $taskId)
+}
+    `;
+export type DeleteTaskByIdMutationFn = ApolloReactCommon.MutationFunction<DeleteTaskByIdMutation, DeleteTaskByIdMutationVariables>;
+
+/**
+ * __useDeleteTaskByIdMutation__
+ *
+ * To run a mutation, you first call `useDeleteTaskByIdMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteTaskByIdMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteTaskByIdMutation, { data, loading, error }] = useDeleteTaskByIdMutation({
+ *   variables: {
+ *      taskId: // value for 'taskId'
+ *   },
+ * });
+ */
+export function useDeleteTaskByIdMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeleteTaskByIdMutation, DeleteTaskByIdMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<DeleteTaskByIdMutation, DeleteTaskByIdMutationVariables>(DeleteTaskByIdDocument, options);
+      }
+export type DeleteTaskByIdMutationHookResult = ReturnType<typeof useDeleteTaskByIdMutation>;
+export type DeleteTaskByIdMutationResult = ApolloReactCommon.MutationResult<DeleteTaskByIdMutation>;
+export type DeleteTaskByIdMutationOptions = ApolloReactCommon.BaseMutationOptions<DeleteTaskByIdMutation, DeleteTaskByIdMutationVariables>;
 export const GetData4TasksDocument = gql`
     query getData4Tasks {
   getTotalTasks {
@@ -1071,6 +1109,9 @@ export const GetData4TasksDocument = gql`
     endTime
     hasDone
     createdAt
+  }
+  getGnss {
+    timestamp
   }
 }
     `;

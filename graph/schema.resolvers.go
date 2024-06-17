@@ -335,9 +335,19 @@ func (r *mutationResolver) AddNewTask(ctx context.Context, tleID int64, gnssLati
 	}
 
 	// Check if the new task time conflicts with existing tasks
+	var (
+		startTimeWithOffset = startTime - 3*60*1000
+		endTimeWithOffset   = endTime + 3*60*1000
+	)
 	err = r.Database.
 		Table(taskRecord.GetName()).
-		Where("((start_time BETWEEN ? AND ?) OR (end_time BETWEEN ? AND ?))", startTime, endTime, startTime, endTime).
+		Where(
+			"((start_time BETWEEN ? AND ?) OR (end_time BETWEEN ? AND ?))",
+			startTimeWithOffset,
+			endTimeWithOffset,
+			startTimeWithOffset,
+			endTimeWithOffset,
+		).
 		Find(&taskRecord).
 		Error
 	if err != nil {

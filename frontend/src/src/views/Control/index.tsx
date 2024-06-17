@@ -129,11 +129,11 @@ const Control = () => {
 				))}
 			</div>
 
-			<div className="mt-12 grid grid-cols-12 md:gap-6 2xl:gap-7">
-				<div className="col-span-12 xl:col-span-6">
+			<div className="mt-12 xl:grid xl:grid-cols-12 xl:gap-6 2xl:gap-7">
+				<div className="hidden xl:block xl:col-span-6">
 					<img src={dish} alt="satellite dish" className="w-full max-w-2xl" />
 				</div>
-				<div className="col-span-12 xl:col-span-6">
+				<div className="lg:col-span-6">
 					<div className="rounded-sm w-full mt-auto space-y-4">
 						<div className="border-b dark:border-gray-500 py-4">
 							<h3 className="font-medium text-2xl text-gray-800 dark:text-white">

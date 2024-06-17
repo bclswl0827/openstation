@@ -15,4 +15,7 @@ query getData4Tasks {
 		hasDone
 		createdAt
 	}
+	getGnss {
+		timestamp
+	}
 }
