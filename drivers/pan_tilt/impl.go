@@ -122,7 +122,7 @@ func (d *PanTiltDriverImpl) getTilt(deps *PanTiltDependency) (float64, error) {
 }
 
 func (d *PanTiltDriverImpl) readerDaemon(deps *PanTiltDependency) {
-	ticker := time.NewTicker(time.Millisecond * 500)
+	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	for {

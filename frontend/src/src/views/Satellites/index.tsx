@@ -617,7 +617,6 @@ const Satellites = () => {
 				]}
 				className="shadow-lg lg:max-w-[calc(100vw-300px)]"
 				sx={{ minHeight: 300, minWidth: 10 }}
-				pageSizeOptions={[5, 10]}
 				rows={satelliteSearchState.result.map((row) => ({
 					id: row!.id,
 					name: row!.name,
@@ -642,6 +641,7 @@ const Satellites = () => {
 						)
 					)
 				}
+				pageSizeOptions={[5, 10]}
 				checkboxSelection
 			/>
 

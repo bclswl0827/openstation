@@ -1,0 +1,3 @@
+mutation deleteTaskById($taskId: Int64!) {
+	deleteTaskById(taskId: $taskId)
+}
