@@ -2,9 +2,7 @@ import "cesium/Build/Cesium/Widgets/widgets.css";
 
 import { mdiMagnify } from "@mdi/js";
 import Icon from "@mdi/react";
-import { DataGrid } from "@mui/x-data-grid";
-import * as dataGridLocales from "@mui/x-data-grid/locales";
-import { Localization } from "@mui/x-data-grid/utils/getGridLocalization";
+import { GridRowSelectionModel } from "@mui/x-data-grid";
 import {
 	Cartesian3,
 	ClockRange,
@@ -26,6 +24,7 @@ import { FileInputButton } from "../../components/FileInputButton";
 import { ListForm, ListFormProps } from "../../components/ListForm";
 import { Panel } from "../../components/Panel";
 import SatelliteEntity from "../../components/SatelliteEntity";
+import { TableList } from "../../components/TableList";
 import {
 	GetData4SatellitesQuery,
 	GetForecastByIdQuery,
@@ -54,21 +53,11 @@ interface ExtendedTimeline extends Timeline {
 }
 (Timeline.prototype as ExtendedTimeline).makeLabel = (time: JulianDate) =>
 	getTimeString(JulianDate.toDate(time).getTime());
+// Cartesian3.normalize(new Cartesian3(0.0, 0.0, 0.0), new Cartesian3());
 
 const Satellites = () => {
-	// Get locale of MUI DataGrid component
+	// Get locale for Table component
 	const { locale } = useLocaleStore();
-	const themeRecords = Object.entries(dataGridLocales).reduce(
-		(acc, [locale, value]) => {
-			acc[locale] = value;
-			return acc;
-		},
-		{} as Record<string, object>
-	);
-	let locale4Component = locale.replaceAll(/[^a-z0-9]/gi, "");
-	if (!themeRecords[locale4Component]) {
-		locale4Component = "enUS";
-	}
 
 	// Get Cesium viewer and run startup job
 	const [isCesiumViewerReady, setIsCesiumViewerReady] = useState(false);
@@ -232,6 +221,13 @@ const Satellites = () => {
 	const [selectedSatellites, setSelectedSatellites] = useState<
 		GetTlEsByKeywordQuery["getTLEsByKeyword"]
 	>([]);
+	const handleSelectSatellites = (ids: GridRowSelectionModel) => {
+		setSelectedSatellites(
+			ids.map(
+				(selectedId) => satelliteSearchState.result.find((row) => row?.id === selectedId)!
+			)
+		);
+	};
 	const handlePreviewTrack = () => {
 		if (selectedSatellites.length > 10) {
 			sendUserAlert("最多选择 10 个卫星进行预览", true);
@@ -290,19 +286,6 @@ const Satellites = () => {
 	const [getForecastById] = useGetForecastByIdLazyQuery();
 	const [addNewTaskMutation] = useAddNewTaskMutation();
 	const handleGetForecast = (tleId: number, name: string) => {
-		const handleTransitSelect = async (value: string) => {
-			handleListFormClose();
-			const valueObj = (JSON.parse(
-				value
-			) as GetForecastByIdQuery["getForecastById"][number])!;
-			await sendPromiseAlert(
-				addNewTaskMutation({ variables: { tleId, ...valueObj } }),
-				"正在添加任务",
-				"任务添加成功",
-				"任务添加失败",
-				true
-			);
-		};
 		const handleElevationSubmit = async (elevationThreshold: number) => {
 			handleDialogFormClose();
 			if (elevationThreshold < 5 || elevationThreshold > 90) {
@@ -326,9 +309,24 @@ const Satellites = () => {
 					true
 				)
 			)?.data?.getForecastById;
+			// Open list form if results are more than 0
 			if (results?.length) {
 				sendUserAlert(`查询到 ${results.length} 个 过境事件`, false);
-				// Open list form if results are more than 0
+				const handleTransitSelect = async (value: string) => {
+					handleListFormClose();
+					const valueObj = (JSON.parse(
+						value
+					) as GetForecastByIdQuery["getForecastById"][number])!;
+					await sendPromiseAlert(
+						addNewTaskMutation({
+							variables: { tleId, elevationThreshold, ...valueObj }
+						}),
+						"正在添加任务",
+						"任务添加成功",
+						"任务添加失败",
+						true
+					);
+				};
 				setListFormState({
 					...listFormState,
 					open: true,
@@ -522,11 +520,8 @@ const Satellites = () => {
 				请输入卫星关键字或 ID 以查询，卫星数据将显示于表格
 			</p>
 
-			<DataGrid
-				localeText={
-					(themeRecords[locale4Component] as Localization).components.MuiDataGrid
-						.defaultProps.localeText
-				}
+			<TableList
+				locale={locale}
 				columns={[
 					{
 						field: "id",
@@ -562,9 +557,9 @@ const Satellites = () => {
 						field: "geostationary",
 						headerName: "同步卫星",
 						resizable: false,
-						sortable: false,
-						minWidth: 100,
-						renderCell: ({ value }) => (value ? "是" : "否")
+						minWidth: 130,
+						renderCell: ({ value }) => (value ? "是" : "否"),
+						sortComparator: (v1, v2) => (v1 === v2 ? 0 : v1 ? -1 : 1)
 					},
 					{
 						field: "actions",
@@ -615,9 +610,7 @@ const Satellites = () => {
 						)
 					}
 				]}
-				className="shadow-lg lg:max-w-[calc(100vw-300px)]"
-				sx={{ minHeight: 300, minWidth: 10 }}
-				rows={satelliteSearchState.result.map((row) => ({
+				data={satelliteSearchState.result.map((row) => ({
 					id: row!.id,
 					name: row!.name,
 					epochTime: row!.epochTime,
@@ -627,26 +620,12 @@ const Satellites = () => {
 					line_1: row!.line_1,
 					line_2: row!.line_2
 				}))}
-				initialState={{ pagination: { paginationModel: { page: 0, pageSize: 5 } } }}
-				onCellClick={({ field }, event) => {
-					if (field === "actions") {
-						event.stopPropagation();
-					}
-				}}
-				onRowSelectionModelChange={(ids) =>
-					setSelectedSatellites(
-						ids.map(
-							(selectedId) =>
-								satelliteSearchState.result.find((row) => row?.id === selectedId)!
-						)
-					)
-				}
-				pageSizeOptions={[5, 10]}
-				checkboxSelection
+				onSelect={handleSelectSatellites}
 			/>
 
 			<Panel heading="轨道预览">
 				<Viewer
+					sceneModePicker={false}
 					className="h-[calc(100vh-250px)]"
 					ref={setCesiumViewerRef}
 					infoBox={false}

@@ -20,19 +20,22 @@ import {
 } from "@devexpress/dx-react-scheduler-material-ui";
 import moment from "moment";
 
+import { localeConfig } from "../config/locale";
+
 interface WeekScheduleProps {
-	events?: AppointmentModel[];
-	currentTime: number;
-	locale: string;
-	categories?: {
-		name: string;
-		field: keyof AppointmentModel[number];
-		instances: Array<{ id: number; text: string; color: string }>;
+	readonly events?: AppointmentModel[];
+	readonly currentTime: number;
+	readonly locale: keyof typeof localeConfig.resources;
+	readonly categories?: {
+		readonly name: string;
+		readonly field: keyof AppointmentModel[number];
+		readonly instances: Array<{ id: number; text: string; color: string }>;
 	};
-	onDelete: (id?: number | string) => void;
-	onRefresh: () => void;
-	refreshButtonLabel: string;
-	todayButtonLabel: string;
+	readonly onDelete: (id?: number | string) => void;
+	readonly onRefresh: () => void;
+	readonly refreshButtonLabel: string;
+	readonly todayButtonLabel: string;
+	readonly cellWidth?: number;
 }
 
 export const WeekSchedule = ({
@@ -43,7 +46,8 @@ export const WeekSchedule = ({
 	onDelete,
 	onRefresh,
 	refreshButtonLabel,
-	todayButtonLabel
+	todayButtonLabel,
+	cellWidth
 }: WeekScheduleProps) => {
 	const formatTimeScale = (date?: SchedulerDateTime) => moment(date).format("HH:mm");
 	const formatDayScale = (date?: SchedulerDateTime, options?: Intl.DateTimeFormatOptions) =>
@@ -80,7 +84,25 @@ export const WeekSchedule = ({
 					<WeekView.TimeScaleLabel {...restProps} formatDate={formatTimeScale} />
 				)}
 				dayScaleCellComponent={({ formatDate, ...restProps }) => (
-					<WeekView.DayScaleCell {...restProps} formatDate={formatDayScale} />
+					<WeekView.DayScaleCell
+						{...restProps}
+						formatDate={formatDayScale}
+						style={
+							cellWidth
+								? {
+										width: categories?.instances
+											? cellWidth * categories.instances.length
+											: cellWidth
+									}
+								: {}
+						}
+					/>
+				)}
+				timeTableCellComponent={({ ...restProps }) => (
+					<WeekView.TimeTableCell
+						{...restProps}
+						style={cellWidth ? { width: cellWidth } : {}}
+					/>
 				)}
 			/>
 			<TodayButton
@@ -106,10 +128,12 @@ export const WeekSchedule = ({
 			/>
 
 			<Appointments
-				appointmentContentComponent={({ formatDate, ...restProps }) => (
+				appointmentContentComponent={({ formatDate, type, ...restProps }) => (
 					<Appointments.AppointmentContent
 						{...restProps}
+						type="horizontal"
 						formatDate={formatAppointmentContent}
+						style={{ padding: "1", textAlign: "center", fontWeight: "bold" }}
 					/>
 				)}
 			/>
@@ -130,7 +154,21 @@ export const WeekSchedule = ({
 				showDeleteButton
 				showCloseButton
 			/>
-			{categories && <GroupingPanel />}
+			{categories && (
+				<GroupingPanel
+					horizontalLayoutComponent={({ cellComponent, ...restProps }) => (
+						<GroupingPanel.HorizontalLayout
+							{...restProps}
+							cellComponent={({ textStyle, ...cellProps }) => (
+								<GroupingPanel.Cell
+									{...cellProps}
+									textStyle={{ width: "100%", textAlign: "center" }}
+								/>
+							)}
+						/>
+					)}
+				/>
+			)}
 		</Scheduler>
 	);
 };

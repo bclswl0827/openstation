@@ -48,7 +48,7 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		AddNewTask        func(childComplexity int, tleID int64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64, startTime int64, endTime int64) int
+		AddNewTask        func(childComplexity int, tleID int64, elevationThreshold float64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64, startTime int64, endTime int64) int
 		AddNewTle         func(childComplexity int, tleData string) int
 		DeleteTLEByID     func(childComplexity int, tleID int64) int
 		DeleteTaskByID    func(childComplexity int, taskID int64) int
@@ -161,7 +161,7 @@ type MutationResolver interface {
 	AddNewTle(ctx context.Context, tleData string) (bool, error)
 	DeleteTLEByID(ctx context.Context, tleID int64) (bool, error)
 	UpdateTLEByID(ctx context.Context, tleID int64, tleData string) (bool, error)
-	AddNewTask(ctx context.Context, tleID int64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64, startTime int64, endTime int64) (bool, error)
+	AddNewTask(ctx context.Context, tleID int64, elevationThreshold float64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64, startTime int64, endTime int64) (bool, error)
 	DeleteTaskByID(ctx context.Context, taskID int64) (bool, error)
 	RebootSystem(ctx context.Context) (bool, error)
 	PurgeTaskQueue(ctx context.Context) (bool, error)
@@ -209,7 +209,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddNewTask(childComplexity, args["tleId"].(int64), args["gnssLatitude"].(float64), args["gnssLongitude"].(float64), args["gnssElevation"].(float64), args["startTime"].(int64), args["endTime"].(int64)), true
+		return e.complexity.Mutation.AddNewTask(childComplexity, args["tleId"].(int64), args["elevationThreshold"].(float64), args["gnssLatitude"].(float64), args["gnssLongitude"].(float64), args["gnssElevation"].(float64), args["startTime"].(int64), args["endTime"].(int64)), true
 
 	case "Mutation.addNewTLE":
 		if e.complexity.Mutation.AddNewTle == nil {
@@ -935,50 +935,59 @@ func (ec *executionContext) field_Mutation_addNewTask_args(ctx context.Context, 
 	}
 	args["tleId"] = arg0
 	var arg1 float64
-	if tmp, ok := rawArgs["gnssLatitude"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssLatitude"))
+	if tmp, ok := rawArgs["elevationThreshold"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("elevationThreshold"))
 		arg1, err = ec.unmarshalNFloat2float64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["gnssLatitude"] = arg1
+	args["elevationThreshold"] = arg1
 	var arg2 float64
-	if tmp, ok := rawArgs["gnssLongitude"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssLongitude"))
+	if tmp, ok := rawArgs["gnssLatitude"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssLatitude"))
 		arg2, err = ec.unmarshalNFloat2float64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["gnssLongitude"] = arg2
+	args["gnssLatitude"] = arg2
 	var arg3 float64
-	if tmp, ok := rawArgs["gnssElevation"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssElevation"))
+	if tmp, ok := rawArgs["gnssLongitude"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssLongitude"))
 		arg3, err = ec.unmarshalNFloat2float64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["gnssElevation"] = arg3
-	var arg4 int64
-	if tmp, ok := rawArgs["startTime"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTime"))
-		arg4, err = ec.unmarshalNInt642int64(ctx, tmp)
+	args["gnssLongitude"] = arg3
+	var arg4 float64
+	if tmp, ok := rawArgs["gnssElevation"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("gnssElevation"))
+		arg4, err = ec.unmarshalNFloat2float64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["startTime"] = arg4
+	args["gnssElevation"] = arg4
 	var arg5 int64
-	if tmp, ok := rawArgs["endTime"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endTime"))
+	if tmp, ok := rawArgs["startTime"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTime"))
 		arg5, err = ec.unmarshalNInt642int64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["endTime"] = arg5
+	args["startTime"] = arg5
+	var arg6 int64
+	if tmp, ok := rawArgs["endTime"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endTime"))
+		arg6, err = ec.unmarshalNInt642int64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["endTime"] = arg6
 	return args, nil
 }
 
@@ -1663,7 +1672,7 @@ func (ec *executionContext) _Mutation_addNewTask(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddNewTask(rctx, fc.Args["tleId"].(int64), fc.Args["gnssLatitude"].(float64), fc.Args["gnssLongitude"].(float64), fc.Args["gnssElevation"].(float64), fc.Args["startTime"].(int64), fc.Args["endTime"].(int64))
+		return ec.resolvers.Mutation().AddNewTask(rctx, fc.Args["tleId"].(int64), fc.Args["elevationThreshold"].(float64), fc.Args["gnssLatitude"].(float64), fc.Args["gnssLongitude"].(float64), fc.Args["gnssElevation"].(float64), fc.Args["startTime"].(int64), fc.Args["endTime"].(int64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

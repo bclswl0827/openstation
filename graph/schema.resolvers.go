@@ -311,7 +311,7 @@ func (r *mutationResolver) UpdateTLEByID(ctx context.Context, tleID int64, tleDa
 }
 
 // AddNewTask is the resolver for the addNewTask field.
-func (r *mutationResolver) AddNewTask(ctx context.Context, tleID int64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64, startTime int64, endTime int64) (bool, error) {
+func (r *mutationResolver) AddNewTask(ctx context.Context, tleID int64, elevationThreshold float64, gnssLatitude float64, gnssLongitude float64, gnssElevation float64, startTime int64, endTime int64) (bool, error) {
 	// Generate task ID
 	h := mmh3.New32()
 	h.Write([]byte(fmt.Sprintf("%d@%d@%d", tleID, int(startTime/1000), int(endTime/1000))))
@@ -386,7 +386,7 @@ func (r *mutationResolver) AddNewTask(ctx context.Context, tleID int64, gnssLati
 		Latitude:  gnssLatitude,
 		Longitude: gnssLongitude,
 		Elevation: gnssElevation,
-	}, time.UnixMilli(startTime).UTC(), time.UnixMilli(endTime).UTC(), time.Millisecond*500, 5)
+	}, time.UnixMilli(startTime).UTC(), time.UnixMilli(endTime).UTC(), time.Millisecond*500, elevationThreshold)
 	if err != nil {
 		logger.GetLogger(r.AddNewTask).Warn(err)
 		return false, err

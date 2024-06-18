@@ -1,5 +1,6 @@
 mutation addNewTask(
 	$tleId: Int64!
+	$elevationThreshold: Float!
 	$gnssLatitude: Float!
 	$gnssLongitude: Float!
 	$gnssElevation: Float!
@@ -8,6 +9,7 @@ mutation addNewTask(
 ) {
 	addNewTask(
 		tleId: $tleId
+		elevationThreshold: $elevationThreshold
 		gnssLatitude: $gnssLatitude
 		gnssLongitude: $gnssLongitude
 		gnssElevation: $gnssElevation

@@ -6,14 +6,14 @@ import { hideLoading } from "../helpers/app/hideLoading";
 import { Code } from "./Code";
 
 interface ErrorProps {
-	code?: number;
-	heading?: string;
-	content?: string;
-	action?: {
-		label: string;
-		onClick: () => void;
+	readonly code?: number;
+	readonly heading?: string;
+	readonly content?: string;
+	readonly action?: {
+		readonly label: string;
+		readonly onClick: () => void;
 	};
-	debug?: string;
+	readonly debug?: string;
 }
 
 export const Error = ({ code, heading, content, action, debug }: ErrorProps) => {
