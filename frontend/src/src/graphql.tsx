@@ -42,6 +42,7 @@ export type MutationAddNewTleArgs = {
 
 
 export type MutationAddNewTaskArgs = {
+  elevationThreshold: Scalars['Float']['input'];
   endTime: Scalars['Int64']['input'];
   gnssElevation: Scalars['Float']['input'];
   gnssLatitude: Scalars['Float']['input'];
@@ -268,6 +269,7 @@ export type AddNewTleMutation = { __typename?: 'Mutation', addNewTLE: boolean };
 
 export type AddNewTaskMutationVariables = Exact<{
   tleId: Scalars['Int64']['input'];
+  elevationThreshold: Scalars['Float']['input'];
   gnssLatitude: Scalars['Float']['input'];
   gnssLongitude: Scalars['Float']['input'];
   gnssElevation: Scalars['Float']['input'];
@@ -726,9 +728,10 @@ export type AddNewTleMutationHookResult = ReturnType<typeof useAddNewTleMutation
 export type AddNewTleMutationResult = ApolloReactCommon.MutationResult<AddNewTleMutation>;
 export type AddNewTleMutationOptions = ApolloReactCommon.BaseMutationOptions<AddNewTleMutation, AddNewTleMutationVariables>;
 export const AddNewTaskDocument = gql`
-    mutation addNewTask($tleId: Int64!, $gnssLatitude: Float!, $gnssLongitude: Float!, $gnssElevation: Float!, $startTime: Int64!, $endTime: Int64!) {
+    mutation addNewTask($tleId: Int64!, $elevationThreshold: Float!, $gnssLatitude: Float!, $gnssLongitude: Float!, $gnssElevation: Float!, $startTime: Int64!, $endTime: Int64!) {
   addNewTask(
     tleId: $tleId
+    elevationThreshold: $elevationThreshold
     gnssLatitude: $gnssLatitude
     gnssLongitude: $gnssLongitude
     gnssElevation: $gnssElevation
@@ -753,6 +756,7 @@ export type AddNewTaskMutationFn = ApolloReactCommon.MutationFunction<AddNewTask
  * const [addNewTaskMutation, { data, loading, error }] = useAddNewTaskMutation({
  *   variables: {
  *      tleId: // value for 'tleId'
+ *      elevationThreshold: // value for 'elevationThreshold'
  *      gnssLatitude: // value for 'gnssLatitude'
  *      gnssLongitude: // value for 'gnssLongitude'
  *      gnssElevation: // value for 'gnssElevation'

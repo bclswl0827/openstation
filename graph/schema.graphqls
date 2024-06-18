@@ -118,6 +118,7 @@ type Mutation {
     # Task queue
     addNewTask(
         tleId: Int64!
+        elevationThreshold: Float!
         gnssLatitude: Float!
         gnssLongitude: Float!
         gnssElevation: Float!
