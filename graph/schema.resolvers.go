@@ -30,6 +30,10 @@ import (
 func (r *mutationResolver) SetPanTilt(ctx context.Context, newPan float64, newTilt float64) (bool, error) {
 	// Apply new pan and tilt angles
 	err := r.Dependency.Invoke(func(deps *pan_tilt.PanTiltDependency) error {
+		if deps.IsBusy {
+			return errors.New("cannot set pan and tilt values while Pan-Tilt is busy")
+		}
+
 		driver := pan_tilt.PanTiltDriver(&pan_tilt.PanTiltDriverImpl{})
 		err := driver.SetPan(deps, newPan)
 		if err != nil {
@@ -746,7 +750,7 @@ func (r *queryResolver) GetForecastByID(ctx context.Context, tleID int64, elevat
 		return nil, err
 	}
 	var satelliteObj tle.Satellite
-	forecastArr, err := satelliteObj.Predict(&satelliteTle, &tle.Observer{
+	forecastArr, err := satelliteObj.Forecast(&satelliteTle, &tle.Observer{
 		Latitude:  gnssLatitude,
 		Longitude: gnssLongitude,
 		Elevation: gnssElevation,
@@ -767,6 +771,7 @@ func (r *queryResolver) GetForecastByID(ctx context.Context, tleID int64, elevat
 			ExitAzimuth:   d.ExitAzimuth,
 			StartTime:     d.StartTime.UnixMilli(),
 			EndTime:       d.EndTime.UnixMilli(),
+			IsAscending:   d.IsAscending,
 		})
 	}
 

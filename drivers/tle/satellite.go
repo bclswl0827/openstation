@@ -110,15 +110,16 @@ func (s *Satellite) Parse(tle *TLE, observer *Observer, observeTime time.Time, e
 	return nil
 }
 
-// Predict calculates the transits of a satellite over an observer between startTime and endTime.
-func (s *Satellite) Predict(tle *TLE, observer *Observer, startTime, endTime time.Time, step time.Duration, elevationThreshold float64) ([]Transit, error) {
+// Forecast calculates the transits of a satellite over an observer between startTime and endTime.
+func (s *Satellite) Forecast(tle *TLE, observer *Observer, startTime, endTime time.Time, step time.Duration, elevationThreshold float64) ([]Transit, error) {
 	if elevationThreshold < 0 || elevationThreshold > 90 {
 		return nil, errors.New("invalid elevation threshold")
 	}
 
 	var (
-		transits       []Transit
-		currentTransit *Transit
+		transits         []Transit
+		currentTransit   *Transit
+		previousLatitude float64
 	)
 	for t := startTime; t.Before(endTime); t = t.Add(step) {
 		var sat Satellite
@@ -142,6 +143,13 @@ func (s *Satellite) Predict(tle *TLE, observer *Observer, startTime, endTime tim
 					currentTransit.MaxElevation = sat.Elevation
 				}
 			}
+			// Check if the satellite is ascending or descending
+			if sat.Latitude > previousLatitude {
+				currentTransit.IsAscending = true
+			} else {
+				currentTransit.IsAscending = false
+			}
+			previousLatitude = sat.Latitude
 		} else if currentTransit != nil {
 			// End of current transit
 			currentTransit.EndTime = t

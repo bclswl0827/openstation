@@ -18,6 +18,7 @@ type Forecast struct {
 	ExitAzimuth   float64 `json:"exitAzimuth"`
 	StartTime     int64   `json:"startTime"`
 	EndTime       int64   `json:"endTime"`
+	IsAscending   bool    `json:"isAscending"`
 }
 
 type Gnss struct {

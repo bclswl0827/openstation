@@ -83,6 +83,7 @@ type ComplexityRoot struct {
 		GnssElevation func(childComplexity int) int
 		GnssLatitude  func(childComplexity int) int
 		GnssLongitude func(childComplexity int) int
+		IsAscending   func(childComplexity int) int
 		MaxElevation  func(childComplexity int) int
 		StartTime     func(childComplexity int) int
 	}
@@ -461,6 +462,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Forecast.GnssLongitude(childComplexity), true
+
+	case "forecast.isAscending":
+		if e.complexity.Forecast.IsAscending == nil {
+			break
+		}
+
+		return e.complexity.Forecast.IsAscending(childComplexity), true
 
 	case "forecast.maxElevation":
 		if e.complexity.Forecast.MaxElevation == nil {
@@ -2338,6 +2346,8 @@ func (ec *executionContext) fieldContext_Query_getForecastById(ctx context.Conte
 				return ec.fieldContext_forecast_startTime(ctx, field)
 			case "endTime":
 				return ec.fieldContext_forecast_endTime(ctx, field)
+			case "isAscending":
+				return ec.fieldContext_forecast_isAscending(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type forecast", field.Name)
 		},
@@ -4824,6 +4834,50 @@ func (ec *executionContext) fieldContext_forecast_endTime(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _forecast_isAscending(ctx context.Context, field graphql.CollectedField, obj *model.Forecast) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_forecast_isAscending(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsAscending, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_forecast_isAscending(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "forecast",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7545,6 +7599,11 @@ func (ec *executionContext) _forecast(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "endTime":
 			out.Values[i] = ec._forecast_endTime(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isAscending":
+			out.Values[i] = ec._forecast_isAscending(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

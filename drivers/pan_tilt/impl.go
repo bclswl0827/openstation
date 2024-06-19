@@ -236,15 +236,6 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64) erro
 		newPan = 0
 	}
 
-	// Check if pan tilt is currently busy
-	if deps.IsBusy {
-		return errors.New("failed to set pan due because Pan-Tilt is currently busy")
-	}
-
-	// Set busy flag
-	deps.IsBusy = true
-	defer func() { deps.IsBusy = false }()
-
 	// Calculate encoded pan with north offset
 	newPanWithOffset := newPan
 	if deps.NorthOffset != 0 {
@@ -281,15 +272,6 @@ func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64) er
 	if newTilt < MIN_TILT || newTilt > MAX_TILT {
 		return fmt.Errorf("tilt angle must be between %d and %d degrees", MIN_TILT, MAX_TILT)
 	}
-
-	// Check if pan tilt is currently busy
-	if deps.IsBusy {
-		return errors.New("failed to set tilt due because Pan-Tilt is currently busy")
-	}
-
-	// Set busy flag
-	deps.IsBusy = true
-	defer func() { deps.IsBusy = false }()
 
 	// Encode tilt angle
 	encodedTilt := int(newTilt * 100)
