@@ -21,6 +21,7 @@ type Transit struct {
 	MaxElevation float64
 	EntryAzimuth float64
 	ExitAzimuth  float64
+	IsAscending  bool
 }
 
 type Bootstrap struct {

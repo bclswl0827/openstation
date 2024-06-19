@@ -53,7 +53,6 @@ interface ExtendedTimeline extends Timeline {
 }
 (Timeline.prototype as ExtendedTimeline).makeLabel = (time: JulianDate) =>
 	getTimeString(JulianDate.toDate(time).getTime());
-// Cartesian3.normalize(new Cartesian3(0.0, 0.0, 0.0), new Cartesian3());
 
 const Satellites = () => {
 	// Get locale for Table component
@@ -335,7 +334,19 @@ const Satellites = () => {
 					options: results.map((item) => [
 						`${getTimeString(item!.startTime)} 过境事件`,
 						JSON.stringify(item),
-						`入境时间 ${getTimeString(item!.startTime)}\n出境时间 ${getTimeString(item!.endTime)}\n入境方位 ${item!.entryAzimuth.toFixed(2)}\n出境方位 ${item!.exitAzimuth.toFixed(2)}\n最大仰角 ${item!.maxElevation.toFixed(2)}\n观测坐标 ${item!.gnssLatitude.toFixed(5)}, ${item!.gnssLongitude.toFixed(5)}\n观测高程 ${item!.gnssElevation.toFixed(2)}\n仰角门限 ${elevationThreshold}°`
+						`入境时间 ${getTimeString(item!.startTime)}\n出境时间 ${getTimeString(
+							item!.endTime
+						)}\n入境方位 ${item!.entryAzimuth.toFixed(
+							2
+						)}\n出境方位 ${item!.exitAzimuth.toFixed(
+							2
+						)}\n最大仰角 ${item!.maxElevation.toFixed(2)}\n升降类型 ${
+							item!.isAscending ? "升轨" : "降轨"
+						}\n观测坐标 ${item!.gnssLatitude.toFixed(5)}, ${item!.gnssLongitude.toFixed(
+							5
+						)}\n观测高程 ${item!.gnssElevation.toFixed(
+							2
+						)}\n仰角门限 ${elevationThreshold}°`
 					])
 				});
 			} else {

@@ -128,7 +128,10 @@ const Home = () => {
 				...prev,
 				satellites: { ...prev.satellites, value: getStation.satellites },
 				gnssSatellites: { ...prev.gnssSatellites, value: getGnss.satellites },
-				trueAzimuth: { ...prev.trueAzimuth, value: getGnss.trueAzimuth },
+				trueAzimuth: {
+					...prev.trueAzimuth,
+					value: Math.floor(getGnss.trueAzimuth * 100) / 100
+				},
 				clockOffset: { ...prev.clockOffset, value: getStation.clockOffset },
 				totalTasks: { ...prev.totalTasks, value: getStation.totalTasks },
 				pendingTasks: { ...prev.pendingTasks, value: getStation.pendingTasks }

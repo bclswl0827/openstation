@@ -56,7 +56,7 @@ const Control = () => {
 			icon: mdiNavigation,
 			value: "0 °",
 			title: "真北方位角",
-			description: "GNSS 解算"
+			description: "透过 GNSS 解算"
 		},
 		panTiltPan: {
 			icon: mdiBackupRestore,
@@ -95,7 +95,7 @@ const Control = () => {
 				},
 				panTiltTilt: {
 					...prev.panTiltTilt,
-					value: `${getPanTilt.currentTilt.toFixed(2)} °`
+					value: `${(90 - getPanTilt.currentTilt).toFixed(2)} °`
 				},
 				panTiltBusy: {
 					...prev.panTiltBusy,

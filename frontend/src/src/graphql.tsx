@@ -134,6 +134,7 @@ export type Forecast = {
   gnssElevation: Scalars['Float']['output'];
   gnssLatitude: Scalars['Float']['output'];
   gnssLongitude: Scalars['Float']['output'];
+  isAscending: Scalars['Boolean']['output'];
   maxElevation: Scalars['Float']['output'];
   startTime: Scalars['Int64']['output'];
 };
@@ -301,7 +302,7 @@ export type GetForecastByIdQueryVariables = Exact<{
 }>;
 
 
-export type GetForecastByIdQuery = { __typename?: 'Query', getForecastById: Array<{ __typename?: 'forecast', duration: number, startTime: number, endTime: number, entryAzimuth: number, exitAzimuth: number, maxElevation: number, gnssLatitude: number, gnssLongitude: number, gnssElevation: number } | null> };
+export type GetForecastByIdQuery = { __typename?: 'Query', getForecastById: Array<{ __typename?: 'forecast', duration: number, startTime: number, endTime: number, entryAzimuth: number, exitAzimuth: number, maxElevation: number, gnssLatitude: number, gnssLongitude: number, gnssElevation: number, isAscending: boolean } | null> };
 
 export type GetObservationByIdQueryVariables = Exact<{
   tleId: Scalars['Int64']['input'];
@@ -863,6 +864,7 @@ export const GetForecastByIdDocument = gql`
     gnssLatitude
     gnssLongitude
     gnssElevation
+    isAscending
   }
 }
     `;

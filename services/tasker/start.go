@@ -55,12 +55,12 @@ func (s *TaskerService) Start(options *services.Options) {
 			continue
 		}
 		if taskRecord.ID == 0 {
-			logger.GetLogger(s.GetTaskName()).Infof("no upcoming task found")
 			continue
 		}
 
 		timeDiff := taskRecord.StartTime - currentTime.UnixMilli()
 		if timeDiff <= 3*60*1000 {
+			panTiltDeps.IsBusy = true
 			logger.GetLogger(s.GetTaskName()).Infof("starting to handle upcoming task: %s, id: %d", taskRecord.Name, taskRecord.ID)
 
 			// Get task bootstrap data
@@ -163,6 +163,9 @@ func (s *TaskerService) Start(options *services.Options) {
 			// Set Pan-Tilt to zero position
 			panTiltDriver.SetPan(panTiltDeps, 0)
 			panTiltDriver.SetTilt(panTiltDeps, 0)
+
+			// Reset Pan-Tilt busy state
+			panTiltDeps.IsBusy = false
 			logger.GetLogger(s.GetTaskName()).Infof("task %s has been completed, id: %d", taskRecord.Name, taskRecord.ID)
 		} else {
 			if (timeDiff/1000)%10 == 0 {
