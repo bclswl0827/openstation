@@ -35,6 +35,10 @@ func (r *GnssDriverImpl) parseRMC(isDataValid *bool, latitude, longitude *float6
 
 	// Get GNSS datetime as reference time
 	timeStr, dateStr := fields[1], fields[9]
+	if len(timeStr) < 6 || len(dateStr) < 6 {
+		return errors.New("got invalid RMC message")
+	}
+
 	day, err := strconv.Atoi(dateStr[0:2])
 	if err != nil {
 		return err
