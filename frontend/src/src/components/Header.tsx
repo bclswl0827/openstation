@@ -148,8 +148,8 @@ export const Header = ({ repository, routes, asideMenu, locales }: Props) => {
 					label
 				}))}
                 defaultValue={locale}
-				cancelText={t("common.close")}
-				submitText={t("common.submit")}
+				cancelText={t("common.dialog.cancel")}
+				submitText={t("common.dialog.submit")}
 			/>
 		</div>
 	);

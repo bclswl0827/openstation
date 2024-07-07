@@ -10,6 +10,7 @@ import {
 import Icon from "@mdi/react";
 import { HighchartsReactRefObject } from "highcharts-react-official";
 import { RefObject, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Chart, ChartProps } from "../../components/Chart";
 import { Error } from "../../components/Error";
@@ -20,6 +21,8 @@ import { useGetData4HomeQuery } from "../../graphql";
 const RETENTION_THRESHOLD_MS = 1000 * 60 * 5;
 
 const Home = () => {
+	const { t } = useTranslation();
+
 	const getBadageColor = (index: number) => {
 		const colors = [
 			"bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
@@ -59,15 +62,40 @@ const Home = () => {
 	const [cards, setCards] = useState({
 		satellites: {
 			value: 0,
-			title: "Available Satellites",
+			title: t("views.home.cards.available_satellites.title"),
 			icon: mdiSatelliteVariant,
 			unit: ""
 		},
-		gnssSatellites: { value: 0, title: "GNSS Satellites", icon: mdiCrosshairsGps, unit: "" },
-		trueAzimuth: { value: 0, title: "Current Azimuth", icon: mdiCompass, unit: "°" },
-		pendingTasks: { value: 0, title: "Pending Tasks", icon: mdiReceiptClock, unit: "" },
-		totalTasks: { value: 0, title: "Total Tasks", icon: mdiArchive, unit: "" },
-		clockOffset: { value: 0, title: "Clock Offset", icon: mdiClockFast, unit: "s" }
+		gnssSatellites: {
+			value: 0,
+			title: t("views.home.cards.gnss_satellites.title"),
+			icon: mdiCrosshairsGps,
+			unit: ""
+		},
+		trueAzimuth: {
+			value: 0,
+			title: t("views.home.cards.current_azimuth.title"),
+			icon: mdiCompass,
+			unit: "°"
+		},
+		pendingTasks: {
+			value: 0,
+			title: t("views.home.cards.pending_tasks.title"),
+			icon: mdiReceiptClock,
+			unit: ""
+		},
+		totalTasks: {
+			value: 0,
+			title: t("views.home.cards.total_tasks.title"),
+			icon: mdiArchive,
+			unit: ""
+		},
+		clockOffset: {
+			value: 0,
+			title: t("views.home.cards.clock_offset.title"),
+			icon: mdiClockFast,
+			unit: "s"
+		}
 	});
 	const [chartsState, setChartsState] = useState<
 		Record<
@@ -82,8 +110,8 @@ const Home = () => {
 		>
 	>({
 		cpuUsage: {
-			title: "CPU Usage",
-			content: "当前 0 %",
+			title: t("views.home.charts.cpu_usage.title"),
+			content: t("views.home.charts.cpu_usage.content", { value: "0" }),
 			chart: {
 				height: 250,
 				lineWidth: 5,
@@ -93,8 +121,8 @@ const Home = () => {
 			}
 		},
 		memUsage: {
-			title: "Memory Usage",
-			content: "当前 0 %",
+			title: t("views.home.charts.mem_usage.title"),
+			content: t("views.home.charts.mem_usage.content", { value: "0" }),
 			chart: {
 				height: 250,
 				lineWidth: 5,
@@ -163,8 +191,18 @@ const Home = () => {
 				}
 				return {
 					...prev,
-					cpuUsage: { ...prev.cpuUsage, content: `当前 ${cpuUsage.toFixed(2)} %` },
-					memUsage: { ...prev.memUsage, content: `当前 ${memUsage.toFixed(2)} %` }
+					cpuUsage: {
+						...prev.cpuUsage,
+						content: t("views.home.charts.cpu_usage.content", {
+							value: cpuUsage.toFixed(2)
+						})
+					},
+					memUsage: {
+						...prev.memUsage,
+						content: t("views.home.charts.mem_usage.content", {
+							value: memUsage.toFixed(2)
+						})
+					}
 				};
 			});
 			setMapState((prev) => ({
@@ -173,7 +211,7 @@ const Home = () => {
 				marker: [getGnss.latitude, getGnss.longitude]
 			}));
 		}
-	}, [data, error, loading]);
+	}, [t, data, error, loading]);
 
 	return !error ? (
 		<div className="animate-fade p-8 min-h-screen">
@@ -226,7 +264,11 @@ const Home = () => {
 			<div className="p-4">
 				<Holder
 					label={`${stationInfo?.location}`}
-					content={`Latitude: ${stationInfo?.coordinates[0].toFixed(5)}\nLongitude: ${stationInfo?.coordinates[1].toFixed(5)}\nElevation: ${stationInfo?.elevation.toFixed(2)} m`}
+					content={t("views.home.map.content", {
+						latitude: stationInfo?.coordinates[0].toFixed(5),
+						longitude: stationInfo?.coordinates[1].toFixed(5),
+						elevation: stationInfo?.elevation.toFixed(2)
+					})}
 				>
 					<MapBox className="h-[300px] md:h-[400px]" {...mapState} />
 				</Holder>
