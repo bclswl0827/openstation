@@ -16,6 +16,7 @@ import {
 } from "cesium";
 import { Field, Form, Formik } from "formik";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CesiumComponentRef, Viewer } from "resium";
 
 import { DialogForm, DialogFormProps } from "../../components/DialogForm";
@@ -55,6 +56,8 @@ interface ExtendedTimeline extends Timeline {
 	getTimeString(JulianDate.toDate(time).getTime());
 
 const Satellites = () => {
+	const { t } = useTranslation();
+
 	// Get locale for Table component
 	const { locale } = useLocaleStore();
 
@@ -137,8 +140,8 @@ const Satellites = () => {
 	};
 	const [dialogFormState, setDialogFormState] = useState<DialogFormProps>({
 		open: false,
-		cancelText: "取消",
-		submitText: "确定",
+		cancelText: t("common.dialog.cancel"),
+		submitText: t("common.dialog.submit"),
 		onClose: handleDialogFormClose
 	});
 
@@ -155,20 +158,23 @@ const Satellites = () => {
 	const [importTlEsMutation] = useImportTlEsMutation();
 	const handleImportTLEs = (file: File) => {
 		if (file.size > 1024 * 1024 * 5) {
-			sendUserAlert("文件过大，请确保文件小于 5 MB", true);
+			sendUserAlert(t("views.satellites.actions.import.size_exceed", { value: 5 }), true);
 			return;
 		}
 		const handleConfirm = async (tleData: string) => {
 			const result = (
 				await sendPromiseAlert(
 					importTlEsMutation({ variables: { tleData } }),
-					"数据导入中",
-					"导入完成",
-					"导入失败",
+					t("views.satellites.actions.import.loading"),
+					t("views.satellites.actions.import.success"),
+					t("views.satellites.actions.import.failure"),
 					true
 				)
 			)?.data?.importTLEs;
-			sendUserAlert(`导入结束，${result ?? 0} 条记录导入失败`);
+			sendUserAlert(
+				t("views.satellites.actions.import.result", { value: result ?? 0 }),
+				false
+			);
 			// If the search keyword is not empty, refresh the search result
 			if (satelliteSearchState.keyword.length) {
 				await handleSearchSatellite(satelliteSearchState.keyword);
@@ -178,15 +184,16 @@ const Satellites = () => {
 		reader.readAsText(file, "UTF-8");
 		reader.onload = ({ target }) => {
 			if ((target!.result as string).includes("\0")) {
-				sendUserAlert("文件格式错误，请确保文件为纯文本文件", true);
+				sendUserAlert(t("views.satellites.actions.import.invalid_file"), true);
 				return;
 			}
-			sendUserConfirm("导入 TLE 数据会覆盖现有数据，是否继续？", {
-				title: "确认操作",
-				cancelText: "取消",
-				confirmText: "继续",
+			sendUserConfirm(t("views.satellites.actions.import.confirm.content"), {
+				title: t("views.satellites.actions.import.confirm.title"),
+				cancelText: t("common.confirm.cancel"),
+				confirmText: t("common.confirm.confirm"),
 				onConfirmed: () => handleConfirm(target!.result as string),
-				onCancelled: () => sendUserAlert("导入操作已取消", true)
+				onCancelled: () =>
+					sendUserAlert(t("views.satellites.actions.import.confirm.cancel"), true)
 			});
 		};
 	};
@@ -198,20 +205,19 @@ const Satellites = () => {
 			handleDialogFormClose();
 			await sendPromiseAlert(
 				addNewTleMutation({ variables: { tleData } }),
-				"新增记录中",
-				"添加成功",
-				"添加失败",
+				t("views.satellites.actions.add_new.loading"),
+				t("views.satellites.actions.add_new.success"),
+				t("views.satellites.actions.add_new.failure"),
 				true
 			);
 		};
 		setDialogFormState({
 			...dialogFormState,
 			open: true,
-			title: "新增 TLE",
+			title: t("views.satellites.actions.add_new.dialog.title"),
 			inputType: "textarea",
-			placeholder: "输入一组 TLE 数据",
-			content:
-				"输入一组 TLE 数据，包含卫星名字、TLE 第一行、TLE 第二行，每行之间使用换行分隔",
+			placeholder: t("views.satellites.actions.add_new.dialog.placeholder"),
+			content: t("views.satellites.actions.add_new.dialog.content"),
 			onSubmit: handleSubmit
 		});
 	};
@@ -227,12 +233,12 @@ const Satellites = () => {
 			)
 		);
 	};
-	const handlePreviewTrack = () => {
+	const handleSimulateTrack = () => {
 		if (selectedSatellites.length > 10) {
-			sendUserAlert("最多选择 10 个卫星进行预览", true);
+			sendUserAlert(t("views.satellites.actions.simulate.items_exceed", { value: 10 }), true);
 			return;
 		} else if (!selectedSatellites.length) {
-			sendUserAlert("请选择至少一个卫星预览轨道", true);
+			sendUserAlert(t("views.satellites.actions.simulate.empty"), true);
 			return;
 		}
 		const { cesiumElement: viewer } = cesiumViewerRef.current!;
@@ -253,7 +259,10 @@ const Satellites = () => {
 			viewer!.entities.add(cesiumEntity);
 		});
 		viewer!.clock.shouldAnimate = true;
-		sendUserAlert(`成功为 ${selectedSatellites.length} 个卫星生成了轨道预览`, false);
+		sendUserAlert(
+			t("views.satellites.actions.simulate.success", { value: selectedSatellites.length }),
+			false
+		);
 	};
 
 	// States & handlers for satellite search box
@@ -267,17 +276,20 @@ const Satellites = () => {
 		const result = (
 			await sendPromiseAlert(
 				getTlEsByKeyword({ variables: { keyword } }),
-				"搜索中",
-				"搜索完成",
-				"搜索失败",
+				t("views.satellites.actions.search.loading"),
+				t("views.satellites.actions.search.success"),
+				t("views.satellites.actions.search.failure"),
 				true
 			)
 		)?.data?.getTLEsByKeyword;
 		if (result?.length) {
 			setSatelliteSearchState({ keyword, result });
-			sendUserAlert(`找到 ${result.length} 个卫星`, false);
+			sendUserAlert(
+				t("views.satellites.actions.search.result", { value: result.length }),
+				false
+			);
 		} else {
-			sendUserAlert("未找到相关卫星", true);
+			sendUserAlert(t("views.satellites.actions.search.empty"), true);
 		}
 	};
 
@@ -287,8 +299,8 @@ const Satellites = () => {
 	const handleGetForecast = (tleId: number, name: string) => {
 		const handleElevationSubmit = async (elevationThreshold: number) => {
 			handleDialogFormClose();
-			if (elevationThreshold < 5 || elevationThreshold > 90) {
-				sendUserAlert("仰角门限应在 5 到 90 度之间", true);
+			if (elevationThreshold < 0 || elevationThreshold > 90) {
+				sendUserAlert(t("views.satellites.actions.set_tracking.invalid_threshold"), true);
 				return;
 			}
 			const results = (
@@ -302,15 +314,14 @@ const Satellites = () => {
 							gnssElevation: data!.getGnss.elevation
 						}
 					}),
-					"正在生成卫星过境预测数据",
-					"预测完成",
-					"预测出错",
+					t("views.satellites.actions.set_tracking.forecast_loading"),
+					t("views.satellites.actions.set_tracking.forecast_success"),
+					t("views.satellites.actions.set_tracking.forecast_failed"),
 					true
 				)
 			)?.data?.getForecastById;
 			// Open list form if results are more than 0
 			if (results?.length) {
-				sendUserAlert(`查询到 ${results.length} 个 过境事件`, false);
 				const handleTransitSelect = async (value: string) => {
 					handleListFormClose();
 					const valueObj = (JSON.parse(
@@ -320,9 +331,9 @@ const Satellites = () => {
 						addNewTaskMutation({
 							variables: { tleId, elevationThreshold, ...valueObj }
 						}),
-						"正在添加任务",
-						"任务添加成功",
-						"任务添加失败",
+						t("views.satellites.actions.set_tracking.loading"),
+						t("views.satellites.actions.set_tracking.success"),
+						t("views.satellites.actions.set_tracking.failure"),
 						true
 					);
 				};
@@ -330,37 +341,40 @@ const Satellites = () => {
 					...listFormState,
 					open: true,
 					onSelect: handleTransitSelect,
-					title: `${name} 未来 24 小时过境事件`,
+					title: t("views.satellites.actions.set_tracking.forecast_list.title", { name }),
 					options: results.map((item) => [
-						`${getTimeString(item!.startTime)} 过境事件`,
+						t("views.satellites.actions.set_tracking.forecast_list.template.title", {
+							value: getTimeString(item!.startTime)
+						}),
 						JSON.stringify(item),
-						`入境时间 ${getTimeString(item!.startTime)}\n出境时间 ${getTimeString(
-							item!.endTime
-						)}\n入境方位 ${item!.entryAzimuth.toFixed(
-							2
-						)}\n出境方位 ${item!.exitAzimuth.toFixed(
-							2
-						)}\n最大仰角 ${item!.maxElevation.toFixed(2)}\n升降类型 ${
-							item!.isAscending ? "升轨" : "降轨"
-						}\n观测坐标 ${item!.gnssLatitude.toFixed(5)}, ${item!.gnssLongitude.toFixed(
-							5
-						)}\n观测高程 ${item!.gnssElevation.toFixed(
-							2
-						)}\n仰角门限 ${elevationThreshold}°`
+						t("views.satellites.actions.set_tracking.forecast_list.template.content", {
+							startTime: getTimeString(item!.startTime),
+							endTime: getTimeString(item!.endTime),
+							entryAzimuth: item!.entryAzimuth.toFixed(2),
+							exitAzimuth: item!.exitAzimuth.toFixed(2),
+							maxElevation: item!.maxElevation.toFixed(2),
+							isAscending: item!.isAscending
+								? t("common.statement.ascending")
+								: t("common.statement.descending"),
+							gnssLatitude: item!.gnssLatitude.toFixed(5),
+							gnssLongitude: item!.gnssLongitude.toFixed(5),
+							gnssElevation: item!.gnssElevation.toFixed(2),
+							elevationThreshold
+						})
 					])
 				});
 			} else {
-				sendUserAlert("未来 24 小时没有过境事件", true);
+				sendUserAlert(t("views.satellites.actions.set_tracking.forecast_empty"), true);
 			}
 		};
 		setDialogFormState({
 			...dialogFormState,
 			open: true,
-			title: `${name} 过境预测`,
+			title: t("views.satellites.actions.set_tracking.dialog.title", { name }),
 			inputType: "number",
-			defaultValue: "5",
-			placeholder: "输入入境仰角门限",
-			content: "输入入境仰角门限，单位为度",
+			defaultValue: "3",
+			placeholder: t("views.satellites.actions.set_tracking.dialog.placeholder"),
+			content: t("views.satellites.actions.set_tracking.dialog.content", { name }),
 			onSubmit: (elevationThreshold: string) =>
 				handleElevationSubmit(Number(elevationThreshold))
 		});
@@ -381,14 +395,17 @@ const Satellites = () => {
 						gnssElevation: data!.getGnss.elevation
 					}
 				}),
-				"正在取得观测数据",
-				"观测数据取得完成",
-				"观测数据取得失败",
+				t("views.satellites.actions.set_pan_tilt.observation_loading"),
+				t("views.satellites.actions.set_pan_tilt.observation_success"),
+				t("views.satellites.actions.set_pan_tilt.observation_failed"),
 				true
 			)
 		)?.data?.getObservationById;
 		if (!result?.observable) {
-			sendUserAlert(`${name} 在此位置无法跟踪`, true);
+			sendUserAlert(
+				t("views.satellites.actions.set_pan_tilt.not_observable", { value: name }),
+				true
+			);
 			return;
 		}
 		const handleConfirm = async () => {
@@ -396,20 +413,25 @@ const Satellites = () => {
 				setPanTiltMutation({
 					variables: { newPan: result.azimuth, newTilt: 90 - result.elevation }
 				}),
-				"正在对准卫星",
-				"指令发送成功",
-				"指令发送失败",
+				t("views.satellites.actions.set_pan_tilt.loading"),
+				t("views.satellites.actions.set_pan_tilt.success"),
+				t("views.satellites.actions.set_pan_tilt.failure"),
 				true
 			);
 		};
 		sendUserConfirm(
-			`转台即将对准 ${name}，方位角 ${result.azimuth.toFixed(2)}，仰角 ${result.elevation.toFixed(2)}，是否继续？`,
+			t("views.satellites.actions.set_pan_tilt.confirm.content", {
+				name,
+				azimuth: result.azimuth.toFixed(2),
+				elevation: result.elevation.toFixed(2)
+			}),
 			{
-				title: "确认操作",
-				confirmText: "确定",
-				cancelText: "取消",
+				title: t("views.satellites.actions.set_pan_tilt.confirm.title"),
+				cancelText: t("common.confirm.cancel"),
+				confirmText: t("common.confirm.confirm"),
 				onConfirmed: handleConfirm,
-				onCancelled: () => sendUserAlert("删除操作已取消", true)
+				onCancelled: () =>
+					sendUserAlert(t("views.satellites.actions.set_pan_tilt.confirm.cancel"), true)
 			}
 		);
 	};
@@ -417,7 +439,7 @@ const Satellites = () => {
 	// Handler for copying TLE data
 	const handleCopyTLE = async (tleData: string) => {
 		await setClipboardText(tleData);
-		sendUserAlert("TLE 数据已复制到剪贴板", false);
+		sendUserAlert(t("views.satellites.actions.copy_tle.success"), false);
 	};
 
 	// Handler for updating TLE record
@@ -428,9 +450,9 @@ const Satellites = () => {
 			const result = (
 				await sendPromiseAlert(
 					updateTleById({ variables: { tleData, tleId } }),
-					"更新记录中",
-					"更新成功",
-					"更新失败",
+					t("views.satellites.actions.update_tle.loading"),
+					t("views.satellites.actions.update_tle.success"),
+					t("views.satellites.actions.update_tle.failure"),
 					true
 				)
 			)?.data?.updateTLEById;
@@ -442,10 +464,10 @@ const Satellites = () => {
 		setDialogFormState({
 			...dialogFormState,
 			open: true,
-			title: "更新 TLE",
+			title: t("views.satellites.actions.update_tle.dialog.title"),
 			inputType: "textarea",
-			placeholder: "输入新的 TLE 数据",
-			content: `正在更新 ${name} 的 TLE 数据，请输入新的 TLE 数据`,
+			placeholder: t("views.satellites.actions.update_tle.dialog.placeholder"),
+			content: t("views.satellites.actions.update_tle.dialog.content", { name }),
 			onSubmit: handleSubmit
 		});
 	};
@@ -456,9 +478,9 @@ const Satellites = () => {
 		const handleConfirm = async () => {
 			await sendPromiseAlert(
 				deleteTleById({ variables: { tleId } }),
-				"删除记录中",
-				"删除成功",
-				"删除失败",
+				t("views.satellites.actions.delete_tle.loading"),
+				t("views.satellites.actions.delete_tle.success"),
+				t("views.satellites.actions.delete_tle.failure"),
 				true
 			);
 			setSatelliteSearchState((prev) => ({
@@ -466,12 +488,13 @@ const Satellites = () => {
 				result: prev.result.filter((val) => val!.id !== tleId)
 			}));
 		};
-		sendUserConfirm("是否删除该条 TLE 记录？", {
-			title: "确认操作",
-			confirmText: "删除",
-			cancelText: "取消",
+		sendUserConfirm(t("views.satellites.actions.delete_tle.confirm.content"), {
+			title: t("views.satellites.actions.delete_tle.confirm.title"),
+			confirmText: t("common.confirm.confirm"),
+			cancelText: t("common.confirm.cancel"),
 			onConfirmed: handleConfirm,
-			onCancelled: () => sendUserAlert("删除操作已取消", true)
+			onCancelled: () =>
+				sendUserAlert(t("views.satellites.actions.delete_tle.confirm.cancel"), true)
 		});
 	};
 
@@ -483,19 +506,19 @@ const Satellites = () => {
 						className="px-3 py-2 rounded-lg font-medium text-white transition-all bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800"
 						onFileSelected={handleImportTLEs}
 					>
-						导入 TLE
+						{t("views.satellites.list.buttons.import")}
 					</FileInputButton>
 					<button
 						className="px-3 py-2 rounded-lg font-medium text-white transition-all bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800"
 						onClick={handleAddNewTLE}
 					>
-						新增 TLE
+						{t("views.satellites.list.buttons.add_new")}
 					</button>
 					<button
 						className="px-3 py-2 rounded-lg font-medium text-white transition-all bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800"
-						onClick={handlePreviewTrack}
+						onClick={handleSimulateTrack}
 					>
-						预览轨道
+						{t("views.satellites.list.buttons.simulate")}
 					</button>
 				</div>
 
@@ -512,7 +535,7 @@ const Satellites = () => {
 								type="search"
 								name="keyword"
 								className="ps-3 w-full min-w-32 md:w-64 py-2 text-sm text-gray-900 border focus:outline-none border-gray-300 rounded-lg bg-gray-50 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-blue-500"
-								placeholder="Input satellite name or ID"
+								placeholder={t("views.satellites.actions.search.placeholder")}
 								required
 							/>
 							<button
@@ -527,54 +550,53 @@ const Satellites = () => {
 				</Formik>
 			</div>
 
-			<p className="mt-6 font-medium text-gray-400">
-				请输入卫星关键字或 ID 以查询，卫星数据将显示于表格
-			</p>
+			<p className="mt-6 font-medium text-gray-400">{t("views.satellites.list.prompt")}</p>
 
 			<TableList
 				locale={locale}
 				columns={[
 					{
 						field: "id",
-						headerName: "NORAD ID",
+						headerName: t("views.satellites.list.labels.satellite_id"),
 						hideable: false,
 						minWidth: 150
 					},
 					{
 						field: "name",
-						headerName: "卫星名称",
+						headerName: t("views.satellites.list.labels.satellite_name"),
 						hideable: false,
 						minWidth: 150
 					},
 					{
 						field: "epochTime",
-						headerName: "星历时间",
+						headerName: t("views.satellites.list.labels.epoch_time"),
 						minWidth: 160,
 						renderCell: ({ value }) => getTimeString(value)
 					},
 					{
 						field: "createdAt",
-						headerName: "创建时间",
+						headerName: t("views.satellites.list.labels.created_at"),
 						minWidth: 160,
 						renderCell: ({ value }) => getTimeString(value)
 					},
 					{
 						field: "updatedAt",
-						headerName: "更新时间",
+						headerName: t("views.satellites.list.labels.updated_at"),
 						minWidth: 160,
 						renderCell: ({ value }) => getTimeString(value)
 					},
 					{
 						field: "geostationary",
-						headerName: "同步卫星",
+						headerName: t("views.satellites.list.labels.geostationary"),
 						resizable: false,
 						minWidth: 130,
-						renderCell: ({ value }) => (value ? "是" : "否"),
+						renderCell: ({ value }) =>
+							value ? t("common.statement.yes") : t("common.statement.no"),
 						sortComparator: (v1, v2) => (v1 === v2 ? 0 : v1 ? -1 : 1)
 					},
 					{
 						field: "actions",
-						headerName: "操作",
+						headerName: t("views.satellites.list.labels.actions"),
 						sortable: false,
 						hideable: false,
 						resizable: false,
@@ -591,7 +613,9 @@ const Satellites = () => {
 										}
 									}}
 								>
-									{row.geostationary ? "设定转台" : "添加排程"}
+									{row.geostationary
+										? t("views.satellites.list.buttons.set_pan_tilt")
+										: t("views.satellites.list.buttons.set_tracking")}
 								</button>
 								<button
 									className="text-blue-700 dark:text-blue-400 hover:opacity-50"
@@ -599,7 +623,7 @@ const Satellites = () => {
 										handleCopyTLE(`${row.line_1}\n${row.line_2}`);
 									}}
 								>
-									复制 TLE
+									{t("views.satellites.list.buttons.copy_tle")}
 								</button>
 								<button
 									className="text-blue-700 dark:text-blue-400 hover:opacity-50"
@@ -607,7 +631,7 @@ const Satellites = () => {
 										handleUpdateTLE(row.id, row.name);
 									}}
 								>
-									更新 TLE
+									{t("views.satellites.list.buttons.update_tle")}
 								</button>
 								<button
 									className="text-red-700 dark:text-red-400 hover:opacity-50"
@@ -615,7 +639,7 @@ const Satellites = () => {
 										handleDeleteTLE(row.id);
 									}}
 								>
-									移除 TLE
+									{t("views.satellites.list.buttons.delete_tle")}
 								</button>
 							</div>
 						)
@@ -634,7 +658,7 @@ const Satellites = () => {
 				onSelect={handleSelectSatellites}
 			/>
 
-			<Panel heading="轨道预览">
+			<Panel heading={t("views.satellites.panels.simulate")}>
 				<Viewer
 					sceneModePicker={false}
 					className="h-[calc(100vh-250px)]"

@@ -1,5 +1,6 @@
 import { Table, TableBody, TableCell, TableContainer, TableRow } from "@mui/material";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Error } from "../../components/Error";
 import { Panel } from "../../components/Panel";
@@ -15,6 +16,8 @@ import { sendUserConfirm } from "../../helpers/interact/sendUserConfirm";
 import { getTimeString } from "../../helpers/utils/getTimeString";
 
 const Diagnose = () => {
+	const { t } = useTranslation();
+
 	const getButtonColor = (index: number, danger: boolean) => {
 		const colors = [
 			"bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800",
@@ -32,74 +35,94 @@ const Diagnose = () => {
 	const handleControl = (title: string, message: string, callback: () => void) => {
 		sendUserConfirm(message, {
 			title,
-			cancelText: "取消",
-			confirmText: "确认",
+			cancelText: t("common.confirm.cancel"),
+			confirmText: t("common.confirm.confirm"),
 			onConfirmed: callback
 		});
-	};
-
-	const [rebootSystemMutation] = useRebootSystemMutation();
-	const handleRebootSystem = async () => {
-		const { errors } = await rebootSystemMutation();
-		sendUserAlert(errors ? "执行失败" : "执行成功", !!errors);
 	};
 
 	const [setPanTiltToNorth] = useSetPanTiltToNorthMutation();
 	const handleSetPanTiltToNorth = async () => {
 		const { errors } = await setPanTiltToNorth();
-		sendUserAlert(errors ? "执行失败" : "执行成功", !!errors);
+		sendUserAlert(
+			errors
+				? t("views.debug.actions.set_north.failure")
+				: t("views.debug.actions.set_north.success"),
+			!!errors
+		);
+	};
+
+	const [rebootSystemMutation] = useRebootSystemMutation();
+	const handleRebootSystem = async () => {
+		const { errors } = await rebootSystemMutation();
+		sendUserAlert(
+			errors
+				? t("views.debug.actions.reboot.failure")
+				: t("views.debug.actions.reboot.success"),
+			!!errors
+		);
 	};
 
 	const [purgeTaskQueue] = usePurgeTaskQueueMutation();
 	const handlePurgeTaskQueue = async () => {
 		const { errors } = await purgeTaskQueue();
-		sendUserAlert(errors ? "执行失败" : "执行成功", !!errors);
+		sendUserAlert(
+			errors
+				? t("views.debug.actions.purge_tasks.failure")
+				: t("views.debug.actions.purge_tasks.success"),
+			!!errors
+		);
 	};
 
 	const [purgeTleRecordsMutation] = usePurgeTleRecordsMutation();
 	const handlePurgeTLERecords = async () => {
 		const { errors } = await purgeTleRecordsMutation();
-		sendUserAlert(errors ? "执行失败" : "执行成功", !!errors);
+		sendUserAlert(
+			errors
+				? t("views.debug.actions.purge_tle.failure")
+				: t("views.debug.actions.purge_tle.success"),
+			!!errors
+		);
 	};
 
 	// Actions for all components
 	const [commonControls] = useState([
 		{
-			button: "定北",
+			button: t("views.debug.list.buttons.set_north"),
 			onClick: handleSetPanTiltToNorth,
-			description: "若转台跟踪卫星时星偏差较大，可以重新执行转台定北",
+			description: t("views.debug.actions.set_north.description"),
 			confirm: {
-				title: "确认操作",
-				message: "定北需要 1 分钟左右，请保证周围空旷，是否确认执行此操作？"
+				title: t("views.debug.actions.set_north.confirm.title"),
+				message: t("views.debug.actions.set_north.confirm.content")
 			}
 		},
 		{
-			button: "重启",
+			button: t("views.debug.list.buttons.reboot"),
 			onClick: handleRebootSystem,
-			description: "点击此按钮将重启站控服务器",
+			description: t("views.debug.actions.reboot.description"),
 			confirm: {
-				title: "确认操作",
-				message: "重启操作将导致站控服务器断开连接，是否确认执行此操作？"
+				title: t("views.debug.actions.reboot.confirm.title"),
+				message: t("views.debug.actions.reboot.confirm.content")
 			}
 		}
 	]);
 	const [dangerControls] = useState([
 		{
-			button: "清理所有排程",
+			button: t("views.debug.list.buttons.purge_tasks"),
 			onClick: handlePurgeTaskQueue,
-			description: "此操作将清空所有排程，请谨慎操作",
+			description: t("views.debug.actions.purge_tasks.description"),
 			confirm: {
-				title: "这是一个危险操作",
-				message: "此操作将清空所有排程，是否确认执行此操作？"
+				title: t("views.debug.actions.purge_tasks.confirm.title"),
+				message: t("views.debug.actions.purge_tasks.confirm.content")
 			}
 		},
 		{
-			button: "清理所有 TLE",
+			button: t("views.debug.list.buttons.purge_tle"),
 			onClick: handlePurgeTLERecords,
-			description: "此操作将清空所有卫星 TLE 数据，请谨慎操作",
+			description: t("views.debug.actions.purge_tle.description"),
 			confirm: {
-				title: "这是一个危险操作",
-				message: "此操作将清空所有卫星 TLE 数据，是否确认执行此操作？"
+				title: t("views.debug.actions.purge_tle.confirm.title"),
+				message: t("views.debug.actions.purge_tle.confirm.content")
 			}
 		}
 	]);
@@ -107,29 +130,29 @@ const Diagnose = () => {
 	// States for all components
 	const [diagnoseRows, setDiagnoseRows] = useState({
 		// GNSS related data
-		gnssTimestamp: { name: "GNSS 当前时间", value: "" },
-		gnssLongitude: { name: "GNSS 当前经度", value: "" },
-		gnssLatitude: { name: "GNSS 当前纬度", value: "" },
-		gnssElevation: { name: "GNSS 当前高程", value: "" },
-		gnssTrueAzimuth: { name: "GNSS 真北方位", value: "" },
-		gnssSatellites: { name: "GNSS 卫星数量", value: "" },
-		gnssDataQuality: { name: "GNSS 解算方法", value: "" },
+		gnssTimestamp: { name: t("views.debug.list.labels.gnss_timestamp"), value: "" },
+		gnssLongitude: { name: t("views.debug.list.labels.gnss_longitude"), value: "" },
+		gnssLatitude: { name: t("views.debug.list.labels.gnss_latitude"), value: "" },
+		gnssElevation: { name: t("views.debug.list.labels.gnss_elevation"), value: "" },
+		gnssTrueAzimuth: { name: t("views.debug.list.labels.gnss_azimuth"), value: "" },
+		gnssSatellites: { name: t("views.debug.list.labels.gnss_satellites"), value: "" },
+		gnssDataQuality: { name: t("views.debug.list.labels.gnss_data_quality"), value: "" },
 		// Pan-Tilt related data
-		panTiltIsBusy: { name: "转台当前状态", value: "" },
-		panTiltCurrentPan: { name: "转台方位角", value: "" },
-		panTiltCurrentTilt: { name: "转台俯仰角", value: "" },
-		panTiltNorthOffset: { name: "转台北偏角", value: "" },
+		panTiltIsBusy: { name: t("views.debug.list.labels.pan_tilt_busy"), value: "" },
+		panTiltCurrentPan: { name: t("views.debug.list.labels.pan_tilt_pan"), value: "" },
+		panTiltCurrentTilt: { name: t("views.debug.list.labels.pan_tilt_tilt"), value: "" },
+		panTiltNorthOffset: { name: t("views.debug.list.labels.pan_tilt_offset"), value: "" },
 		// System resource usage
-		systemCPUUsage: { name: "CPU 占用百分比", value: "" },
-		systemMemUsage: { name: "RAM 占用百分比", value: "" },
-		systemDiskUsage: { name: "磁盘占用百分比", value: "" },
-		systemTimestamp: { name: "系统 RTC 时间", value: "" },
-		systemUptime: { name: "站控系统运行时长", value: "" },
+		systemCPUUsage: { name: t("views.debug.list.labels.cpu_usage"), value: "" },
+		systemMemUsage: { name: t("views.debug.list.labels.mem_usage"), value: "" },
+		systemDiskUsage: { name: t("views.debug.list.labels.disk_usage"), value: "" },
+		systemTimestamp: { name: t("views.debug.list.labels.system_timestamp"), value: "" },
+		systemUptime: { name: t("views.debug.list.labels.system_uptime"), value: "" },
 		// System information
-		systemIP: { name: "设备 IP 地址", value: "" },
-		systemHostname: { name: "设备主机名称", value: "" },
-		systemRelease: { name: "设备内核版本号", value: "" },
-		systemArch: { name: "设备 CPU 架构", value: "" }
+		systemIP: { name: t("views.debug.list.labels.system_ip"), value: "" },
+		systemHostname: { name: t("views.debug.list.labels.system_hostname"), value: "" },
+		systemRelease: { name: t("views.debug.list.labels.system_release"), value: "" },
+		systemArch: { name: t("views.debug.list.labels.system_arch"), value: "" }
 	});
 
 	// Polling debug data
@@ -165,7 +188,9 @@ const Diagnose = () => {
 				},
 				panTiltIsBusy: {
 					...prev.panTiltIsBusy,
-					value: getPanTilt.isBusy ? "繁忙" : "就绪"
+					value: getPanTilt.isBusy
+						? t("common.statement.busy")
+						: t("common.statement.ready")
 				},
 				panTiltCurrentPan: {
 					...prev.panTiltCurrentPan,
@@ -202,11 +227,11 @@ const Diagnose = () => {
 				systemRelease: { ...prev.systemRelease, value: getSystem.release }
 			}));
 		}
-	}, [data, error, loading]);
+	}, [t, data, error, loading]);
 
 	return !error ? (
 		<div className="animate-fade p-8 space-y-4 min-h-screen">
-			<Panel heading="系统资讯">
+			<Panel heading={t("views.debug.panels.diagnose")}>
 				<TableContainer>
 					<Table>
 						<TableBody>
@@ -221,7 +246,7 @@ const Diagnose = () => {
 				</TableContainer>
 			</Panel>
 
-			<Panel className="space-y-4" heading="装置控制">
+			<Panel className="space-y-4" heading={t("views.debug.panels.advanced")}>
 				{commonControls.map(({ button, description, onClick, confirm }, index) => (
 					<div
 						className="p-5 flex justify-between items-center rounded-md border dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
@@ -242,7 +267,7 @@ const Diagnose = () => {
 				))}
 			</Panel>
 
-			<Panel className="space-y-4" heading="危险操作">
+			<Panel className="space-y-4" heading={t("views.debug.panels.dangerous")}>
 				{dangerControls.map(({ button, description, onClick, confirm }, index) => (
 					<div
 						className="p-5 flex justify-between items-center rounded-md border border-orange-400 dark:border-orange-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"

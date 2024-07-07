@@ -1,11 +1,401 @@
 {
+    "views": {
+        "home": {
+            "cards": {
+                "available_satellites": {
+                    "title": "已入庫衛星"
+                },
+                "gnss_satellites": {
+                    "title": "GNSS 可見衛星"
+                },
+                "current_azimuth": {
+                    "title": "當前真北方位"
+                },
+                "pending_tasks": {
+                    "title": "待跟踪任務數"
+                },
+                "total_tasks": {
+                    "title": "總排程任務數"
+                },
+                "clock_offset": {
+                    "title": "系統時鐘偏移"
+                }
+            },
+            "charts": {
+                "cpu_usage": {
+                    "title": "CPU 使用率",
+                    "content": "當前 {{value}}%"
+                },
+                "mem_usage": {
+                    "title": "內存使用率",
+                    "content": "當前 {{value}}%"
+                }
+            },
+            "map": {
+                "content": "當前經度 {{longitude}}\n當前緯度 {{latitude}}\n當前高程 {{elevation}}"
+            }
+        },
+        "tasks": {
+            "tabs": {
+                "week_view": {
+                    "title": "週曆視圖",
+                    "buttons": {
+                        "today": "回到今日",
+                        "refresh": "刷新資料"
+                    }
+                },
+                "list_view": {
+                    "title": "清單視圖",
+                    "buttons": {
+                        "refresh": "刷新資料",
+                        "delete": "移除排程",
+                        "batch_delete": "批量刪除"
+                    },
+                    "labels": {
+                        "task_id": "任務 ID",
+                        "task_name": "任務名稱",
+                        "start_time": "起始時間",
+                        "end_time": "結束時間",
+                        "created_at": "創建時間",
+                        "task_status": "任務狀態",
+                        "actions": "操作"
+                    }
+                }
+            },
+            "status": {
+                "title": "任務狀態",
+                "categories": {
+                    "pending": "待追蹤",
+                    "completed": "已完成",
+                    "missed": "已錯過",
+                    "in_progress": "任務已進行 {{value}}%"
+                },
+                "countdown": {
+                    "hours": "{{value}} 小時後開始",
+                    "minutes": "{{value}} 分鐘後開始",
+                    "seconds": "倒計時 {{value}} 秒"
+                }
+            },
+            "banners": {
+                "in_progress": {
+                    "start_time": "任務起始時間 {{value}}",
+                    "end_time": "任務結束時間 {{value}}",
+                    "content": "[{{progress}}%] {{name}} 追蹤任務執行中"
+                },
+                "upcoming": {
+                    "start_time": "任務起始時間 {{value}}",
+                    "end_time": "任務結束時間 {{value}}",
+                    "content": "{{name}} 追蹤任務 {{status}}"
+                }
+            },
+            "actions": {
+                "search": {
+                    "placeholder": "搜索任務名稱或 ID",
+                    "failure": "未找到符合條件的任務",
+                    "success": "已找到 {{value}} 個符合條件的任務"
+                },
+                "refresh": {
+                    "loading": "正在刷新任務",
+                    "success": "任務刷新成功",
+                    "failure": "任務刷新失敗"
+                },
+                "delete": {
+                    "confirm": {
+                        "title": "確認刪除任務",
+                        "cancel": "刪除操作已取消",
+                        "content": "確定要刪除 ID 為 {{value}} 的任務嗎？"
+                    },
+                    "loading": "正在移除任務",
+                    "success": "任務移除成功",
+                    "failure": "任務移除失敗"
+                },
+                "batch_delete": {
+                    "confirm": {
+                        "title": "確認批量刪除任務",
+                        "cancel": "批量刪除操作已取消",
+                        "content": "確定要刪除選中的 {{value}} 個任務嗎？"
+                    },
+                    "loading": "正在批量刪除任務",
+                    "success": "任務批量刪除成功",
+                    "failure": "任務批量刪除失敗",
+                    "empty": "請先選擇要刪除的任務"
+                }
+            }
+        },
+        "satellites": {
+            "list": {
+                "labels": {
+                    "satellite_id": "衛星 ID",
+                    "satellite_name": "衛星名稱",
+                    "epoch_time": "星曆時間",
+                    "created_at": "創建時間",
+                    "updated_at": "更新時間",
+                    "geostationary": "靜止軌道",
+                    "actions": "操作"
+                },
+                "buttons": {
+                    "import": "導入衛星",
+                    "add_new": "新增衛星",
+                    "simulate": "仿真軌道",
+                    "set_pan_tilt": "設置雲台",
+                    "set_tracking": "設定跟蹤",
+                    "copy_tle": "複製軌道",
+                    "update_tle": "更新軌道",
+                    "delete_tle": "移除衛星"
+                },
+                "prompt": "請輸入衛星關鍵字或 ID 以查詢，衛星數據將顯示於表格"
+            },
+            "panels": {
+                "simulate": "軌道仿真"
+            },
+            "actions": {
+                "import": {
+                    "confirm": {
+                        "title": "確認操作",
+                        "cancel": "導入操作已取消",
+                        "content": "導入 TLE 數據會覆蓋現有數據，是否繼續？"
+                    },
+                    "loading": "正在導入衛星數據",
+                    "success": "衛星數據導入完成",
+                    "failure": "衛星數據導入失敗",
+                    "result": "導入完成，{{value}} 條記錄導入失敗",
+                    "invalid_file": "文件格式錯誤，請確保文件為純文本文件",
+                    "size_exceed": "文件過大，請確保文件小於 {{value}} MB"
+                },
+                "add_new": {
+                    "dialog": {
+                        "title": "新增衛星",
+                        "placeholder": "輸入一組 TLE 數據",
+                        "content": "輸入一組 TLE 數據，包含衛星名字、TLE 第一行、TLE 第二行，每行之間以回車（Enter）分割"
+                    },
+                    "loading": "正在新增衛星",
+                    "success": "衛星新增成功",
+                    "failure": "衛星新增失敗"
+                },
+                "simulate": {
+                    "empty": "請選擇至少一個衛星進行軌道仿真",
+                    "success": "成功為 {{value}} 個衛星進行了軌道仿真",
+                    "items_exceed": "最多選擇 {{value}} 個衛星進行仿真"
+                },
+                "search": {
+                    "placeholder": "輸入衛星名稱或 ID",
+                    "loading": "正在搜索衛星",
+                    "success": "搜索完成",
+                    "failure": "搜索失敗",
+                    "empty": "未找到符合條件的衛星",
+                    "result": "已找到 {{value}} 個符合條件的衛星"
+                },
+                "set_tracking": {
+                    "dialog": {
+                        "title": "{{name}} 未來 24h 過境預測",
+                        "placeholder": "輸入入境仰角門限",
+                        "content": "輸入衛星 {{name}} 入境仰角門限，單位為度，需大於 0 且小於 90"
+                    },
+                    "forecast_list": {
+                        "title": "{{name}} 未來 24 小時過境事件",
+                        "template": {
+                            "title": "{{value}} 過境事件",
+                            "content": "入境時間 {{startTime}}\n出境時間 {{endTime}}\n入境方位 {{entryAzimuth}} °\n出境方位 {{exitAzimuth}} °\n最大仰角 {{maxElevation}} °\n升降類型 {{isAscending}}\n觀測坐標 ({{gnssLatitude}}, {{gnssLongitude}})\n觀測高程 {{gnssElevation}} m\n仰角門限 {{elevationThreshold}} °"
+                        }
+                    },
+                    "forecast_loading": "正在取得衛星過境預測數據",
+                    "forecast_success": "過境預報數據取得完成",
+                    "forecast_failure": "過境預報數據取得失敗",
+                    "forecast_empty": "未來 24 小時沒有過境事件",
+                    "loading": "正在新增跟蹤任務",
+                    "success": "跟蹤任務新增成功",
+                    "failure": "排程新增失敗，請檢查排程是否重複添加，或該時間段內任務是否存在衝突",
+                    "invalid_threshold": "入境仰角門限應在 0 到 90 度之間"
+                },
+                "set_pan_tilt": {
+                    "confirm": {
+                        "title": "確認操作",
+                        "cancel": "設定操作已取消",
+                        "content": "轉台即將指向衛星 {{name}}，方位角 {{azimuth}}，仰角 {{elevation}}，是否繼續？"
+                    },
+                    "observation_loading": "正在取得衛星觀測數據",
+                    "observation_success": "觀測數據取得完成",
+                    "observation_failure": "觀測數據取得失敗",
+                    "not_observable": "衛星 {{value}} 在當前位置不可觀測",
+                    "loading": "正在設定轉台以指向衛星 {{value}}",
+                    "success": "成功下發轉台設定指令",
+                    "failure": "轉台設定指令下發失敗"
+                },
+                "copy_tle": {
+                    "success": "軌道數據已複製到剪貼板"
+                },
+                "update_tle": {
+                    "dialog": {
+                        "title": "更新軌道",
+                        "placeholder": "輸入新的 TLE 數據",
+                        "content": "正在更新 {{name}} 的 TLE 數據，請輸入新的 TLE 數據，包含衛星名字、TLE 第一行、TLE 第二行，每行之間以回車（Enter）分割"
+                    },
+                    "loading": "正在更新衛星軌道",
+                    "success": "衛星軌道更新成功",
+                    "failure": "衛星軌道更新失敗"
+                },
+                "delete_tle": {
+                    "confirm": {
+                        "title": "確認操作",
+                        "cancel": "移除操作已取消",
+                        "content": "確定要移除該條軌道數據嗎？"
+                    },
+                    "loading": "正在移除衛星軌道",
+                    "success": "衛星軌道移除成功",
+                    "failure": "衛星軌道移除失敗"
+                }
+            }
+        },
+        "control": {
+            "cards": {
+                "true_azimuth": {
+                    "title": "真北方位角",
+                    "description": "透過 GNSS 解算"
+                },
+                "pan_tilt_pan": {
+                    "title": "轉台方位角",
+                    "description": "相對真北方位偏角"
+                },
+                "pan_tilt_tilt": {
+                    "title": "轉台俯仰角",
+                    "description": "相對地平面傾斜角"
+                },
+                "pan_tilt_busy": {
+                    "title": "轉台狀態標識",
+                    "description": "轉台是否就緒"
+                }
+            },
+            "form": {
+                "title": "控制台",
+                "submit": "送出",
+                "errors": {
+                    "invalid_pan": "方位角應在 0 到 360 度之間",
+                    "invalid_tilt": "俯仰角應在 0 到 85 度之間",
+                    "invalid_offset": "北偏角應在 0 到 360 度之間"
+                },
+                "fields": {
+                    "set_pan": "轉台北偏角設定",
+                    "set_tilt": "轉台俯仰角設定",
+                    "set_offset": "轉台方位角設定",
+                    "ignore_offset": "不設定北偏角"
+                }
+            },
+            "actions": {
+                "set_offset": {
+                    "loading": "正在設置轉台北偏角",
+                    "success": "轉台北偏角設置成功",
+                    "failure": "轉台北偏角設置失敗"
+                },
+                "set_pan_tilt": {
+                    "loading": "正在設置轉台方位俯仰數據",
+                    "success": "轉台方位俯仰設置成功",
+                    "failure": "轉台方位俯仰設置失敗"
+                }
+            }
+        },
+        "debug": {
+            "list": {
+                "labels": {
+                    "gnss_timestamp": "GNSS 當前時間",
+                    "gnss_longitude": "GNSS 當前經度",
+                    "gnss_latitude": "GNSS 當前緯度",
+                    "gnss_elevation": "GNSS 當前高程",
+                    "gnss_azimuth": "GNSS 真北方位",
+                    "gnss_satellites": "GNSS 衛星數量",
+                    "gnss_data_quality": "GNSS 解算方法",
+                    "pan_tilt_busy": "轉台繁忙標識",
+                    "pan_tilt_pan": "轉台方位角",
+                    "pan_tilt_tilt": "轉台俯仰角",
+                    "pan_tilt_offset": "轉台北偏角",
+                    "cpu_usage": "CPU 佔用百分比",
+                    "mem_usage": "RAM 佔用百分比",
+                    "disk_usage": "磁盤佔用百分比",
+                    "system_timestamp": "系統 RTC 時間",
+                    "system_uptime": "站控系統運行時長",
+                    "system_ip": "設備 IP 地址",
+                    "system_hostname": "設備主機名稱",
+                    "system_release": "設備內核版本號",
+                    "system_arch": "設備 CPU 架構"
+                },
+                "buttons": {
+                    "set_north": "轉台定北",
+                    "reboot": "重啟站控端",
+                    "purge_tasks": "清空所有排程",
+                    "purge_tle": "清空系統內衛星"
+                }
+            },
+            "panels": {
+                "diagnose": "診斷資訊",
+                "advanced": "高級控制",
+                "dangerous": "危險操作"
+            },
+            "actions": {
+                "set_north": {
+                    "description": "若轉台跟踪衛星時星偏差較大，可以重新執行轉台定北，從而校準轉台，提高跟踪精度",
+                    "confirm": {
+                        "title": "確認操作",
+                        "content": "定北需要 1 分鐘左右，請保證四周空曠可見天空，否則會引起轉台資源長時間未釋放，導致錯過排程，是否確認執行？"
+                    },
+                    "success": "定北指令下發成功",
+                    "failure": "定北指令下發失敗"
+                },
+                "reboot": {
+                    "description": "執行此操作將導致站控伺服器斷開連接，是否確認執行？",
+                    "confirm": {
+                        "title": "確認操作",
+                        "content": "站控重啟過程中，頁面短時間內會出現錯誤調試資訊，是否確認執行？"
+                    },
+                    "success": "重啟指令下發成功",
+                    "failure": "重啟指令下發失敗"
+                },
+                "purge_tasks": {
+                    "description": "此操作將導致系統內所有排程被清空，請謹慎操作！",
+                    "confirm": {
+                        "title": "這是一個危險操作！",
+                        "content": "此操作將清空所有排程，且不可恢復，是否確認執行？"
+                    },
+                    "success": "系統內所有排程已清空",
+                    "failure": "排程清空失敗"
+                },
+                "purge_tle": {
+                    "description": "此操作將導致系統內所有衛星數據被清空，請謹慎操作！",
+                    "confirm": {
+                        "title": "這是一個危險操作！",
+                        "content": "此操作將清空所有衛星 TLE 數據，且不可恢復，是否確認執行？"
+                    },
+                    "success": "系統內所有衛星數據已清空",
+                    "failure": "衛星數據清空失敗"
+                }
+            }
+        },
+        "not_found": {
+            "title": "頁面未找到",
+            "content": "抱歉，此頁面不存在",
+            "go_back": "返回上一頁"
+        }
+    },
+    "components": {
+        "chart": {
+            "reset_zoom": "重置縮放",
+            "reset_zoom_title": "重置縮放"
+        }
+    },
     "common": {
-        "submit": "送出",
-        "cancel": "取消",
-        "close": "關閉",
-        "confirm": "確認",
-        "delete": "刪除",
-        "edit": "編輯",
-        "save": "儲存"
+        "dialog": {
+            "cancel": "取消",
+            "submit": "送出"
+        },
+        "confirm": {
+            "confirm": "確認",
+            "cancel": "取消"
+        },
+        "statement": {
+            "yes": "是",
+            "no": "否",
+            "busy": "忙碌",
+            "ready": "就緒",
+            "ascending": "升軌",
+            "descending": "降軌"
+        }
     }
 }

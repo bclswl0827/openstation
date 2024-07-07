@@ -5,6 +5,7 @@ import Tabs from "@mui/material/Tabs";
 import { GridRowSelectionModel } from "@mui/x-data-grid";
 import { Field, Form, Formik } from "formik";
 import { SyntheticEvent, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { AlertMessage } from "../../components/AlertMessage";
 import { Error } from "../../components/Error";
@@ -22,6 +23,8 @@ import { getTimeString } from "../../helpers/utils/getTimeString";
 import { useLocaleStore } from "../../stores/locale";
 
 const Tasks = () => {
+	const { t } = useTranslation();
+
 	// Get the locale for the scheduler
 	const { locale } = useLocaleStore();
 
@@ -42,25 +45,30 @@ const Tasks = () => {
 		hasDone: boolean
 	) => {
 		if (hasDone) {
-			return "已完成";
+			return t("views.tasks.status.categories.completed");
 		}
 		if (endTime < currentTime) {
-			return "已错过";
+			return t("views.tasks.status.categories.missed");
 		}
 		if (startTime <= currentTime && endTime >= currentTime) {
-			return `任务已进行 ${(
-				((currentTime - startTime) / (endTime - startTime)) *
-				100
-			).toFixed(2)}%`;
+			return t("views.tasks.status.categories.in_progress", {
+				value: (((currentTime - startTime) / (endTime - startTime)) * 100).toFixed(2)
+			});
 		}
 		const timeLeft = startTime - currentTime;
 		if (timeLeft > 60 * 60 * 1000) {
-			return `${Math.floor(timeLeft / (60 * 60 * 1000))} 小时后开始`;
+			return t("views.tasks.status.countdown.hours", {
+				value: Math.floor(timeLeft / (60 * 60 * 1000))
+			});
 		}
 		if (timeLeft > 10 * 60 * 1000) {
-			return `${Math.floor(timeLeft / (60 * 1000))} 分钟后开始`;
+			return t("views.tasks.status.countdown.minutes", {
+				value: Math.floor(timeLeft / (60 * 1000))
+			});
 		}
-		return `倒计时 ${Math.floor(timeLeft / 1000)} 秒`;
+		return t("views.tasks.status.countdown.seconds", {
+			value: Math.floor(timeLeft / 1000)
+		});
 	};
 	const getTaskComparator =
 		() =>
@@ -97,7 +105,10 @@ const Tasks = () => {
 	// Handler for switching tabs
 	const [tabsState, setTabsState] = useState<
 		Record<string, { label: string; current?: boolean }>
-	>({ calendar: { current: true, label: "周历视图" }, countDown: { label: "列表视图" } });
+	>({
+		calendar: { current: true, label: t("views.tasks.tabs.week_view.title") },
+		list: { label: t("views.tasks.tabs.list_view.title") }
+	});
 	const handleTabChange = (_: SyntheticEvent, newValue: string) => {
 		setTabsState((prev) => {
 			const newState = Object.fromEntries(
@@ -139,7 +150,13 @@ const Tasks = () => {
 	// Handler for refreshing tasks
 	const handleRefreshTasks = async () => {
 		const result = (
-			await sendPromiseAlert(refetch(), "正在刷新任务", "任务刷新成功", "任务刷新失败", true)
+			await sendPromiseAlert(
+				refetch(),
+				t("views.tasks.actions.refresh.loading"),
+				t("views.tasks.actions.refresh.success"),
+				t("views.tasks.actions.refresh.failure"),
+				true
+			)
 		)?.data;
 		if (result) {
 			const { getTotalTasks: total, getPendingTasks: pending, getGnss } = result;
@@ -156,9 +173,9 @@ const Tasks = () => {
 				const result = (
 					await sendPromiseAlert(
 						deleteTaskById({ variables: { taskId } }),
-						"正在删除任务",
-						"任务删除成功",
-						"任务删除失败",
+						t("views.tasks.actions.delete.loading"),
+						t("views.tasks.actions.delete.success"),
+						t("views.tasks.actions.delete.failure"),
 						true
 					)
 				)?.data?.deleteTaskById;
@@ -170,12 +187,13 @@ const Tasks = () => {
 					});
 				}
 			};
-			sendUserConfirm("确定要删除这个任务吗？", {
-				title: "删除任务",
-				confirmText: "删除",
-				cancelText: "取消",
+			sendUserConfirm(t("views.tasks.actions.delete.confirm.content", { value: id }), {
+				title: t("views.tasks.actions.delete.confirm.title"),
+				confirmText: t("common.confirm.confirm"),
+				cancelText: t("common.confirm.cancel"),
 				onConfirmed: handleConfirm,
-				onCancelled: () => sendUserAlert("删除操作已取消", true)
+				onCancelled: () =>
+					sendUserAlert(t("views.tasks.actions.delete.confirm.cancel"), true)
 			});
 		}
 	};
@@ -187,7 +205,7 @@ const Tasks = () => {
 	};
 	const handleBatchDelete = () => {
 		if (!selectedTasks.length) {
-			sendUserAlert("请先选择要删除的任务", true);
+			sendUserAlert(t("views.tasks.actions.batch_delete.empty"), true);
 			return;
 		}
 		const handleConfirm = async () => {
@@ -195,20 +213,24 @@ const Tasks = () => {
 				Promise.all(
 					selectedTasks.map((task) => deleteTaskById({ variables: { taskId: task!.id } }))
 				),
-				"正在删除任务",
-				"任务删除成功",
-				"任务删除失败",
+				t("views.tasks.actions.batch_delete.loading"),
+				t("views.tasks.actions.batch_delete.success"),
+				t("views.tasks.actions.batch_delete.failure"),
 				true
 			);
-			await sendPromiseAlert(refetch(), "正在刷新任务", "任务刷新成功", "任务刷新失败", true);
+			await handleRefreshTasks();
 		};
-		sendUserConfirm("确定要删除所有任务吗？", {
-			title: "删除任务",
-			confirmText: "删除",
-			cancelText: "取消",
-			onConfirmed: handleConfirm,
-			onCancelled: () => sendUserAlert("删除操作已取消", true)
-		});
+		sendUserConfirm(
+			t("views.tasks.actions.batch_delete.confirm.content", { value: selectedTasks.length }),
+			{
+				title: t("views.tasks.actions.batch_delete.confirm.title"),
+				confirmText: t("common.confirm.confirm"),
+				cancelText: t("common.confirm.cancel"),
+				onConfirmed: handleConfirm,
+				onCancelled: () =>
+					sendUserAlert(t("views.tasks.actions.batch_delete.confirm.cancel"), true)
+			}
+		);
 	};
 
 	// Handler for searching tasks
@@ -222,9 +244,12 @@ const Tasks = () => {
 		);
 		setTasks4TableList(results);
 		if (!results.length) {
-			sendUserAlert("未搜索到匹配的任务", true);
+			sendUserAlert(t("views.tasks.actions.search.failure"), true);
 		} else {
-			sendUserAlert(`搜索到 ${results.length} 条符合条件的任务`, false);
+			sendUserAlert(
+				t("views.tasks.actions.search.success", { value: results.length }),
+				false
+			);
 		}
 	};
 
@@ -250,40 +275,66 @@ const Tasks = () => {
 					<div className="lg:max-w-[calc(100vw-300px)]">
 						{taskInProcess && (
 							<AlertMessage severity="info">
-								{`[${(
-									((currentTasks.timestamp - taskInProcess.startTime) /
-										(taskInProcess.endTime - taskInProcess.startTime)) *
-									100
-								).toFixed(2)}%] ${taskInProcess.name} 跟踪任务执行中`}
+								{t("views.tasks.banners.in_progress.content", {
+									progress: (
+										((currentTasks.timestamp - taskInProcess.startTime) /
+											(taskInProcess.endTime - taskInProcess.startTime)) *
+										100
+									).toFixed(2),
+									name: taskInProcess.name
+								})}
 								<br />
-								{`起始时间 ${getTimeString(taskInProcess.startTime)}`}
+								{t("views.tasks.banners.in_progress.start_time", {
+									value: getTimeString(taskInProcess.startTime)
+								})}
 								<br />
-								{`结束时间 ${getTimeString(taskInProcess.endTime)}`}
+								{t("views.tasks.banners.in_progress.end_time", {
+									value: getTimeString(taskInProcess.endTime)
+								})}
 							</AlertMessage>
 						)}
 						{taskUpcoming && (
 							<AlertMessage severity="warning">
-								{`${taskUpcoming.name} 跟踪任务 ${getTaskStatus(
-									currentTasks.timestamp,
-									taskUpcoming.startTime,
-									taskUpcoming.endTime,
-									taskUpcoming.hasDone
-								)}`}
+								{t("views.tasks.banners.upcoming.content", {
+									name: taskUpcoming.name,
+									status: getTaskStatus(
+										currentTasks.timestamp,
+										taskUpcoming.startTime,
+										taskUpcoming.endTime,
+										taskUpcoming.hasDone
+									)
+								})}
 								<br />
-								{`起始时间 ${getTimeString(taskUpcoming.startTime)}`}
+								{t("views.tasks.banners.upcoming.start_time", {
+									value: getTimeString(taskUpcoming.startTime)
+								})}
 								<br />
-								{`结束时间 ${getTimeString(taskUpcoming.endTime)}`}
+								{t("views.tasks.banners.upcoming.end_time", {
+									value: getTimeString(taskUpcoming.endTime)
+								})}
 							</AlertMessage>
 						)}
 						<WeekSchedule
 							currentTime={currentTasks.timestamp ?? Date.now()}
 							categories={{
 								field: "taskStatusCode",
-								name: "任务状态",
+								name: t("views.tasks.status.title"),
 								instances: [
-									{ id: 0, text: "未完成", color: "#0284c7" },
-									{ id: 1, text: "已完成", color: "#059669" },
-									{ id: 2, text: "已错过", color: "#d97706" }
+									{
+										id: 0,
+										text: t("views.tasks.status.categories.pending"),
+										color: "#0284c7"
+									},
+									{
+										id: 1,
+										text: t("views.tasks.status.categories.completed"),
+										color: "#059669"
+									},
+									{
+										id: 2,
+										text: t("views.tasks.status.categories.missed"),
+										color: "#d97706"
+									}
 								]
 							}}
 							events={
@@ -302,14 +353,14 @@ const Tasks = () => {
 							onRefresh={handleRefreshTasks}
 							onDelete={handleDeleteTask}
 							locale={locale}
-							todayButtonLabel="回到今日"
-							refreshButtonLabel="刷新数据"
+							todayButtonLabel={t("views.tasks.tabs.week_view.buttons.today")}
+							refreshButtonLabel={t("views.tasks.tabs.week_view.buttons.refresh")}
 							cellWidth={120}
 						/>
 					</div>
 				)}
 
-				{tabsState.countDown.current && (
+				{tabsState.list.current && (
 					<div className="space-y-8">
 						<div className="flex flex-col sm:flex-row justify-between gap-6">
 							<div className="flex flex-row space-x-4 sm:whitespace-nowrap">
@@ -317,13 +368,13 @@ const Tasks = () => {
 									className="px-3 py-2 rounded-lg font-medium text-white transition-all bg-sky-600 hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-800"
 									onClick={handleRefreshTasks}
 								>
-									刷新数据
+									{t("views.tasks.tabs.list_view.buttons.refresh")}
 								</button>
 								<button
 									className="px-3 py-2 rounded-lg font-medium text-white transition-all bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800"
 									onClick={handleBatchDelete}
 								>
-									批量删除
+									{t("views.tasks.tabs.list_view.buttons.batch_delete")}
 								</button>
 							</div>
 
@@ -340,7 +391,9 @@ const Tasks = () => {
 											type="search"
 											name="keyword"
 											className="ps-3 w-full min-w-32 md:w-64 py-2 text-sm text-gray-900 border focus:outline-none border-gray-300 rounded-lg bg-gray-50 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-blue-500"
-											placeholder="Input task name or ID"
+											placeholder={t(
+												"views.tasks.actions.search.placeholder"
+											)}
 										/>
 										<button
 											className="text-white bg-blue-700 hover:bg-blue-800 focus:outline-none font-medium rounded-lg text-sm p-2 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:cursor-not-allowed"
@@ -363,21 +416,21 @@ const Tasks = () => {
 							columns={[
 								{
 									field: "id",
-									headerName: "任务 ID",
+									headerName: t("views.tasks.tabs.list_view.labels.task_id"),
 									hideable: false,
 									sortable: false,
 									minWidth: 110
 								},
 								{
 									field: "name",
-									headerName: "任务名称",
+									headerName: t("views.tasks.tabs.list_view.labels.task_name"),
 									hideable: false,
 									sortable: false,
 									minWidth: 220
 								},
 								{
 									field: "startTime",
-									headerName: "起始时间",
+									headerName: t("views.tasks.tabs.list_view.labels.start_time"),
 									hideable: false,
 									sortable: false,
 									minWidth: 200,
@@ -385,7 +438,7 @@ const Tasks = () => {
 								},
 								{
 									field: "endTime",
-									headerName: "结束时间",
+									headerName: t("views.tasks.tabs.list_view.labels.end_time"),
 									hideable: false,
 									sortable: false,
 									minWidth: 200,
@@ -393,14 +446,14 @@ const Tasks = () => {
 								},
 								{
 									field: "createdAt",
-									headerName: "创建时间",
+									headerName: t("views.tasks.tabs.list_view.labels.created_at"),
 									sortable: false,
 									minWidth: 200,
 									renderCell: ({ value }) => getTimeString(value)
 								},
 								{
 									field: "taskStatus",
-									headerName: "执行状态",
+									headerName: t("views.tasks.tabs.list_view.labels.task_status"),
 									hideable: false,
 									sortable: false,
 									minWidth: 200,
@@ -415,7 +468,7 @@ const Tasks = () => {
 								},
 								{
 									field: "actions",
-									headerName: "操作",
+									headerName: t("views.tasks.tabs.list_view.labels.actions"),
 									sortable: false,
 									resizable: false,
 									minWidth: 150,
@@ -427,7 +480,7 @@ const Tasks = () => {
 													handleDeleteTask(row.id);
 												}}
 											>
-												移除排程
+												{t("views.tasks.tabs.list_view.buttons.delete")}
 											</button>
 										</div>
 									)

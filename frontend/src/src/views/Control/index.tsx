@@ -2,6 +2,7 @@ import { mdiBackupRestore, mdiBoomGateArrowUp, mdiClockAlert, mdiNavigation } fr
 import Icon from "@mdi/react";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import dish from "../../assets/dish.png";
 import { Error } from "../../components/Error";
@@ -15,6 +16,8 @@ import {
 import { sendPromiseAlert } from "../../helpers/interact/sendPromiseAlert";
 
 const Control = () => {
+	const { t } = useTranslation();
+
 	// Handler for whether to set Pan-Tilt without offset
 	const [panTiltOffset, setPanTiltOffset] = useState({
 		value: 0,
@@ -35,17 +38,17 @@ const Control = () => {
 		if (!panTiltOffset.ignore) {
 			await sendPromiseAlert(
 				setPanTiltOffsetMutation({ variables: { newOffset } }),
-				"正在设置转台北偏角",
-				"指令下发完成",
-				"指令下发失败",
+				t("views.control.actions.set_offset.loading"),
+				t("views.control.actions.set_offset.success"),
+				t("views.control.actions.set_offset.failure"),
 				true
 			);
 		}
 		await sendPromiseAlert(
 			setPanTiltMutation({ variables: { newPan, newTilt } }),
-			"正在设置转台方位俯仰数据",
-			"指令下发完成",
-			"指令下发失败",
+			t("views.control.actions.set_pan_tilt.loading"),
+			t("views.control.actions.set_pan_tilt.success"),
+			t("views.control.actions.set_pan_tilt.failure"),
 			true
 		);
 	};
@@ -55,26 +58,26 @@ const Control = () => {
 		trueAzimuth: {
 			icon: mdiNavigation,
 			value: "0 °",
-			title: "真北方位角",
-			description: "透过 GNSS 解算"
+			title: t("views.control.cards.true_azimuth.title"),
+			description: t("views.control.cards.true_azimuth.description")
 		},
 		panTiltPan: {
 			icon: mdiBackupRestore,
 			value: "0 °",
-			title: "转台方位角",
-			description: "相对真北方位角"
+			title: t("views.control.cards.pan_tilt_pan.title"),
+			description: t("views.control.cards.pan_tilt_pan.description")
 		},
 		panTiltTilt: {
 			icon: mdiBoomGateArrowUp,
 			value: "0 °",
-			title: "转台俯仰角",
-			description: "相对地平面俯仰角"
+			title: t("views.control.cards.pan_tilt_tilt.title"),
+			description: t("views.control.cards.pan_tilt_tilt.description")
 		},
 		panTiltBusy: {
 			icon: mdiClockAlert,
-			value: "繁忙",
-			title: "转台状态",
-			description: "转台是否就绪"
+			value: t("common.statement.busy"),
+			title: t("views.control.cards.pan_tilt_busy.title"),
+			description: t("views.control.cards.pan_tilt_busy.description")
 		}
 	});
 
@@ -99,12 +102,14 @@ const Control = () => {
 				},
 				panTiltBusy: {
 					...prev.panTiltBusy,
-					value: getPanTilt.isBusy ? "繁忙" : "就绪"
+					value: getPanTilt.isBusy
+						? t("common.statement.busy")
+						: t("common.statement.ready")
 				}
 			}));
 			setPanTiltOffset((prev) => ({ ...prev, value: getPanTilt.northOffset }));
 		}
-	}, [data, error, loading]);
+	}, [t, data, error, loading]);
 
 	return !error ? (
 		<div className="animate-fade p-8 min-h-screen">
@@ -137,7 +142,7 @@ const Control = () => {
 					<div className="rounded-sm w-full mt-auto space-y-4">
 						<div className="border-b dark:border-gray-500 py-4">
 							<h3 className="font-medium text-2xl text-gray-800 dark:text-white">
-								控制台
+								{t("views.control.form.title")}
 							</h3>
 						</div>
 
@@ -157,13 +162,15 @@ const Control = () => {
 									newOffset?: string;
 								} = {};
 								if (values.newPan < 0 || values.newPan > 360) {
-									errors.newPan = "方位角应在 0 到 360 之间";
+									errors.newPan = t("views.control.form.errors.invalid_pan");
 								}
 								if (values.newTilt < 0 || values.newTilt > 85) {
-									errors.newTilt = "俯仰角应在 0 到 85 之间";
+									errors.newTilt = t("views.control.form.errors.invalid_tilt");
 								}
 								if (values.newOffset < 0 || values.newOffset > 360) {
-									errors.newOffset = "北偏角应在 0 到 360 之间";
+									errors.newOffset = t(
+										"views.control.form.errors.invalid_offset"
+									);
 								}
 								return errors;
 							}}
@@ -176,7 +183,7 @@ const Control = () => {
 								<Form className="space-y-4">
 									<div className="space-y-2">
 										<label className="text-sm font-medium text-gray-800 dark:text-white">
-											转台方位设定
+											{t("views.control.form.fields.set_pan")}
 										</label>
 										<ErrorMessage
 											className="text-red-500 text-sm"
@@ -192,7 +199,7 @@ const Control = () => {
 
 									<div className="space-y-2">
 										<label className="text-sm font-medium text-gray-800 dark:text-white">
-											转台俯仰设定
+											{t("views.control.form.fields.set_tilt")}
 										</label>
 										<ErrorMessage
 											className="text-red-500 text-sm"
@@ -215,7 +222,7 @@ const Control = () => {
 												onChange={handleToggleIgnorePanTiltOffset}
 											/>
 											<label className="ml-1 text-sm font-medium text-gray-800 dark:text-white">
-												不设置北偏角
+												{t("views.control.form.fields.ignore_offset")}
 											</label>
 										</div>
 									</div>
@@ -223,7 +230,7 @@ const Control = () => {
 									{!panTiltOffset.ignore && (
 										<div className="space-y-2">
 											<label className="text-sm font-medium text-gray-800 dark:text-white">
-												转台北偏角设定
+												{t("views.control.form.fields.set_offset")}
 											</label>
 											<ErrorMessage
 												className="text-red-500 text-sm"
@@ -243,7 +250,7 @@ const Control = () => {
 										disabled={isSubmitting}
 										type="submit"
 									>
-										提交
+										{t("views.control.form.submit")}
 									</button>
 								</Form>
 							)}

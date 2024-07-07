@@ -13,11 +13,11 @@ const NotFound = () => {
 		<div className="p-8">
 			<Error
 				code={404}
-				heading={t("not_found.heading")}
-				content={t("not_found.content")}
+				heading={t("views.not_found.title")}
+				content={t("views.not_found.content")}
 				action={{
 					onClick: handleGoBack,
-					label: t("not_found.go_back")
+					label: t("views.not_found.go_back")
 				}}
 			/>
 		</div>

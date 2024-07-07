@@ -1,11 +1,401 @@
 {
+    "views": {
+        "home": {
+            "cards": {
+                "available_satellites": {
+                    "title": "Satellites in Database"
+                },
+                "gnss_satellites": {
+                    "title": "GNSS Visible Satellites"
+                },
+                "current_azimuth": {
+                    "title": "Current True North Azimuth"
+                },
+                "pending_tasks": {
+                    "title": "Pending Tracking Tasks"
+                },
+                "total_tasks": {
+                    "title": "Total Scheduled Tasks"
+                },
+                "clock_offset": {
+                    "title": "System Clock Offset"
+                }
+            },
+            "charts": {
+                "cpu_usage": {
+                    "title": "CPU Usage",
+                    "content": "Currently {{value}}%"
+                },
+                "mem_usage": {
+                    "title": "Memory Usage",
+                    "content": "Currently {{value}}%"
+                }
+            },
+            "map": {
+                "content": "Current Longitude {{longitude}}\nCurrent Latitude {{latitude}}\nCurrent Elevation {{elevation}}"
+            }
+        },
+        "tasks": {
+            "tabs": {
+                "week_view": {
+                    "title": "Weekly Calendar View",
+                    "buttons": {
+                        "today": "Go to Today",
+                        "refresh": "Refresh Data"
+                    }
+                },
+                "list_view": {
+                    "title": "List View",
+                    "buttons": {
+                        "refresh": "Refresh Data",
+                        "delete": "Remove Schedule",
+                        "batch_delete": "Batch Delete"
+                    },
+                    "labels": {
+                        "task_id": "Task ID",
+                        "task_name": "Task Name",
+                        "start_time": "Start Time",
+                        "end_time": "End Time",
+                        "created_at": "Created At",
+                        "task_status": "Task Status",
+                        "actions": "Actions"
+                    }
+                }
+            },
+            "status": {
+                "title": "Task Status",
+                "categories": {
+                    "pending": "Pending",
+                    "completed": "Completed",
+                    "missed": "Missed",
+                    "in_progress": "Task in Progress {{value}}%"
+                },
+                "countdown": {
+                    "hours": "{{value}} Hours Until Start",
+                    "minutes": "{{value}} Minutes Until Start",
+                    "seconds": "Countdown: {{value}} Seconds"
+                }
+            },
+            "banners": {
+                "in_progress": {
+                    "start_time": "Task Start Time {{value}}",
+                    "end_time": "Task End Time {{value}}",
+                    "content": "[{{progress}}%] Tracking task {{name}} in progress"
+                },
+                "upcoming": {
+                    "start_time": "Task Start Time {{value}}",
+                    "end_time": "Task End Time {{value}}",
+                    "content": "Upcoming tracking task {{name}} {{status}}"
+                }
+            },
+            "actions": {
+                "search": {
+                    "placeholder": "Search Task Name or ID",
+                    "failure": "No tasks matching the criteria found",
+                    "success": "{{value}} tasks found matching the criteria"
+                },
+                "refresh": {
+                    "loading": "Refreshing tasks",
+                    "success": "Tasks refreshed successfully",
+                    "failure": "Failed to refresh tasks"
+                },
+                "delete": {
+                    "confirm": {
+                        "title": "Confirm Task Deletion",
+                        "cancel": "Deletion operation canceled",
+                        "content": "Are you sure you want to delete the task with ID {{value}}?"
+                    },
+                    "loading": "Removing task",
+                    "success": "Task removed successfully",
+                    "failure": "Failed to remove task"
+                },
+                "batch_delete": {
+                    "confirm": {
+                        "title": "Confirm Batch Task Deletion",
+                        "cancel": "Batch deletion operation canceled",
+                        "content": "Are you sure you want to delete the selected {{value}} tasks?"
+                    },
+                    "loading": "Batch deleting tasks",
+                    "success": "Tasks batch deleted successfully",
+                    "failure": "Failed to batch delete tasks",
+                    "empty": "Please select tasks to delete first"
+                }
+            }
+        },
+        "satellites": {
+            "list": {
+                "labels": {
+                    "satellite_id": "Satellite ID",
+                    "satellite_name": "Satellite Name",
+                    "epoch_time": "Epoch Time",
+                    "created_at": "Created At",
+                    "updated_at": "Updated At",
+                    "geostationary": "Geostationary",
+                    "actions": "Actions"
+                },
+                "buttons": {
+                    "import": "Import Satellite",
+                    "add_new": "Add New Satellite",
+                    "simulate": "Orbit Simulation",
+                    "set_pan_tilt": "Set Pan Tilt",
+                    "set_tracking": "Set Tracking",
+                    "copy_tle": "Copy TLE",
+                    "update_tle": "Update TLE",
+                    "delete_tle": "Delete Satellite"
+                },
+                "prompt": "Enter satellite keyword or ID to query, satellite data will be displayed in the table"
+            },
+            "panels": {
+                "simulate": "Orbit Simulation"
+            },
+            "actions": {
+                "import": {
+                    "confirm": {
+                        "title": "Confirm Operation",
+                        "cancel": "Import operation canceled",
+                        "content": "Importing TLE data will overwrite existing data. Continue?"
+                    },
+                    "loading": "Importing satellite data",
+                    "success": "Satellite data imported successfully",
+                    "failure": "Failed to import satellite data",
+                    "result": "Import completed, {{value}} records failed to import",
+                    "invalid_file": "File format error, please ensure the file is a plain text file",
+                    "size_exceed": "File too large, please ensure the file is smaller than {{value}} MB"
+                },
+                "add_new": {
+                    "dialog": {
+                        "title": "Add New Satellite",
+                        "placeholder": "Enter a set of TLE data",
+                        "content": "Enter a set of TLE data, including satellite name, TLE line 1, and TLE line 2, separated by Enter (Return) between each line"
+                    },
+                    "loading": "Adding new satellite",
+                    "success": "Satellite added successfully",
+                    "failure": "Failed to add satellite"
+                },
+                "simulate": {
+                    "empty": "Please select at least one satellite for orbit simulation",
+                    "success": "Orbit simulation successfully performed for {{value}} satellites",
+                    "items_exceed": "Maximum {{value}} satellites can be selected for simulation"
+                },
+                "search": {
+                    "placeholder": "Enter satellite name or ID",
+                    "loading": "Searching satellites",
+                    "success": "Search completed",
+                    "failure": "Search failed",
+                    "empty": "No satellites matching the criteria found",
+                    "result": "{{value}} satellites found matching the criteria"
+                },
+                "set_tracking": {
+                    "dialog": {
+                        "title": "{{name}} Future 24h Transit Prediction",
+                        "placeholder": "Enter entry elevation threshold",
+                        "content": "Enter the entry elevation threshold for satellite {{name}}, in degrees, must be greater than 0 and less than 90"
+                    },
+                    "forecast_list": {
+                        "title": "{{name}} Future 24-hour Transit Events",
+                        "template": {
+                            "title": "{{value}} Transit Event",
+                            "content": "Entry Time {{startTime}}\nExit Time {{endTime}}\nEntry Azimuth {{entryAzimuth}} °\nExit Azimuth {{exitAzimuth}} °\nMax Elevation {{maxElevation}} °\nAscending/Descending {{isAscending}}\nObservation Coordinates ({{gnssLatitude}}, {{gnssLongitude}})\nObservation Elevation {{gnssElevation}} m\nElevation Threshold {{elevationThreshold}} °"
+                        }
+                    },
+                    "forecast_loading": "Fetching satellite transit prediction data",
+                    "forecast_success": "Transit forecast data retrieval complete",
+                    "forecast_failure": "Failed to retrieve transit forecast data",
+                    "forecast_empty": "No transit events in the next 24 hours",
+                    "loading": "Adding tracking task",
+                    "success": "Tracking task added successfully",
+                    "failure": "Failed to add schedule, please check if the schedule is duplicated or if there are conflicts within the time frame",
+                    "invalid_threshold": "Entry elevation threshold should be between 0 and 90 degrees"
+                },
+                "set_pan_tilt": {
+                    "confirm": {
+                        "title": "Confirm Operation",
+                        "cancel": "Setting operation canceled",
+                        "content": "The pan-tilt will soon point to satellite {{name}}, azimuth {{azimuth}}, elevation {{elevation}}, continue?"
+                    },
+                    "observation_loading": "Fetching satellite observation data",
+                    "observation_success": "Observation data retrieval complete",
+                    "observation_failure": "Failed to retrieve observation data",
+                    "not_observable": "Satellite {{value}} is not observable at the current location",
+                    "loading": "Setting pan-tilt to point to satellite {{value}}",
+                    "success": "Pan-tilt setup command successfully issued",
+                    "failure": "Failed to issue pan-tilt setup command"
+                },
+                "copy_tle": {
+                    "success": "Orbit data copied to clipboard"
+                },
+                "update_tle": {
+                    "dialog": {
+                        "title": "Update TLE",
+                        "placeholder": "Enter new TLE data",
+                        "content": "Updating TLE data for {{name}}, please enter new TLE data, including satellite name, TLE line 1, and TLE line 2, separated by Enter (Return) between each line"
+                    },
+                    "loading": "Updating satellite orbit",
+                    "success": "Satellite orbit updated successfully",
+                    "failure": "Failed to update satellite orbit"
+                },
+                "delete_tle": {
+                    "confirm": {
+                        "title": "Confirm Operation",
+                        "cancel": "Removal operation canceled",
+                        "content": "Are you sure you want to remove this orbit data?"
+                    },
+                    "loading": "Removing satellite orbit",
+                    "success": "Satellite orbit removed successfully",
+                    "failure": "Failed to remove satellite orbit"
+                }
+            }
+        },
+        "control": {
+            "cards": {
+                "true_azimuth": {
+                    "title": "True North Azimuth",
+                    "description": "Computed via GNSS"
+                },
+                "pan_tilt_pan": {
+                    "title": "Pan-Tilt Azimuth",
+                    "description": "Relative azimuth offset from true north"
+                },
+                "pan_tilt_tilt": {
+                    "title": "Pan-Tilt Elevation",
+                    "description": "Angle relative to the horizontal plane"
+                },
+                "pan_tilt_busy": {
+                    "title": "Pan-Tilt Status Indicator",
+                    "description": "Pan-tilt readiness status"
+                }
+            },
+            "form": {
+                "title": "Control Panel",
+                "submit": "Submit",
+                "errors": {
+                    "invalid_pan": "Azimuth should be between 0 and 360 degrees",
+                    "invalid_tilt": "Elevation should be between 0 and 85 degrees",
+                    "invalid_offset": "North offset angle should be between 0 and 360 degrees"
+                },
+                "fields": {
+                    "set_pan": "Set Pan Offset",
+                    "set_tilt": "Set Tilt Angle",
+                    "set_offset": "Set Azimuth Offset",
+                    "ignore_offset": "Ignore North Offset"
+                }
+            },
+            "actions": {
+                "set_offset": {
+                    "loading": "Setting pan offset",
+                    "success": "Pan offset set successfully",
+                    "failure": "Failed to set pan offset"
+                },
+                "set_pan_tilt": {
+                    "loading": "Setting pan-tilt azimuth and elevation data",
+                    "success": "Pan-tilt azimuth and elevation set successfully",
+                    "failure": "Failed to set pan-tilt azimuth and elevation"
+                }
+            }
+        },
+        "debug": {
+            "list": {
+                "labels": {
+                    "gnss_timestamp": "GNSS Current Time",
+                    "gnss_longitude": "GNSS Current Longitude",
+                    "gnss_latitude": "GNSS Current Latitude",
+                    "gnss_elevation": "GNSS Current Elevation",
+                    "gnss_azimuth": "GNSS True North Azimuth",
+                    "gnss_satellites": "GNSS Satellites Count",
+                    "gnss_data_quality": "GNSS Positioning Method",
+                    "pan_tilt_busy": "Pan-Tilt Busy Indicator",
+                    "pan_tilt_pan": "Pan-Tilt Azimuth",
+                    "pan_tilt_tilt": "Pan-Tilt Elevation",
+                    "pan_tilt_offset": "Pan-Tilt North Offset",
+                    "cpu_usage": "CPU Usage Percentage",
+                    "mem_usage": "RAM Usage Percentage",
+                    "disk_usage": "Disk Usage Percentage",
+                    "system_timestamp": "System RTC Time",
+                    "system_uptime": "System Uptime",
+                    "system_ip": "Device IP Address",
+                    "system_hostname": "Device Hostname",
+                    "system_release": "Device Kernel Version",
+                    "system_arch": "Device CPU Architecture"
+                },
+                "buttons": {
+                    "set_north": "Set North Direction",
+                    "reboot": "Reboot Control Station",
+                    "purge_tasks": "Purge All Schedules",
+                    "purge_tle": "Purge Satellites in System"
+                }
+            },
+            "panels": {
+                "diagnose": "Diagnostic Information",
+                "advanced": "Advanced Control",
+                "dangerous": "Dangerous Operation"
+            },
+            "actions": {
+                "set_north": {
+                    "description": "If the pan-tilt deviates significantly while tracking satellites, you can re-execute the set north operation to calibrate the pan-tilt, improving tracking accuracy.",
+                    "confirm": {
+                        "title": "Confirm Operation",
+                        "content": "Setting north direction takes about 1 minute. Please ensure the surrounding area has clear visibility of the sky. Otherwise, prolonged resources may cause missed schedules. Are you sure you want to proceed?"
+                    },
+                    "success": "Set north command successfully issued",
+                    "failure": "Failed to issue set north command"
+                },
+                "reboot": {
+                    "description": "Executing this operation will disconnect the control station server. Are you sure you want to proceed?",
+                    "confirm": {
+                        "title": "Confirm Operation",
+                        "content": "During the control station reboot process, there may be temporary errors and diagnostic information on the page. Are you sure you want to proceed?"
+                    },
+                    "success": "Reboot command successfully issued",
+                    "failure": "Failed to issue reboot command"
+                },
+                "purge_tasks": {
+                    "description": "This operation will clear all schedules in the system. Proceed with caution!",
+                    "confirm": {
+                        "title": "This is a dangerous operation!",
+                        "content": "This operation will clear all schedules, and cannot be undone. Are you sure you want to proceed?"
+                    },
+                    "success": "All schedules in the system have been cleared",
+                    "failure": "Failed to clear schedules"
+                },
+                "purge_tle": {
+                    "description": "This operation will clear all satellite TLE data in the system. Proceed with caution!",
+                    "confirm": {
+                        "title": "This is a dangerous operation!",
+                        "content": "This operation will clear all satellite TLE data, and cannot be undone. Are you sure you want to proceed?"
+                    },
+                    "success": "All satellite data in the system has been cleared",
+                    "failure": "Failed to clear satellite data"
+                }
+            }
+        },
+        "not_found": {
+            "title": "Page Not Found",
+            "content": "Sorry, this page does not exist.",
+            "go_back": "Go Back"
+        }
+    },
+    "components": {
+        "chart": {
+            "reset_zoom": "Reset Zoom",
+            "reset_zoom_title": "Reset Zoom"
+        }
+    },
     "common": {
-        "submit": "Submit",
-        "cancel": "Cancel",
-        "close": "Close",
-        "confirm": "Confirm",
-        "delete": "Delete",
-        "edit": "Edit",
-        "save": "Save"
+        "dialog": {
+            "cancel": "Cancel",
+            "submit": "Submit"
+        },
+        "confirm": {
+            "confirm": "Confirm",
+            "cancel": "Cancel"
+        },
+        "statement": {
+            "yes": "Yes",
+            "no": "No",
+            "busy": "Busy",
+            "ready": "Ready",
+            "ascending": "Ascending",
+            "descending": "Descending"
+        }
     }
 }

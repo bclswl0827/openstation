@@ -25,7 +25,7 @@ type Transit struct {
 }
 
 type Bootstrap struct {
-	Timestamp int64   `json:"time"`
+	Timestamp int64   `json:"timestamp"`
 	Azimuth   float64 `json:"azimuth"`
 	Elevation float64 `json:"elevation"`
 }
