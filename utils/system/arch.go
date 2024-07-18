@@ -1,8 +1,6 @@
 package system
 
-import (
-	"runtime"
-)
+import "runtime"
 
 func GetArch() (string, error) {
 	return runtime.GOARCH, nil
