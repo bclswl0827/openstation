@@ -228,8 +228,10 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64) erro
 		return errors.New("dependency is not provided")
 	}
 
-	if newPan > MAX_PAN || newPan < MIN_PAN {
-		return fmt.Errorf("pan angle must be between %d and %d degrees", MIN_PAN, MAX_PAN)
+	if newPan < MIN_PAN {
+		newPan = MIN_PAN
+	} else if newPan > MAX_PAN {
+		newPan = MAX_PAN
 	}
 
 	if newPan == 360 {
@@ -269,8 +271,10 @@ func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64) er
 		return errors.New("dependency is not provided")
 	}
 
-	if newTilt < MIN_TILT || newTilt > MAX_TILT {
-		return fmt.Errorf("tilt angle must be between %d and %d degrees", MIN_TILT, MAX_TILT)
+	if newTilt < MIN_TILT {
+		newTilt = MIN_TILT
+	} else if newTilt > MAX_TILT {
+		newTilt = MAX_TILT
 	}
 
 	// Encode tilt angle

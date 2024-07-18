@@ -79,12 +79,10 @@ func (s *TaskerService) Start(options *services.Options) {
 			err = panTiltDriver.SetPan(panTiltDeps, bootstrap[0].Azimuth)
 			if err != nil {
 				logger.GetLogger(s.GetTaskName()).Errorf("failed to set Pan-Tilt pan: %v", err)
-				continue
 			}
 			err = panTiltDriver.SetTilt(panTiltDeps, 90-bootstrap[0].Elevation)
 			if err != nil {
 				logger.GetLogger(s.GetTaskName()).Errorf("failed to set Pan-Tilt tilt: %v", err)
-				continue
 			}
 
 			// Print task countdown
