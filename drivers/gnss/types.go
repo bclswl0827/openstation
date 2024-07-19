@@ -3,7 +3,7 @@ package gnss
 import (
 	"time"
 
-	"github.com/bclswl0827/go-serial"
+	"github.com/bclswl0827/openstation/drivers/transport"
 )
 
 type GnssTime struct {
@@ -23,8 +23,8 @@ type GnssState struct {
 }
 
 type GnssDependency struct {
-	Port  *serial.Port
-	State *GnssState
+	Transport transport.TransportDriver
+	State     *GnssState
 }
 
 type GnssDriver interface {

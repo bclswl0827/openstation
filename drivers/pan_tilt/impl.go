@@ -6,8 +6,6 @@ import (
 	"math"
 	"sync"
 	"time"
-
-	"github.com/bclswl0827/openstation/drivers/serial"
 )
 
 const (
@@ -39,14 +37,14 @@ func (d *PanTiltDriverImpl) getPan(deps *PanTiltDependency) (float64, error) {
 
 	// Send query command and wait approximately for some time
 	queryCmd := []byte{SYNC_WORD, SLAVE_ADDR, 0x00, 0x51, 0x00, 0x00, 0x52}
-	_, err := serial.Write(deps.Port, queryCmd, false)
+	_, err := deps.Transport.Write(queryCmd, false)
 	if err != nil {
 		return DUMMY_VALUE, err
 	}
 
 	// Read pan angle response
 	response := make([]byte, 7)
-	_, err = serial.Read(deps.Port, response, time.Millisecond*100, true)
+	_, err = deps.Transport.Read(response, time.Millisecond*100, true)
 	if err != nil {
 		return DUMMY_VALUE, err
 	}
@@ -87,14 +85,14 @@ func (d *PanTiltDriverImpl) getTilt(deps *PanTiltDependency) (float64, error) {
 
 	// Send query command and wait for some time
 	queryCmd := []byte{SYNC_WORD, SLAVE_ADDR, 0x00, 0x53, 0x00, 0x00, 0x54}
-	_, err := serial.Write(deps.Port, queryCmd, false)
+	_, err := deps.Transport.Write(queryCmd, false)
 	if err != nil {
 		return DUMMY_VALUE, err
 	}
 
 	// Read tilt angle response
 	response := make([]byte, 7)
-	_, err = serial.Read(deps.Port, response, time.Millisecond*100, true)
+	_, err = deps.Transport.Read(response, time.Millisecond*100, true)
 	if err != nil {
 		return DUMMY_VALUE, err
 	}
@@ -149,7 +147,7 @@ func (d *PanTiltDriverImpl) IsAvailable(deps *PanTiltDependency) bool {
 
 	// Send pan query command and wait for some time
 	queryCmd := []byte{SLAVE_ADDR, 0x00, 0x51, 0x00, 0x00, 0x52}
-	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, queryCmd...), false)
+	_, err := deps.Transport.Write(append([]byte{SYNC_WORD}, queryCmd...), false)
 	if err != nil {
 		return false
 	}
@@ -157,7 +155,7 @@ func (d *PanTiltDriverImpl) IsAvailable(deps *PanTiltDependency) bool {
 
 	// Read response
 	response := make([]byte, 7)
-	_, err = serial.Read(deps.Port, response, time.Millisecond*100, false)
+	_, err = deps.Transport.Read(response, time.Millisecond*100, false)
 	if err != nil {
 		return false
 	}
@@ -189,7 +187,7 @@ func (d *PanTiltDriverImpl) Reset(deps *PanTiltDependency, sig chan<- bool) erro
 	resetCmd := []byte{SLAVE_ADDR, 0x00, 0x0F, 0x00, 0x00}
 	checksum := d.getChecksum(resetCmd)
 	resetCmd = append(resetCmd, checksum)
-	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, resetCmd...), false)
+	_, err := deps.Transport.Write(append([]byte{SYNC_WORD}, resetCmd...), false)
 	if err != nil {
 		return err
 	}
@@ -257,7 +255,7 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64) erro
 	setCmd = append(setCmd, checksum)
 
 	d.mutex.Lock()
-	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, setCmd...), false)
+	_, err := deps.Transport.Write(append([]byte{SYNC_WORD}, setCmd...), false)
 	d.mutex.Unlock()
 	if err != nil {
 		return err
@@ -287,7 +285,7 @@ func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64) er
 	setCmd = append(setCmd, checksum)
 
 	d.mutex.Lock()
-	_, err := serial.Write(deps.Port, append([]byte{SYNC_WORD}, setCmd...), false)
+	_, err := deps.Transport.Write(append([]byte{SYNC_WORD}, setCmd...), false)
 	d.mutex.Unlock()
 	if err != nil {
 		return err
