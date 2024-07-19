@@ -7,13 +7,13 @@ type station struct {
 }
 
 type pan_tilt struct {
-	Device   string `json:"device"`
-	BaudRate int    `json:"baudrate"`
+	DSN    string `json:"dsn"`
+	Engine string `json:"engine"`
 }
 
 type gnss struct {
-	Device   string  `json:"device"`
-	BaudRate int     `json:"baudrate"`
+	DSN      string  `json:"dsn"`
+	Engine   string  `json:"engine"`
 	Baseline float64 `json:"baseline"`
 }
 

@@ -1,6 +1,8 @@
 package pan_tilt
 
-import "github.com/bclswl0827/go-serial"
+import (
+	"github.com/bclswl0827/openstation/drivers/transport"
+)
 
 const ERROR_THRESHOLD = 0.2 // 0.2 degree error threshold
 
@@ -12,7 +14,7 @@ const (
 )
 
 type PanTiltDependency struct {
-	Port        *serial.Port
+	Transport   transport.TransportDriver
 	CurrentPan  float64
 	CurrentTilt float64
 	NorthOffset float64

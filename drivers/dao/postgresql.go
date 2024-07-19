@@ -11,7 +11,7 @@ import (
 
 type PostgreSQL struct{}
 
-func (p *PostgreSQL) compatible(engine string) bool {
+func (p *PostgreSQL) match(engine string) bool {
 	return engine == "postgres" || engine == "postgresql"
 }
 

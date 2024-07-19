@@ -11,7 +11,7 @@ import (
 
 type SQLite struct{}
 
-func (s *SQLite) compatible(engine string) bool {
+func (s *SQLite) match(engine string) bool {
 	return engine == "sqlite3" || engine == "sqlite"
 }
 

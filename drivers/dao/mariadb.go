@@ -11,7 +11,7 @@ import (
 
 type MariaDB struct{}
 
-func (m *MariaDB) compatible(engine string) bool {
+func (m *MariaDB) match(engine string) bool {
 	return engine == "mysql" || engine == "mariadb"
 }
 
