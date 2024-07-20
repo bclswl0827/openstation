@@ -274,9 +274,9 @@
                     "invalid_offset": "北偏角应在 0 到 360 度之间"
                 },
                 "fields": {
-                    "set_pan": "转台北偏角设定",
+                    "set_pan": "转台方位角设定",
                     "set_tilt": "转台俯仰角设定",
-                    "set_offset": "转台方位角设定",
+                    "set_offset": "转台北偏角设定",
                     "ignore_offset": "不设定北偏角"
                 }
             },
