@@ -44,7 +44,7 @@ func (d *PanTiltDriverImpl) getPan(deps *PanTiltDependency) (float64, error) {
 
 	// Read pan angle response
 	response := make([]byte, 7)
-	_, err = deps.Transport.Read(response, time.Millisecond*100, true)
+	_, err = deps.Transport.Read(response, time.Second, true)
 	if err != nil {
 		return DUMMY_VALUE, err
 	}
@@ -92,7 +92,7 @@ func (d *PanTiltDriverImpl) getTilt(deps *PanTiltDependency) (float64, error) {
 
 	// Read tilt angle response
 	response := make([]byte, 7)
-	_, err = deps.Transport.Read(response, time.Millisecond*100, true)
+	_, err = deps.Transport.Read(response, time.Second, true)
 	if err != nil {
 		return DUMMY_VALUE, err
 	}
@@ -131,6 +131,7 @@ func (d *PanTiltDriverImpl) readerDaemon(deps *PanTiltDependency) {
 			continue
 		}
 
+		time.Sleep(100 * time.Millisecond)
 		tilt, err := d.getTilt(deps)
 		if err != nil {
 			continue
@@ -254,6 +255,7 @@ func (d *PanTiltDriverImpl) SetPan(deps *PanTiltDependency, newPan float64) erro
 	checksum := d.getChecksum(setCmd)
 	setCmd = append(setCmd, checksum)
 
+	time.Sleep(100 * time.Millisecond)
 	d.mutex.Lock()
 	_, err := deps.Transport.Write(append([]byte{SYNC_WORD}, setCmd...), false)
 	d.mutex.Unlock()
@@ -284,6 +286,7 @@ func (d *PanTiltDriverImpl) SetTilt(deps *PanTiltDependency, newTilt float64) er
 	checksum := d.getChecksum(setCmd)
 	setCmd = append(setCmd, checksum)
 
+	time.Sleep(100 * time.Millisecond)
 	d.mutex.Lock()
 	_, err := deps.Transport.Write(append([]byte{SYNC_WORD}, setCmd...), false)
 	d.mutex.Unlock()

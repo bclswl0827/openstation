@@ -8,11 +8,13 @@ import (
 )
 
 func (p *PeripheralsCleanerTask) Execute(options *cleaners.Options) {
-	options.Dependency.Invoke(func(panTiltDeps *pan_tilt.PanTiltDependency, gnssDeps *gnss.GnssDependency) {
-		// Close serial ports
-		logger.GetLogger(p.GetTaskName()).Info("closing Pan-Tilt serial port")
-		panTiltDeps.Transport.Close()
-		logger.GetLogger(p.GetTaskName()).Info("closing GNSS serial port")
-		gnssDeps.Transport.Close()
-	})
+	if !options.MockMode {
+		options.Dependency.Invoke(func(panTiltDeps *pan_tilt.PanTiltDependency, gnssDeps *gnss.GnssDependency) {
+			// Close serial ports
+			logger.GetLogger(p.GetTaskName()).Info("closing Pan-Tilt serial port")
+			panTiltDeps.Transport.Close()
+			logger.GetLogger(p.GetTaskName()).Info("closing GNSS serial port")
+			gnssDeps.Transport.Close()
+		})
+	}
 }

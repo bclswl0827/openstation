@@ -37,6 +37,7 @@ func (t *TransportDriverTcpImpl) Read(buf []byte, timeout time.Duration, flush b
 }
 
 func (t *TransportDriverTcpImpl) Write(buf []byte, flush bool) (int, error) {
+	t.conn.SetWriteDeadline(time.Now().Add(time.Second))
 	return t.conn.Write(buf)
 }
 

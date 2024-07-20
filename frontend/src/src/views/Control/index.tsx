@@ -98,7 +98,7 @@ const Control = () => {
 				},
 				panTiltTilt: {
 					...prev.panTiltTilt,
-					value: `${(90 - getPanTilt.currentTilt).toFixed(2)} °`
+					value: `${getPanTilt.currentTilt.toFixed(2)} °`
 				},
 				panTiltBusy: {
 					...prev.panTiltBusy,
