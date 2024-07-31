@@ -6623,15 +6623,15 @@
 	(symbol
 		(lib_id "Diode:SS34")
 		(at 173.99 33.02 0)
+		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "5395e226-be1c-4251-bfc3-8b513106ed8c")
 		(property "Reference" "D2"
-			(at 173.6725 26.67 0)
+			(at 174.3075 26.67 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6639,7 +6639,7 @@
 			)
 		)
 		(property "Value" "SS34"
-			(at 173.6725 29.21 0)
+			(at 174.3075 29.21 0)
 			(effects
 				(font
 					(size 1.27 1.27)
