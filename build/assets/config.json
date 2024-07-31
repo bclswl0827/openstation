@@ -9,12 +9,12 @@
         "location": "北京"
     },
     "pantilt_settings": {
-        "device": "/dev/ttyUSB1",
-        "baudrate": 9600
+        "dsn": "transport://192.168.1.107:8889",
+        "engine": "tcp"
     },
     "gnss_settings": {
-        "device": "/dev/ttyUSB0",
-        "baudrate": 115200,
+        "dsn": "transport://192.168.1.107:8888",
+        "engine": "tcp",
         "baseline": 0.55
     },
     "database_settings": {
