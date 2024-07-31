@@ -8,9 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	libserial "github.com/bclswl0827/go-serial"
-	"github.com/bclswl0827/openstation/drivers/serial"
 )
 
 // Hardware driver to LC02HB(A/C) GNSS module
@@ -206,7 +203,7 @@ func (e *GnssDriverImpl) extractMessage(text, keyword string) (string, error) {
 	return "", errors.New("no NMEA message found with the given keyword")
 }
 
-func (r *GnssDriverImpl) getMessages(port *libserial.Port, read_attempts int) error {
+func (r *GnssDriverImpl) getMessages(deps *GnssDependency, read_attempts int) error {
 	var (
 		rmc     string
 		gga     string
@@ -214,7 +211,7 @@ func (r *GnssDriverImpl) getMessages(port *libserial.Port, read_attempts int) er
 	)
 	for ; read_attempts > 0; read_attempts-- {
 		buffer := make([]byte, 1024)
-		serial.Read(port, buffer, time.Millisecond*500, true)
+		deps.Transport.Read(buffer, time.Millisecond*500, true)
 		lines := string(buffer[:])
 
 		// Try to extract RMC message
@@ -277,7 +274,7 @@ func (r *GnssDriverImpl) readerDaemon(deps *GnssDependency) {
 	}
 
 	for {
-		err := r.getMessages(deps.Port, math.MaxUint8)
+		err := r.getMessages(deps, math.MaxUint8)
 		if err != nil {
 			continue
 		}
@@ -289,7 +286,7 @@ func (r *GnssDriverImpl) readerDaemon(deps *GnssDependency) {
 }
 
 func (r *GnssDriverImpl) IsAvailable(deps *GnssDependency) bool {
-	err := r.getMessages(deps.Port, math.MaxInt8)
+	err := r.getMessages(deps, math.MaxInt8)
 	return err == nil
 }
 
@@ -310,22 +307,20 @@ func (r *GnssDriverImpl) SetBaseline(deps *GnssDependency, baseline float64) err
 
 	command := fmt.Sprintf("$PQTMCFGBLD,W,%.3f", baseline)
 	checksum := r.getMessageChecksum(command)
-	_, err := serial.Write(
-		deps.Port, []byte(fmt.Sprintf("%s*%s\r\n", command, checksum)), false,
-	)
+	_, err := deps.Transport.Write([]byte(fmt.Sprintf("%s*%s\r\n", command, checksum)), false)
 	if err != nil {
 		return err
 	}
 
 	// Check if GNSS module accepted the command
 	buffer := make([]byte, 128)
-	serial.Read(deps.Port, buffer, time.Millisecond*500, true)
+	deps.Transport.Read(buffer, time.Millisecond*500, true)
 	if !strings.Contains(string(buffer[:]), "$PQTMCFGBLD,OK") {
 		return errors.New("failed to set GNSS baseline")
 	}
 
 	// To save baseline configuration
-	_, err = serial.Write(deps.Port, []byte("$PQTMSAVEPAR*5A\r\n"), false)
+	_, err = deps.Transport.Write([]byte("$PQTMSAVEPAR*5A\r\n"), false)
 	if err != nil {
 		return err
 	}
@@ -334,13 +329,13 @@ func (r *GnssDriverImpl) SetBaseline(deps *GnssDependency, baseline float64) err
 }
 
 func (r *GnssDriverImpl) GetBaseline(deps *GnssDependency) (float64, error) {
-	_, err := serial.Write(deps.Port, []byte("$PQTMCFGBLD,R*6E\r\n"), false)
+	_, err := deps.Transport.Write([]byte("$PQTMCFGBLD,R*6E\r\n"), false)
 	if err != nil {
 		return 0, err
 	}
 
 	buffer := make([]byte, 128)
-	serial.Read(deps.Port, buffer, time.Millisecond*500, true)
+	deps.Transport.Read(buffer, time.Millisecond*500, true)
 	lines := strings.Split(string(buffer[:]), "\n")
 
 	for _, line := range lines {

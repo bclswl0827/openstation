@@ -170,7 +170,7 @@ const Diagnose = () => {
 				gnssLatitude: { ...prev.gnssLatitude, value: `${getGnss.latitude.toFixed(5)} °` },
 				gnssElevation: {
 					...prev.gnssElevation,
-					value: `${getGnss.elevation.toFixed(5)} °`
+					value: `${getGnss.elevation.toFixed(5)} m`
 				},
 				gnssTrueAzimuth: {
 					...prev.gnssTrueAzimuth,

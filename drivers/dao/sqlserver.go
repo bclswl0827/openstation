@@ -11,7 +11,7 @@ import (
 
 type SQLServer struct{}
 
-func (s *SQLServer) compatible(engine string) bool {
+func (s *SQLServer) match(engine string) bool {
 	return engine == "sqlserver" || engine == "mssql"
 }
 

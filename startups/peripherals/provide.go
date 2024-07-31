@@ -5,7 +5,7 @@ import (
 
 	"github.com/bclswl0827/openstation/drivers/gnss"
 	"github.com/bclswl0827/openstation/drivers/pan_tilt"
-	"github.com/bclswl0827/openstation/drivers/serial"
+	"github.com/bclswl0827/openstation/drivers/transport"
 	"github.com/bclswl0827/openstation/startups"
 	"go.uber.org/dig"
 )
@@ -47,36 +47,44 @@ func (t *PeripheralsStartupTask) Provide(container *dig.Container, options *star
 	}
 
 	// Open Pan-Tilt device
-	var (
-		panTiltDeviceName = options.Config.PanTilt.Device
-		panTiltBaudRate   = options.Config.PanTilt.BaudRate
-	)
-	panTiltPort, err := serial.Open(panTiltDeviceName, panTiltBaudRate)
+	panTiltDsn := &transport.TransportDependency{
+		DSN:    options.Config.PanTilt.DSN,
+		Engine: options.Config.PanTilt.Engine,
+	}
+	panTiltTransport, err := transport.New(panTiltDsn)
 	if err != nil {
 		return err
 	}
-
+	err = panTiltTransport.Open(panTiltDsn)
+	if err != nil {
+		return err
+	}
 	err = container.Provide(func() *pan_tilt.PanTiltDependency {
-		return &pan_tilt.PanTiltDependency{Port: panTiltPort}
+		return &pan_tilt.PanTiltDependency{
+			Transport: panTiltTransport,
+		}
 	})
 	if err != nil {
 		return err
 	}
 
 	// Open GNSS device
-	var (
-		gnssDeviceName = options.Config.GNSS.Device
-		gnssBaudRate   = options.Config.GNSS.BaudRate
-	)
-	gnssPort, err := serial.Open(gnssDeviceName, gnssBaudRate)
+	gnssDsn := &transport.TransportDependency{
+		DSN:    options.Config.GNSS.DSN,
+		Engine: options.Config.GNSS.Engine,
+	}
+	gnssTransport, err := transport.New(gnssDsn)
 	if err != nil {
 		return err
 	}
-
+	err = gnssTransport.Open(gnssDsn)
+	if err != nil {
+		return err
+	}
 	err = container.Provide(func() *gnss.GnssDependency {
 		return &gnss.GnssDependency{
-			Port:  gnssPort,
-			State: &gnss.GnssState{},
+			Transport: gnssTransport,
+			State:     &gnss.GnssState{},
 		}
 	})
 	if err != nil {

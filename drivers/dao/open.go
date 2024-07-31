@@ -14,7 +14,7 @@ func Open(host string, port int, engineName, username, password, database string
 		&SQLite{},
 	}
 	for _, e := range engines {
-		if e.compatible(engineName) {
+		if e.match(engineName) {
 			return e.open(host, port, username, password, database, CONNECT_TIMEOUT)
 		}
 	}
