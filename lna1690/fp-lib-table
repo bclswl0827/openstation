@@ -1,4 +1,0 @@
-(fp_lib_table
-  (version 7)
-  (lib (name "LNA1690")(type "KiCad")(uri "${KIPRJMOD}/library/LNA1690.pretty")(options "")(descr ""))
-)
