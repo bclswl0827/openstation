@@ -73,7 +73,7 @@ func (p *NtpServerService) Start(options *services.Options, waitGroup *sync.Wait
 	logger.GetLogger(p.GetTaskName()).Infof("built-in NTP server is listening on 0.0.0.0:%d", options.Config.NTP.Port)
 	for {
 		select {
-		case <-options.Context.Done():
+		case <-options.CancelToken.Done():
 			if options.Config.NTP.Enable && p.udpConn != nil {
 				logger.GetLogger(p.GetTaskName()).Infoln("stopping built-in NTP server")
 				p.udpConn.Close()

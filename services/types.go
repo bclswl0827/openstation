@@ -10,11 +10,11 @@ import (
 )
 
 type Options struct {
-	MockMode   bool
-	Config     *config.Config
-	Dependency *dig.Container
-	Database   *gorm.DB
-	Context    context.Context
+	MockMode    bool
+	Config      *config.Config
+	Dependency  *dig.Container
+	Database    *gorm.DB
+	CancelToken context.Context
 }
 
 type Service interface {

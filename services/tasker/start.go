@@ -37,7 +37,7 @@ func (s *TaskerService) Start(options *services.Options, waitGroup *sync.WaitGro
 
 	for {
 		select {
-		case <-options.Context.Done():
+		case <-options.CancelToken.Done():
 			logger.GetLogger(s.GetTaskName()).Infoln("service has been stopped")
 			return
 		case <-ticker.C:

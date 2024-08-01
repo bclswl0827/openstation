@@ -1,6 +1,7 @@
 package gnss
 
 import (
+	"context"
 	"time"
 
 	"github.com/bclswl0827/openstation/drivers/transport"
@@ -23,8 +24,9 @@ type GnssState struct {
 }
 
 type GnssDependency struct {
-	Transport transport.TransportDriver
-	State     *GnssState
+	Transport   transport.TransportDriver
+	CancelToken context.Context
+	State       *GnssState
 }
 
 type GnssDriver interface {

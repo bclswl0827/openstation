@@ -124,21 +124,25 @@ func (d *PanTiltDriverImpl) readerDaemon(deps *PanTiltDependency) {
 	defer ticker.Stop()
 
 	for {
-		<-ticker.C
+		select {
+		case <-deps.CancelToken.Done():
+			return
+		case <-ticker.C:
 
-		pan, err := d.getPan(deps)
-		if err != nil {
-			continue
+			pan, err := d.getPan(deps)
+			if err != nil {
+				continue
+			}
+
+			time.Sleep(100 * time.Millisecond)
+			tilt, err := d.getTilt(deps)
+			if err != nil {
+				continue
+			}
+
+			deps.CurrentPan = pan
+			deps.CurrentTilt = tilt
 		}
-
-		time.Sleep(100 * time.Millisecond)
-		tilt, err := d.getTilt(deps)
-		if err != nil {
-			continue
-		}
-
-		deps.CurrentPan = pan
-		deps.CurrentTilt = tilt
 	}
 }
 

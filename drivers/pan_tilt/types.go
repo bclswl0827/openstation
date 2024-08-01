@@ -1,6 +1,8 @@
 package pan_tilt
 
 import (
+	"context"
+
 	"github.com/bclswl0827/openstation/drivers/transport"
 )
 
@@ -15,6 +17,7 @@ const (
 
 type PanTiltDependency struct {
 	Transport   transport.TransportDriver
+	CancelToken context.Context
 	CurrentPan  float64
 	CurrentTilt float64
 	NorthOffset float64
