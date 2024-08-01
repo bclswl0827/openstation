@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/bclswl0827/go-serial"
 )
 
 type TransportDriverSerialImpl struct {
-	conn *serial.Port
+	conn  *serial.Port
+	mutex sync.Mutex
 }
 
 func (t *TransportDriverSerialImpl) Open(deps *TransportDependency) error {
@@ -57,6 +59,9 @@ func (t *TransportDriverSerialImpl) Close() error {
 		return errors.New("connection is not opened")
 	}
 
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	return t.conn.Close()
 }
 
@@ -64,6 +69,9 @@ func (t *TransportDriverSerialImpl) Read(buf []byte, timeout time.Duration, flus
 	if t.conn == nil {
 		return 0, errors.New("connection is not opened")
 	}
+
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 
 	if flush {
 		t.conn.ResetInputBuffer()
@@ -77,6 +85,9 @@ func (t *TransportDriverSerialImpl) Write(buf []byte, flush bool) (int, error) {
 		return 0, errors.New("connection is not opened")
 	}
 
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	if flush {
 		t.conn.ResetOutputBuffer()
 	}
@@ -87,6 +98,9 @@ func (t *TransportDriverSerialImpl) Filter(signature []byte, filter_attempts int
 	if t.conn == nil {
 		return errors.New("connection is not opened")
 	}
+
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
 
 	t.conn.ResetInputBuffer()
 	t.conn.ResetOutputBuffer()
