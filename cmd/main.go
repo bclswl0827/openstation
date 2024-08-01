@@ -114,6 +114,9 @@ func main() {
 	// Create dependency injection container
 	depsContainer := dig.New()
 
+	// Setup context for graceful shutdown
+	cancelToken, abortSignal := context.WithCancel(context.Background())
+
 	// Setup cleaner tasks for graceful shutdown
 	cleanerTasks := []cleaners.CleanerTask{
 		&cleaner_peripherals.PeripheralsCleanerTask{},
@@ -161,17 +164,16 @@ func main() {
 	}
 
 	// Setup background services
-	serviceCtx, serviceCancel := context.WithCancel(context.Background())
 	regServices := []services.Service{
 		&service_ntp_server.NtpServerService{},
 		&service_tracker.TaskerService{},
 	}
 	serviceOptions := &services.Options{
-		Config:     &conf,
-		MockMode:   args.Mock,
-		Database:   databaseConn,
-		Dependency: depsContainer,
-		Context:    serviceCtx,
+		Config:      &conf,
+		MockMode:    args.Mock,
+		Database:    databaseConn,
+		Dependency:  depsContainer,
+		CancelToken: cancelToken,
 	}
 	var waitGroup sync.WaitGroup
 	for _, s := range regServices {
@@ -207,6 +209,6 @@ func main() {
 
 	// Stop services gracefully
 	logger.GetLogger(main).Info("services are shutting down, please wait")
-	serviceCancel()
+	abortSignal()
 	waitGroup.Wait()
 }

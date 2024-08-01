@@ -274,14 +274,19 @@ func (r *GnssDriverImpl) readerDaemon(deps *GnssDependency) {
 	}
 
 	for {
-		err := r.getMessages(deps, math.MaxUint8)
-		if err != nil {
-			continue
-		}
+		select {
+		case <-deps.CancelToken.Done():
+			return
+		default:
+			err := r.getMessages(deps, math.MaxUint8)
+			if err != nil {
+				continue
+			}
 
-		r.parseRMC(&deps.State.IsDataValid, &deps.State.Latitude, &deps.State.Longitude, deps.State.Time)
-		r.parseGGA(&deps.State.Satellites, &deps.State.Elevation)
-		r.parsePQTMTAR(&deps.State.DataQuality, &deps.State.TrueAzimuth)
+			r.parseRMC(&deps.State.IsDataValid, &deps.State.Latitude, &deps.State.Longitude, deps.State.Time)
+			r.parseGGA(&deps.State.Satellites, &deps.State.Elevation)
+			r.parsePQTMTAR(&deps.State.DataQuality, &deps.State.TrueAzimuth)
+		}
 	}
 }
 

@@ -1,3 +1,7 @@
 package peripherals
 
-type PeripheralsStartupTask struct{}
+import "context"
+
+type PeripheralsStartupTask struct {
+	CancelToken context.Context
+}
