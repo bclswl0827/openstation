@@ -1,7 +1,8 @@
 package services
 
 import (
-	"os"
+	"context"
+	"sync"
 
 	"github.com/bclswl0827/openstation/config"
 	"go.uber.org/dig"
@@ -13,11 +14,10 @@ type Options struct {
 	Config     *config.Config
 	Dependency *dig.Container
 	Database   *gorm.DB
-	OsSignal   chan os.Signal
+	Context    context.Context
 }
 
 type Service interface {
-	Start(options *Options)
-	Stop(options *Options)
+	Start(options *Options, waitGroup *sync.WaitGroup)
 	GetTaskName() string
 }

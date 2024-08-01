@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/bclswl0827/openstation/cleaners"
@@ -159,6 +161,7 @@ func main() {
 	}
 
 	// Setup background services
+	serviceCtx, serviceCancel := context.WithCancel(context.Background())
 	regServices := []services.Service{
 		&service_ntp_server.NtpServerService{},
 		&service_tracker.TaskerService{},
@@ -168,10 +171,12 @@ func main() {
 		MockMode:   args.Mock,
 		Database:   databaseConn,
 		Dependency: depsContainer,
-		OsSignal:   make(chan os.Signal, 1),
+		Context:    serviceCtx,
 	}
+	var waitGroup sync.WaitGroup
 	for _, s := range regServices {
-		go s.Start(serviceOptions)
+		waitGroup.Add(1)
+		go s.Start(serviceOptions, &waitGroup)
 	}
 
 	// Start HTTP web server
@@ -196,12 +201,12 @@ func main() {
 	logger.GetLogger(main).Infof("web server is listening on %s:%d", conf.Server.Host, conf.Server.Port)
 
 	// Receive interrupt signals
-	signal.Notify(serviceOptions.OsSignal, os.Interrupt, syscall.SIGTERM)
-	<-serviceOptions.OsSignal
+	osSignal := make(chan os.Signal, 1)
+	signal.Notify(osSignal, os.Interrupt, syscall.SIGTERM)
+	<-osSignal
 
 	// Stop services gracefully
 	logger.GetLogger(main).Info("services are shutting down, please wait")
-	for _, s := range regServices {
-		s.Stop(serviceOptions)
-	}
+	serviceCancel()
+	waitGroup.Wait()
 }

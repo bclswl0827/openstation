@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/bclswl0827/openstation/drivers/gnss"
@@ -11,7 +12,9 @@ import (
 	"github.com/bclswl0827/openstation/utils/logger"
 )
 
-func (p *NtpServerService) Start(options *services.Options) {
+func (p *NtpServerService) Start(options *services.Options, waitGroup *sync.WaitGroup) {
+	defer waitGroup.Done()
+
 	if !options.Config.NTP.Enable {
 		logger.GetLogger(p.GetTaskName()).Infoln("built-in NTP server is disabled")
 		return
@@ -69,6 +72,15 @@ func (p *NtpServerService) Start(options *services.Options) {
 
 	logger.GetLogger(p.GetTaskName()).Infof("built-in NTP server is listening on 0.0.0.0:%d", options.Config.NTP.Port)
 	for {
-		runtime.Gosched()
+		select {
+		case <-options.Context.Done():
+			if options.Config.NTP.Enable && p.udpConn != nil {
+				logger.GetLogger(p.GetTaskName()).Infoln("stopping built-in NTP server")
+				p.udpConn.Close()
+			}
+			return
+		default:
+			runtime.Gosched()
+		}
 	}
 }
