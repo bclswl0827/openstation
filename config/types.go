@@ -40,7 +40,7 @@ type ntp struct {
 
 type logger struct {
 	Level string `json:"level"`
-	Path  string `json:"path"`
+	Dump  string `json:"dump"`
 }
 
 type Config struct {

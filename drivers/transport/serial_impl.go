@@ -2,6 +2,7 @@ package transport
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -41,7 +42,7 @@ func (t *TransportDriverSerialImpl) Open(deps *TransportDependency) error {
 		serial.WithStopBits(serial.OneStopBit),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("%v %s", err, deviceName)
 	}
 
 	conn.SetDTR(true)
@@ -53,7 +54,7 @@ func (t *TransportDriverSerialImpl) Open(deps *TransportDependency) error {
 
 func (t *TransportDriverSerialImpl) Close() error {
 	if t.conn == nil {
-		return fmt.Errorf("connection is not opened")
+		return errors.New("connection is not opened")
 	}
 
 	return t.conn.Close()
@@ -61,7 +62,7 @@ func (t *TransportDriverSerialImpl) Close() error {
 
 func (t *TransportDriverSerialImpl) Read(buf []byte, timeout time.Duration, flush bool) (int, error) {
 	if t.conn == nil {
-		return 0, fmt.Errorf("connection is not opened")
+		return 0, errors.New("connection is not opened")
 	}
 
 	if flush {
@@ -73,7 +74,7 @@ func (t *TransportDriverSerialImpl) Read(buf []byte, timeout time.Duration, flus
 
 func (t *TransportDriverSerialImpl) Write(buf []byte, flush bool) (int, error) {
 	if t.conn == nil {
-		return 0, fmt.Errorf("connection is not opened")
+		return 0, errors.New("connection is not opened")
 	}
 
 	if flush {
@@ -84,7 +85,7 @@ func (t *TransportDriverSerialImpl) Write(buf []byte, flush bool) (int, error) {
 
 func (t *TransportDriverSerialImpl) Filter(signature []byte, filter_attempts int) error {
 	if t.conn == nil {
-		return fmt.Errorf("connection is not opened")
+		return errors.New("connection is not opened")
 	}
 
 	t.conn.ResetInputBuffer()
@@ -104,5 +105,5 @@ func (t *TransportDriverSerialImpl) Filter(signature []byte, filter_attempts int
 		}
 	}
 
-	return fmt.Errorf("failed to filter header")
+	return errors.New("failed to filter header")
 }

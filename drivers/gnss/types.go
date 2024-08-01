@@ -7,8 +7,8 @@ import (
 )
 
 type GnssTime struct {
-	BaseTime time.Time
-	RefTime  time.Time
+	LocalBaseTime time.Time
+	ReferenceTime time.Time
 }
 
 type GnssState struct {

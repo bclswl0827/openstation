@@ -11,9 +11,9 @@ func (p *PeripheralsCleanerTask) Execute(options *cleaners.Options) {
 	if !options.MockMode {
 		options.Dependency.Invoke(func(panTiltDeps *pan_tilt.PanTiltDependency, gnssDeps *gnss.GnssDependency) {
 			// Close serial ports
-			logger.GetLogger(p.GetTaskName()).Info("closing Pan-Tilt serial port")
+			logger.GetLogger(p.GetTaskName()).Info("closing connection to Pan-Tilt")
 			panTiltDeps.Transport.Close()
-			logger.GetLogger(p.GetTaskName()).Info("closing GNSS serial port")
+			logger.GetLogger(p.GetTaskName()).Info("closing connection to GNSS receiver")
 			gnssDeps.Transport.Close()
 		})
 	}
