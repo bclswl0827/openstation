@@ -30,8 +30,8 @@ func (t *PeripheralsStartupTask) mockProvide(container *dig.Container, _ *startu
 				TrueAzimuth: 128,
 				DataQuality: 4,
 				Time: &gnss.GnssTime{
-					RefTime:  time.Now().UTC().Add(time.Second),
-					BaseTime: time.Now().UTC(),
+					ReferenceTime: time.Now().UTC().Add(time.Second),
+					LocalBaseTime: time.Now().UTC(),
 				},
 			},
 		}

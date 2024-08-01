@@ -28,7 +28,7 @@ func (r *GnssDriverImpl) parseRMC(isDataValid *bool, latitude, longitude *float6
 	}
 
 	// Get system datetime as base time
-	gnssTime.BaseTime = time.Now().UTC()
+	gnssTime.LocalBaseTime = time.Now().UTC()
 
 	// Get GNSS datetime as reference time
 	timeStr, dateStr := fields[1], fields[9]
@@ -64,7 +64,7 @@ func (r *GnssDriverImpl) parseRMC(isDataValid *bool, latitude, longitude *float6
 	if err != nil {
 		return err
 	}
-	gnssTime.RefTime = time.Date(
+	gnssTime.ReferenceTime = time.Date(
 		2000+year, time.Month(month), day,
 		hour, minute, second, millisecond*int(time.Millisecond),
 		time.UTC,

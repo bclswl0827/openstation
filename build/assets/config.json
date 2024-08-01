@@ -37,6 +37,6 @@
     },
     "logger_settings": {
         "level": "info",
-        "path": "/home/yuki/openstation.log"
+        "dump": "/home/yuki/openstation.log"
     }
 }

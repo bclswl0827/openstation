@@ -41,7 +41,7 @@ func parseCommandLine() (args arguments) {
 	return args
 }
 
-func setupLogger(level, path string) {
+func setupLogger(level, dumpPath string) {
 	var err error
 	switch level {
 	case "info":
@@ -60,8 +60,8 @@ func setupLogger(level, path string) {
 		logger.GetLogger(main).Fatalln(err)
 	}
 
-	if len(path) != 0 {
-		logger.SetFile(path)
+	if len(dumpPath) != 0 {
+		logger.SetFile(dumpPath)
 	}
 }
 
@@ -85,7 +85,7 @@ func main() {
 	}
 
 	// Setup logger with given configuration
-	setupLogger(conf.Logger.Level, conf.Logger.Path)
+	setupLogger(conf.Logger.Level, conf.Logger.Dump)
 	logger.GetLogger(main).Info("global configuration has been loaded")
 
 	// Connect to database
