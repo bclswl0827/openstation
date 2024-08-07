@@ -36,10 +36,11 @@ windows:
 	@cp -r $(ASSETS_DIR) $(DIST_DIR)/win64
 
 gen:
+ifeq ($(shell command -v gqlgen 2> /dev/null),)
 	@echo "Installing gqlgen..."
 	@go get github.com/99designs/gqlgen
 	@go install github.com/99designs/gqlgen
-	@echo "Generating code..."
+endif
 	@gqlgen generate
 
 version:
