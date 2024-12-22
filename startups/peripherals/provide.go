@@ -62,7 +62,7 @@ func (t *PeripheralsStartupTask) Provide(container *dig.Container, options *star
 	err = container.Provide(func() *pan_tilt.PanTiltDependency {
 		return &pan_tilt.PanTiltDependency{
 			Transport:   panTiltTransport,
-			CancelToken: t.CancelToken,
+			CancelToken: options.CancelToken,
 		}
 	})
 	if err != nil {
@@ -85,7 +85,7 @@ func (t *PeripheralsStartupTask) Provide(container *dig.Container, options *star
 	err = container.Provide(func() *gnss.GnssDependency {
 		return &gnss.GnssDependency{
 			Transport:   gnssTransport,
-			CancelToken: t.CancelToken,
+			CancelToken: options.CancelToken,
 			State:       &gnss.GnssState{},
 		}
 	})

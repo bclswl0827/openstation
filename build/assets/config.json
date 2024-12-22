@@ -1,29 +1,29 @@
 {
     "station_settings": {
-        "name": "北京 1.2 公尺 L/S 站",
+        "name": "南京 1.2 公尺 L/S 站",
         "remarks": [
             "测试站",
             "临时站",
             "嵌赛用"
         ],
-        "location": "北京"
+        "location": "南京"
     },
     "pantilt_settings": {
-        "dsn": "transport://192.168.1.107:8889",
+        "dsn": "transport://192.168.100.2:8889",
         "engine": "tcp"
     },
     "gnss_settings": {
-        "dsn": "transport://192.168.1.107:8888",
+        "dsn": "transport://192.168.100.2:8888",
         "engine": "tcp",
         "baseline": 0.55
     },
     "database_settings": {
-        "engine": "postgresql",
+        "engine": "sqlite",
         "host": "127.0.0.1",
         "port": 5432,
         "username": "postgres",
         "password": "passw0rd",
-        "database": "openstation"
+        "database": "/home/loongson/openstation.db"
     },
     "server_settings": {
         "host": "0.0.0.0",
@@ -37,6 +37,6 @@
     },
     "logger_settings": {
         "level": "info",
-        "dump": "/home/yuki/openstation.log"
+        "dump": "/home/loongson/openstation.log"
     }
 }
