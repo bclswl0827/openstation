@@ -143,9 +143,10 @@ func main() {
 		&startup_alignment.AlignmentStartupTask{},
 	}
 	startupOptions := &startups.Options{
-		Config:   &conf,
-		MockMode: args.Mock,
-		Database: databaseConn,
+		Config:      &conf,
+		MockMode:    args.Mock,
+		Database:    databaseConn,
+		CancelToken: cancelToken,
 	}
 	for _, t := range startupTasks {
 		taskName := t.GetTaskName()

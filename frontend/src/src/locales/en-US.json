@@ -274,7 +274,7 @@
                     "invalid_offset": "North offset angle should be between 0 and 360 degrees"
                 },
                 "fields": {
-                    "set_pan": "Set Pan Offset",
+                    "set_pan": "Set Pan Azimuth",
                     "set_tilt": "Set Tilt Angle",
                     "set_offset": "Set Azimuth Offset",
                     "ignore_offset": "Ignore North Offset"
